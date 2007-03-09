@@ -1,0 +1,654 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 39;
+	objects = {
+		014CEA520018CE5811CA2923 = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_CPU = "";
+				GCC_MODEL_PPC64 = NO;
+				GCC_MODEL_TUNING = "";
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "/sw/include/ -L/sw/lib";
+				MACOSX_DEPLOYMENT_TARGET = "";
+				OPTIMIZATION_CFLAGS = "-O0";
+				OTHER_CFLAGS = "-falign-loops=32 -mdynamic-no-pic";
+				OTHER_CPLUSPLUSFLAGS = "-falign-loops=32 -mdynamic-no-pic";
+				OTHER_LDFLAGS = "-lMallocDebug -L/sw/lib -lf2c -falign-loops=32 -mdynamic-no-pic";
+				ZERO_LINK = NO;
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+		014CEA530018CE5811CA2923 = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_CPU = G5;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				HEADER_SEARCH_PATHS = "/sw/include/ -L/sw/lib";
+				OTHER_CFLAGS = "-falign-loops=32 -mdynamic-no-pic";
+				OTHER_CPLUSPLUSFLAGS = "-falign-loops=32 -mdynamic-no-pic";
+				OTHER_LDFLAGS = "-L/sw/lib -lf2c -falign-loops=32 -mdynamic-no-pic";
+				ZERO_LINK = NO;
+			};
+			isa = PBXBuildStyle;
+			name = Deployment;
+		};
+//010
+//011
+//012
+//013
+//014
+//080
+//081
+//082
+//083
+//084
+		08FB7793FE84155DC02AAC07 = {
+			buildSettings = {
+			};
+			buildStyles = (
+				014CEA520018CE5811CA2923,
+				014CEA530018CE5811CA2923,
+			);
+			hasScannedForEncodings = 1;
+			isa = PBXProject;
+			mainGroup = 08FB7794FE84155DC02AAC07;
+			projectDirPath = "";
+			targets = (
+				8DD76FA90486AB0100D96B5E,
+			);
+		};
+		08FB7794FE84155DC02AAC07 = {
+			children = (
+				348DEA400677EB3B00EFE7B9,
+				08FB7795FE84155DC02AAC07,
+				C6A0FF2B0290797F04C91782,
+				1AB674ADFE9D54B511CA2CBB,
+			);
+			isa = PBXGroup;
+			name = csnnls_tester;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 = {
+			children = (
+				08FB7796FE84155DC02AAC07,
+				348DE7A30677DE5000EFE7B9,
+			);
+			isa = PBXGroup;
+			name = Source;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		08FB7796FE84155DC02AAC07 = {
+			fileEncoding = 4;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			path = tsnnls_test.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//080
+//081
+//082
+//083
+//084
+//1A0
+//1A1
+//1A2
+//1A3
+//1A4
+		1AB674ADFE9D54B511CA2CBB = {
+			children = (
+				8DD76FB20486AB0100D96B5E,
+			);
+			isa = PBXGroup;
+			name = Products;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//1A0
+//1A1
+//1A2
+//1A3
+//1A4
+//340
+//341
+//342
+//343
+//344
+		348DE7A30677DE5000EFE7B9 = {
+			children = (
+				D30FCE3606C06DAF00EE3947,
+				D30FCE3706C06DAF00EE3947,
+				D30FCE3806C06DAF00EE3947,
+				D30FCE3906C06DAF00EE3947,
+				D30FCE3A06C06DAF00EE3947,
+				348DE7A90677DE6100EFE7B9,
+			);
+			isa = PBXGroup;
+			name = tsnnls;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		348DE7A90677DE6100EFE7B9 = {
+			children = (
+				D30FCE5A06C06DEC00EE3947,
+				D30FCEF406C06E7F00EE3947,
+				D30FCE4F06C06DEC00EE3947,
+				D30FCE5706C06DEC00EE3947,
+				D30FCE5106C06DEC00EE3947,
+				D30FCF1A06C06EFA00EE3947,
+				D30FCE5006C06DEC00EE3947,
+				D3EFD47806C59D3600C77810,
+				D30FCE5606C06DEC00EE3947,
+				D30FCE5906C06DEC00EE3947,
+				D30FCE5D06C06DEC00EE3947,
+				D30FCE6006C06DEC00EE3947,
+				D30FCE5406C06DEC00EE3947,
+				D30FCE4C06C06DEC00EE3947,
+				D30FCE4806C06DEC00EE3947,
+			);
+			isa = PBXGroup;
+			name = taucs_basic;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		348DEA400677EB3B00EFE7B9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = wrapper.framework;
+			name = vecLib.framework;
+			path = /System/Library/Frameworks/vecLib.framework;
+			refType = 0;
+			sourceTree = "<absolute>";
+		};
+		348DEA410677EB3B00EFE7B9 = {
+			fileRef = 348DEA400677EB3B00EFE7B9;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+//340
+//341
+//342
+//343
+//344
+//8D0
+//8D1
+//8D2
+//8D3
+//8D4
+		8DD76FA90486AB0100D96B5E = {
+			buildPhases = (
+				8DD76FAA0486AB0100D96B5E,
+				8DD76FAB0486AB0100D96B5E,
+				8DD76FAD0486AB0100D96B5E,
+				8DD76FAE0486AB0100D96B5E,
+				8DD76FAF0486AB0100D96B5E,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = "";
+				GCC_ENABLE_TRIGRAPHS = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = NO;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
+				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
+				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				HEADER_SEARCH_PATHS = "";
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = "/Users/michaelp/Desktop/csnnls_tester/csnnls/taucs_basic \"/Users/piatek/Desktop/csnnls_tester nocilk\" /Users/piatek/Desktop/csnnls_dist /Users/piatek/Desktop/tsnnls_dist/tsnnls /Users/piatek/Desktop/tsnnls_dist";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = csnnls_tester;
+				REZ_EXECUTABLE = YES;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			dependencies = (
+			);
+			isa = PBXNativeTarget;
+			name = tsnnls_tester;
+			productInstallPath = "$(HOME)/bin";
+			productName = csnnls_tester;
+			productReference = 8DD76FB20486AB0100D96B5E;
+			productType = "com.apple.product-type.tool";
+		};
+		8DD76FAA0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+				D30FCE3B06C06DAF00EE3947,
+				D30FCE3E06C06DAF00EE3947,
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAB0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+				8DD76FAC0486AB0100D96B5E,
+				D30FCE3C06C06DAF00EE3947,
+				D30FCE3D06C06DAF00EE3947,
+				D30FCE3F06C06DAF00EE3947,
+				D30FCE6706C06DEC00EE3947,
+				D30FCE6B06C06DEC00EE3947,
+				D30FCE6E06C06DEC00EE3947,
+				D30FCE6F06C06DEC00EE3947,
+				D30FCE7006C06DEC00EE3947,
+				D30FCE7306C06DEC00EE3947,
+				D30FCE7506C06DEC00EE3947,
+				D30FCE7606C06DEC00EE3947,
+				D30FCE7806C06DEC00EE3947,
+				D30FCE7906C06DEC00EE3947,
+				D30FCE7C06C06DEC00EE3947,
+				D30FCE7F06C06DEC00EE3947,
+				D30FCEF506C06E7F00EE3947,
+				D30FCF1B06C06EFA00EE3947,
+				D3EFD47906C59D3600C77810,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAC0486AB0100D96B5E = {
+			fileRef = 08FB7796FE84155DC02AAC07;
+			isa = PBXBuildFile;
+			settings = {
+				ATTRIBUTES = (
+				);
+			};
+		};
+		8DD76FAD0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+				348DEA410677EB3B00EFE7B9,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAE0486AB0100D96B5E = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8DD76FAF0486AB0100D96B5E = {
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				8DD76FB00486AB0100D96B5E,
+			);
+			isa = PBXCopyFilesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		8DD76FB00486AB0100D96B5E = {
+			fileRef = C6A0FF2C0290799A04C91782;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		8DD76FB20486AB0100D96B5E = {
+			explicitFileType = "compiled.mach-o.executable";
+			includeInIndex = 0;
+			isa = PBXFileReference;
+			path = csnnls_tester;
+			refType = 3;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+//8D0
+//8D1
+//8D2
+//8D3
+//8D4
+//C60
+//C61
+//C62
+//C63
+//C64
+		C6A0FF2B0290797F04C91782 = {
+			children = (
+				C6A0FF2C0290799A04C91782,
+			);
+			isa = PBXGroup;
+			name = Documentation;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		C6A0FF2C0290799A04C91782 = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.man;
+			path = csnnls_tester.1;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+//C60
+//C61
+//C62
+//C63
+//C64
+//D30
+//D31
+//D32
+//D33
+//D34
+		D30FCE3606C06DAF00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = tsnnls.h;
+			path = tsnnls/tsnnls.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE3706C06DAF00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = tsnnls.c;
+			path = tsnnls/tsnnls.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE3806C06DAF00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = tlsqr.c;
+			path = tsnnls/tlsqr.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE3906C06DAF00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = lsqr.h;
+			path = tsnnls/lsqr.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE3A06C06DAF00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = lsqr.c;
+			path = tsnnls/lsqr.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE3B06C06DAF00EE3947 = {
+			fileRef = D30FCE3606C06DAF00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE3C06C06DAF00EE3947 = {
+			fileRef = D30FCE3706C06DAF00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE3D06C06DAF00EE3947 = {
+			fileRef = D30FCE3806C06DAF00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE3E06C06DAF00EE3947 = {
+			fileRef = D30FCE3906C06DAF00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE3F06C06DAF00EE3947 = {
+			fileRef = D30FCE3A06C06DAF00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE4806C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_ccs_base.c;
+			path = tsnnls/taucs_basic/taucs_ccs_base.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE4C06C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_sn_llt.c;
+			path = tsnnls/taucs_basic/taucs_sn_llt.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE4F06C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_ccs_order.c;
+			path = tsnnls/taucs_basic/taucs_ccs_order.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5006C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = colamd.c;
+			path = tsnnls/taucs_basic/colamd.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5106C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_complex.c;
+			path = tsnnls/taucs_basic/taucs_complex.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5406C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_timer.c;
+			path = tsnnls/taucs_basic/taucs_timer.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5606C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = amdbar.c;
+			path = tsnnls/taucs_basic/amdbar.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5706C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_ccs_ops.c;
+			path = tsnnls/taucs_basic/taucs_ccs_ops.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5906C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = amdexa.c;
+			path = tsnnls/taucs_basic/amdexa.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5A06C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_logging.c;
+			path = tsnnls/taucs_basic/taucs_logging.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE5D06C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = amdtru.c;
+			path = tsnnls/taucs_basic/amdtru.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE6006C06DEC00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = genmmd.c;
+			path = tsnnls/taucs_basic/genmmd.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCE6706C06DEC00EE3947 = {
+			fileRef = D30FCE4806C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE6B06C06DEC00EE3947 = {
+			fileRef = D30FCE4C06C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE6E06C06DEC00EE3947 = {
+			fileRef = D30FCE4F06C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE6F06C06DEC00EE3947 = {
+			fileRef = D30FCE5006C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7006C06DEC00EE3947 = {
+			fileRef = D30FCE5106C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7306C06DEC00EE3947 = {
+			fileRef = D30FCE5406C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7506C06DEC00EE3947 = {
+			fileRef = D30FCE5606C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7606C06DEC00EE3947 = {
+			fileRef = D30FCE5706C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7806C06DEC00EE3947 = {
+			fileRef = D30FCE5906C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7906C06DEC00EE3947 = {
+			fileRef = D30FCE5A06C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7C06C06DEC00EE3947 = {
+			fileRef = D30FCE5D06C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCE7F06C06DEC00EE3947 = {
+			fileRef = D30FCE6006C06DEC00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCEF406C06E7F00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_malloc.c;
+			path = tsnnls/taucs_basic/taucs_malloc.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCEF506C06E7F00EE3947 = {
+			fileRef = D30FCEF406C06E7F00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D30FCF1A06C06EFA00EE3947 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_vec_base.c;
+			path = tsnnls/taucs_basic/taucs_vec_base.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D30FCF1B06C06EFA00EE3947 = {
+			fileRef = D30FCF1A06C06EFA00EE3947;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		D3EFD47806C59D3600C77810 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = taucs_ccs_generators.c;
+			path = tsnnls/taucs_basic/taucs_ccs_generators.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		D3EFD47906C59D3600C77810 = {
+			fileRef = D3EFD47806C59D3600C77810;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+	};
+	rootObject = 08FB7793FE84155DC02AAC07;
+}
