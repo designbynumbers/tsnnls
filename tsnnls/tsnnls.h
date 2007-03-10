@@ -1,7 +1,9 @@
 
 /*
- * This program is free software distributed under the GPL. A copy of the license should have been included with this 
- * archive in a file named 'LICENSE'. You can read the license there or on the web at: http://www.gnu.org/licenses/gpl.txt
+ * This program is free software distributed under the GPL. A copy of
+ * the license should have been included with this archive in a file
+ * named 'LICENSE'. You can read the license there or on the web at:
+ * http://www.gnu.org/licenses/gpl.txt
  */
 
 /*
@@ -86,7 +88,9 @@ void				selectAprimeDotAsparse( const taucs_ccs_matrix* apda, int* F, int sizeF,
  *		A = fixed;
  */
 taucs_double*		t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
-							 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings );
+				 double* outResidualNorm, 
+				 double inRelErrTolerance, 
+				 int inPrintErrorWarnings );
 
 #if (__cplusplus || c_plusplus)
 };

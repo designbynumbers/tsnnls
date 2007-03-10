@@ -379,7 +379,6 @@ void
 sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod )
 {
 	taucs_ccs_matrix* A = (taucs_ccs_matrix*)prod;
-	int i;
 	int cItr, rItr;
 	
 	if( mode == 0 )
@@ -439,7 +438,7 @@ sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod )
 
 taucs_double*
 t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
-		 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
+	 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
 {
 	taucs_ccs_matrix  *Af;
 	int               p, ninf, pbar = {3};
@@ -648,7 +647,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 			selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
 						
 			xf_raw = NULL;
-			if( inRelErrTolerance > 1 || lsqrStep != 0 && inPrintErrorWarnings == 0 )
+			if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
 				xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
 			else
 			{
@@ -806,20 +805,20 @@ double
 taucs_rcond( taucs_ccs_matrix* A )
 {
 	char	NORM = '1';
-	int		N = 0;
-	int		LDA = 0;
+	long int	N = 0,AN = 0;     /* These are long to conform with Apple CLAPACK types */
+	long int        LDA = 0;
 	double  ANORM = 0;
 	double  RCOND = 0;
 	double* WORK = NULL;
-	int*	IWORK = NULL;
-	int		INFO;
-	int*	IPIV = NULL;
+	long int* IWORK = NULL;
+	long int	INFO;
+	long int*	IPIV = NULL;
 	double* lapackA = NULL;
 	
 	/* Construct LAPACK representation of A and compute the 1 norm of A */
 	int vSize;
 	int cItr, rItr;
-	int rowCount = A->m;
+	long int rowCount = A->m;
 	double localMax = 0;
 	
 	if( (A->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
@@ -854,15 +853,16 @@ taucs_rcond( taucs_ccs_matrix* A )
 
 	NORM = '1';
 	N = A->n;
+	AN = A->n;
 	LDA = A->m;
 	RCOND = 0;
 	WORK = (double*)malloc(sizeof(double)*4*N);
-	IWORK = (int*)malloc(sizeof(int)*N);
+	IWORK = (long int*)malloc(sizeof(long int)*N);
 	INFO = 0;
 
-	IPIV = (int*)malloc(sizeof(int)*min(rowCount, A->n));
+	IPIV = (long int*)malloc(sizeof(long int)*min(rowCount, A->n));
 	
-	dgetrf_( &rowCount, &A->n, lapackA, &rowCount, IPIV, &INFO );
+	dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
 	dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
 
 	free(IPIV);

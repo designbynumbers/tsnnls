@@ -371,7 +371,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
   double  dvec_norm2( dvec * );
 
   long    indx,
-          num_iter,
+    //    num_iter,
           term_iter,
           term_iter_max;
   
@@ -422,10 +422,10 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
 
   if( input->lsqr_fp_out != NULL )
     fprintf( input->lsqr_fp_out, "  Least Squares Solution of A*x = b\n\
-	The matrix A has %7i rows and %7i columns\n\
+	The matrix A has %7ld rows and %7ld columns\n\
 	The damping parameter is\tDAMP = %10.2e\n\
 	ATOL = %10.2e\t\tCONDLIM = %10.2e\n\
-	BTOL = %10.2e\t\tITERLIM = %10i\n\n",
+	BTOL = %10.2e\t\tITERLIM = %10ld\n\n",
 	input->num_rows, input->num_cols, input->damp_val, input->rel_mat_err,
 	input->cond_lim, input->rel_rhs_err, input->max_iter );
   
@@ -505,7 +505,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
 */
   if( (output->mat_resid_norm == 0.0) && (input->lsqr_fp_out != NULL) )
     {
-      fprintf( input->lsqr_fp_out, "\tISTOP = %3i\t\t\tITER = %9i\n\
+      fprintf( input->lsqr_fp_out, "\tISTOP = %3ld\t\t\tITER = %9ld\n\
 	|| A ||_F = %13.5e\tcond( A ) = %13.5e\n\
 	|| r ||_2 = %13.5e\t|| A^T r ||_2 = %13.5e\n\
 	|| b ||_2 = %13.5e\t|| x - x0 ||_2 = %13.5e\n\n", 
@@ -534,7 +534,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
       stop_crit_2 = alpha / beta;
 
       fprintf( input->lsqr_fp_out,
-      "%6i %13.5e %10.2e \t%10.2e \t%10.2e  %10.2e\n",
+      "%6ld %13.5e %10.2e \t%10.2e \t%10.2e  %10.2e\n",
 	       output->num_iters, output->resid_norm, stop_crit_1, stop_crit_2,
 	       output->frob_mat_norm, output->mat_cond_num);
     }
@@ -712,7 +712,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
       if( input->lsqr_fp_out != NULL )
 	{
 	  fprintf( input->lsqr_fp_out,
-          "%6i %13.5e %10.2e \t%10.2e \t%10.2e %10.2e\n",
+          "%6ld %13.5e %10.2e \t%10.2e \t%10.2e %10.2e\n",
 		   output->num_iters, output->resid_norm, stop_crit_1, 
                    stop_crit_2,
 		   output->frob_mat_norm, output->mat_cond_num);
@@ -754,7 +754,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
 */
   if( input->lsqr_fp_out != NULL )
     {
-      fprintf( input->lsqr_fp_out, "\n\tISTOP = %3i\t\t\tITER = %9i\n\
+      fprintf( input->lsqr_fp_out, "\n\tISTOP = %3ld\t\t\tITER = %9ld\n\
 	|| A ||_F = %13.5e\tcond( A ) = %13.5e\n\
 	|| r ||_2 = %13.5e\t|| A^T r ||_2 = %13.5e\n\
 	|| b ||_2 = %13.5e\t|| x - x0 ||_2 = %13.5e\n\n", 

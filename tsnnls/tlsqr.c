@@ -89,80 +89,80 @@ full_aprime_times_a( double* A, int rows, int cols )
 taucs_ccs_matrix* 
 taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
 {
-	int rItr, cItr, colOffset, maxSize, scItr, srItr;
-	taucs_ccs_matrix* result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
-	register double v;
-	int newSize, currentSize;
-
-	result->n = A->n;
-
-	/* we'll be symmetric */
-	result->flags = TAUCS_DOUBLE;
-	result->flags = result->flags | TAUCS_SYMMETRIC;
-	result->flags = result->flags | TAUCS_LOWER; // rep the lower half
-
-	result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
-
-	currentSize = A->colptr[A->n]*2; // start with the number of entries in A*2 and see if we need more
-	result->values.d = (double*)malloc(sizeof(taucs_double)*currentSize);
-	result->rowind = (int*)malloc(sizeof(int)*currentSize);
-	
-	colOffset = 0;
-	double* valsPtr = result->values.d;
-	int* rowptrs = result->rowind;
-	int* colptrs = result->colptr;
-	int Acols = A->n;
-	int* Acolptrs = A->colptr;
-	double* AvalsPtr = A->values.d;
-	int* Arowptrs = A->rowind;
-	int stopPoint, interiorStopPoint;
-	
-	for( cItr=0; cItr<Acols; cItr++ )
+  int rItr, cItr, colOffset; // maxSize, scItr, srItr;
+  taucs_ccs_matrix* result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+  register double v;
+  int newSize, currentSize;
+  
+  result->n = A->n;
+  
+  /* we'll be symmetric */
+  result->flags = TAUCS_DOUBLE;
+  result->flags = result->flags | TAUCS_SYMMETRIC;
+  result->flags = result->flags | TAUCS_LOWER; // rep the lower half
+  
+  result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
+  
+  currentSize = A->colptr[A->n]*2; // start with the number of entries in A*2 and see if we need more
+  result->values.d = (double*)malloc(sizeof(taucs_double)*currentSize);
+  result->rowind = (int*)malloc(sizeof(int)*currentSize);
+  
+  colOffset = 0;
+  double* valsPtr = result->values.d;
+  int* rowptrs = result->rowind;
+  int* colptrs = result->colptr;
+  int Acols = A->n;
+  //  int* Acolptrs = A->colptr;
+  // double* AvalsPtr = A->values.d;
+  // int* Arowptrs = A->rowind;
+  // int stopPoint, interiorStopPoint;
+  
+  for( cItr=0; cItr<Acols; cItr++ )
+    {
+      colptrs[cItr] = colOffset;
+      
+      for( rItr=cItr; rItr<Acols; rItr++ )
 	{
-		colptrs[cItr] = colOffset;
-		
-		for( rItr=cItr; rItr<Acols; rItr++ )
+	  v = taucs_dotcols(A,cItr,rItr);
+	  
+	  if( v == 0.0 )
+	    {
+	      continue;
+	    }
+	  else
+	    {
+	      valsPtr[colOffset] = v;
+	      rowptrs[colOffset] = rItr;
+	      colOffset++;
+	      
+	      if( colOffset < currentSize )
+		continue;
+	      else
 		{
-			v = taucs_dotcols(A,cItr,rItr);
-			
-			if( v == 0.0 )
-			{
-				continue;
-			}
-			else
-			{
-				valsPtr[colOffset] = v;
-				rowptrs[colOffset] = rItr;
-				colOffset++;
-				
-				if( colOffset < currentSize )
-					continue;
-				else
-				{
-					/* we need to increase our allocation size.  */
-					newSize = 2*currentSize;
-					int* newRows = (int*)realloc(rowptrs, sizeof(int)*newSize);
-					double* newVals = (double*)realloc(valsPtr, sizeof(double)*newSize);
-					
-					currentSize = newSize;
-					
-					if( newRows == NULL || newVals == NULL )
-					{
-						fprintf( stderr, "tsnnls: Out of memory!\n" );
-					}
-					
-					result->values.d = newVals;
-					valsPtr = newVals;
-					result->rowind = newRows;
-					rowptrs = newRows;
-				}
-			}
+		  /* we need to increase our allocation size.  */
+		  newSize = 2*currentSize;
+		  int* newRows = (int*)realloc(rowptrs, sizeof(int)*newSize);
+		  double* newVals = (double*)realloc(valsPtr, sizeof(double)*newSize);
+		  
+		  currentSize = newSize;
+		  
+		  if( newRows == NULL || newVals == NULL )
+		    {
+		      fprintf( stderr, "tsnnls: Out of memory!\n" );
+		    }
+		  
+		  result->values.d = newVals;
+		  valsPtr = newVals;
+		  result->rowind = newRows;
+		  rowptrs = newRows;
 		}
+	    }
 	}
-	colptrs[cItr] = colOffset;
-	
-
-	return result;
+    }
+  colptrs[cItr] = colOffset;
+  
+  
+  return result;
 }
 
 static void
@@ -210,11 +210,11 @@ t_condest( void* mfR )
 {
 	taucs_ccs_matrix* L;
 	double* lapackL;
-	int N, LDA, INFO;
+	long int N, LDA, INFO;  /* The Apple CLapack uses long int as the data type. */
 	char	UPLO;
 	double  ANORM = 0;
 	double* WORK;
-	int*	IWORK;
+	long int* IWORK;
 	double  RCOND;
 	
 	L = taucs_supernodal_factor_to_ccs(mfR);
@@ -254,7 +254,7 @@ t_condest( void* mfR )
 	LDA = L->m;
 	UPLO = 'L';
 	WORK = (double*)malloc(sizeof(double)*3*N);
-	IWORK = (int*)malloc(sizeof(int)*N);
+	IWORK = (long int*)malloc(sizeof(long int)*N);
 	
 	dpocon_( &UPLO, &N, lapackL, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
 		
