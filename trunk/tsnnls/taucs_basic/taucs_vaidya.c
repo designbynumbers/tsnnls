@@ -1101,8 +1101,7 @@ linked* create_linked_list_cluster(graph *A,int n,int Anent,double *min,double *
 }
 
 
-static
-taucs_ccs_matrix *graph_to_ccs_matrix(graph *A)
+static taucs_ccs_matrix *graph_to_ccs_matrix(graph *A)
 {
   taucs_ccs_matrix *out;
   int n,nent,i,j1,j2;
