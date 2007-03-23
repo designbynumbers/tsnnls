@@ -81,6 +81,7 @@ case "${host_os}" in
     # Gets ready to compile with weird Fortran stuff
     AC_PROG_F77
     AC_F77_LIBRARY_LDFLAGS
+    ACX_BLAS
     ACX_LAPACK
   esac
 
