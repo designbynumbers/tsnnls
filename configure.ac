@@ -81,6 +81,14 @@ case "${host_os}" in
     # Gets ready to compile with weird Fortran stuff
     AC_PROG_F77
     AC_F77_LIBRARY_LDFLAGS
+
+    aLIBS="$LIBS"LIBS="$aLIBS -latlas $MATH_LIBS $FLIBS"
+    AC_CHECK_LIB(f77blas, dgemm_, BLAS_LIBS="-lf77blas -latlas $MATH_LIBS $FLIBS",[
+      LIBS="$aLIBS $MATH_LIBS $FLIBS"
+    AC_CHECK_LIB(blas, dgemm_, BLAS_LIBS="-lblas $MATH_LIBS $FLIBS",
+    AC_MSG_ERROR(BLAS basic linear algebra subroutines are not installed onthis platform.  Please see the documentation for download locations.))])
+    AC_SUBST(BLAS_LIBS)LIBS="$aLIBS"
+    
     ACX_BLAS
     ACX_LAPACK
   esac
