@@ -73,6 +73,7 @@ AMTAR = ${SHELL} /Users/cantarel/tsnnls/missing --run tar
 AR = ar
 AS = @AS@
 AWK = gawk
+BLAS_LIBS =  
 CC = gcc
 CXX = g++
 CXXCPP = g++ -E
@@ -81,9 +82,11 @@ DLLTOOL = @DLLTOOL@
 ECHO = echo
 EGREP = grep -E
 F77 = g77
+FLIBS =  
 GCJ = @GCJ@
 GCJFLAGS = @GCJFLAGS@
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
+LAPACK_LIBS = -framework vecLib
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIB_VERSION = 1:0:1
 LN_S = ln -s
@@ -128,8 +131,7 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 check_PROGRAMS = tsnnls_test
 tsnnls_test_SOURCES = tsnnls_test.c
 
-tsnnls_test_LDFLAGS = -ltsnnls -framework vecLib
-#tsnnls_test_LDFLAGS = -L../external_libraries -ltsnnls -llapacklinux -lblaslinux -lf77blas -lcblas -latlas -lg2c -lm
+tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 subdir = tsnnls
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
@@ -830,6 +832,12 @@ uninstall-info: uninstall-info-recursive
 	uninstall-info-recursive uninstall-libLTLIBRARIES \
 	uninstall-nobase_includeHEADERS uninstall-recursive
 
+
+#if DARWIN
+#tsnnls_test_LDFLAGS = -ltsnnls -framework vecLib
+#else
+#tsnnls_test_LDFLAGS = -L../external_libraries -ltsnnls -llapacklinux -lblaslinux -lf77blas -lcblas -latlas -lg2c -lm
+#endif
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -32,9 +32,11 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 check_PROGRAMS = tsnnls_test
 tsnnls_test_SOURCES = tsnnls_test.c
 
-if DARWIN
-tsnnls_test_LDFLAGS = -ltsnnls -framework vecLib
-else
-tsnnls_test_LDFLAGS = -L../external_libraries -ltsnnls -llapacklinux -lblaslinux -lf77blas -lcblas -latlas -lg2c -lm
-endif
+tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+#if DARWIN
+#tsnnls_test_LDFLAGS = -ltsnnls -framework vecLib
+#else
+#tsnnls_test_LDFLAGS = -L../external_libraries -ltsnnls -llapacklinux -lblaslinux -lf77blas -lcblas -latlas -lg2c -lm
+#endif
 

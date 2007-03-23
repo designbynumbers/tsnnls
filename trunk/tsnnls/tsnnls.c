@@ -7,15 +7,22 @@
 #include "lsqr.h"
 #include "tsnnls.h"
 
-#include <string.h>
-#include <float.h>
+#include <config.h>
 
-#ifdef __APPLE__
-#include <vecLib/vBLAS.h>
-#include <vecLib/clapack.h>
+#ifdef HAVE_STRING_H
+  #include <string.h>
+#endif
+
+#ifdef HAVE_FLOAT_H
+  #include <float.h>
+#endif 
+
+#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
+  #include <vecLib/vBLAS.h>
+  #include <vecLib/clapack.h>
 #else
-#include "gsl_cblas.h"
-#endif // __APPLE__
+  #include "gsl_cblas.h"
+#endif 
 
 
 /*
