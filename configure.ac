@@ -48,6 +48,9 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 AC_PROG_F77
 
+# Checks for functions
+AC_CHECK_FUNCS([memset])
+
 # Checks for libraries.
 #AC_CHECK_LIB(m,sqrt)
 #AC_CHECK_LIB(argtable2,arg_parse,[have_argtable2=true],[have_argtable2=false])
