@@ -49,7 +49,7 @@ AUTOMAKE = ${SHELL} /Users/cantarel/tsnnls/missing --run automake-1.6
 AUTOHEADER = ${SHELL} /Users/cantarel/tsnnls/missing --run autoheader
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
-INSTALL = /sw/bin/install -c
+INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_DATA = ${INSTALL} -m 644
 install_sh_DATA = $(install_sh) -c -m 644
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_alias = 
-host_triplet = powerpc-apple-darwin7.9.0
+host_triplet = powerpc-apple-darwin8.8.0
 
 EXEEXT = 
 OBJEXT = o
@@ -82,12 +82,13 @@ DEPDIR = .deps
 DLLTOOL = @DLLTOOL@
 ECHO = echo
 EGREP = grep -E
-F77 = g77
+F77 = 
 FLIBS =  
 GCJ = @GCJ@
 GCJFLAGS = @GCJFLAGS@
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-LAPACK_LIBS = -framework vecLib
+LAPACK_LIBS = -framework vecLib -lm
+LIBS =  
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIB_VERSION = 1:0:1
 LN_S = ln -s

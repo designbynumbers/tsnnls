@@ -46,17 +46,13 @@ AM_CONFIG_HEADER([config.h])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_LIBTOOL
-AC_PROG_F77
 
 # Checks for functions
-AC_CHECK_FUNCS([memset])
+AC_CHECK_FUNCS([memset,memcpy])
 
 # Checks for libraries.
 #AC_CHECK_LIB(m,sqrt)
 #AC_CHECK_LIB(argtable2,arg_parse,[have_argtable2=true],[have_argtable2=false])
-
-# Gets ready to compile with weird Fortran stuff
-AC_F77_LIBRARY_LDFLAGS
 
 # Checks for Darwin.
 AC_MSG_CHECKING(whether we should have Accelerate framework)
@@ -73,7 +69,8 @@ case "${host_os}" in
     echo ===========================================================
     AM_CONDITIONAL([DARWIN],[test 1 == 1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
-    AC_SUBST([LAPACK_LIBS],["-framework vecLib"])
+    AC_SUBST([LAPACK_LIBS],["-framework vecLib -lm"])
+    AC_SUBST([LIBS],[" "])
     AC_SUBST([BLAS_LIBS],[" "])
     AC_SUBST([FLIBS],[" "])
     ;;
@@ -81,10 +78,11 @@ case "${host_os}" in
     echo no
     AM_CONDITIONAL([DARWIN],[test 0 == 1])
     AC_MSG_WARN($UNSUPPORTED_OS)
+    # Gets ready to compile with weird Fortran stuff
+    AC_PROG_F77
+    AC_F77_LIBRARY_LDFLAGS
     ACX_LAPACK
   esac
-
-#AM_CONDITIONAL([DARWIN],[test "$(uname)" = Darwin],AM_WARN["Found Darwin, will link with Accelerate framework"],AM_WARN["Will attempt to link with system BLAS/LAPACK"])
 
 # Checks for header files.
 AC_HEADER_STDC

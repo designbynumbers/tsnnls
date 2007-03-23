@@ -8,16 +8,16 @@
 
 /*
 
-    tsnnls.h : Header for unconstrained and constrained sparse 
-                   least-squares solvers built on the TAUCS library.
-
-		   The unconstrained solver uses the method of normal
-		   equations based on a Cholesky decomposition, as in
-		   Bjork (p. 264).
-
-		   The constrained solver is an implementation of 
-		   Portugal, Judice, and Vicente's block-principal
-		   pivoting algorithm.
+tsnnls.h : Header for unconstrained and constrained sparse 
+           least-squares solvers built on the TAUCS library.
+	   
+	   The unconstrained solver uses the method of normal
+	   equations based on a Cholesky decomposition, as in
+	   Bjork (p. 264).
+	   
+	   The constrained solver is an implementation of 
+	   Portugal, Judice, and Vicente's block-principal
+	   pivoting algorithm.
 
 */
 
@@ -31,12 +31,16 @@ extern "C" {
   #include <math.h>
 #endif
 
-#ifdef STDIO_H
+#ifdef HAVE_STDIO_H
   #include <stdio.h>
 #endif
 
 #ifdef HAVE_STDLIB_H
   #include <stdlib.h>
+#endif
+
+#ifdef HAVE_STRING_H
+  #include <string.h>
 #endif
 
 #include "taucs_basic/taucs.h"
