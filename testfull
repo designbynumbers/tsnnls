@@ -1,2 +1,2 @@
 #!/bin/sh
-./tsnnls/tsnnls_test ../test_files/full_example_200 0 0
+./tsnnls/tsnnls_test ./test_files/full_example_200 0 0

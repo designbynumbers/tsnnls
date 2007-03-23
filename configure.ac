@@ -52,7 +52,28 @@ AC_PROG_LIBTOOL
 #AC_CHECK_LIB(argtable2,arg_parse,[have_argtable2=true],[have_argtable2=false])
 
 # Checks for Darwin.
-AM_CONDITIONAL([DARWIN],[test "$(uname)" = Darwin])
+AC_MSG_CHECKING(whether we should have Accelerate framework)
+AC_CANONICAL_HOST
+# Since foo is currently untested on any os other
+# than solaris, so check the os and quit if not solaris.
+UNSUPPORTED_OS="Will try to set up tsnnls with local BLAS/LAPACK"
+case "${host_os}" in
+  darwin*)
+    echo yes
+    echo
+    echo ===========================================================
+    echo Setting up build environment for ${host_cpu}${host_os}
+    echo ===========================================================
+    AM_CONDITIONAL([DARWIN],[test 1 == 1])
+    [HAVE_DARWIN=true]
+    ;;
+  *)
+    echo no
+    AM_CONDITIONAL([DARWIN],[test 0 == 1])
+    AC_MSG_WARN($UNSUPPORTED_OS)
+  esac
+
+#AM_CONDITIONAL([DARWIN],[test "$(uname)" = Darwin],AM_WARN["Found Darwin, will link with Accelerate framework"],AM_WARN["Will attempt to link with system BLAS/LAPACK"])
 
 # Checks for header files.
 AC_HEADER_STDC
