@@ -53,11 +53,28 @@
 /* Include files */
 /*---------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <limits.h>
-#include <float.h>
+#include <config.h>
+
+#ifdef HAVE_STDIO_H
+  #include <stdio.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+  #include <stdlib.h>
+#endif
+
+#ifdef HAVE_MATH_H
+  #include <math.h>
+#endif
+
+
+#ifdef HAVE_LIMITS_H
+  #include <limits.h>
+#endif
+
+#ifdef HAVE_FLOAT_H
+  #include <float.h>
+#endif
 
 /*------------------------*/
 /* User-defined functions */

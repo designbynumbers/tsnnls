@@ -38,19 +38,37 @@
 #include "lsqr.h"
 #include "tsnnls.h"
 
-#ifdef __APPLE__
-#include <vecLib/vBLAS.h>
+#include <config.h>
+
+#ifdef HAVE_DARWIN          /* We use the Apple BLAS/LAPACK if possible. */
+ #include <vecLib/vBLAS.h>
 #else
-#include "tsnnls/gsl_cblas.h"
-#endif // __APPLE__
+ #include "tsnnls/gsl_cblas.h"
+#endif 
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#ifdef HAVE_STRING_H
+  #include <string.h>
+#endif
 
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <float.h>
+#ifdef HAVE_STDLIB_H
+  #include <stdlib.h>
+#endif
+
+#ifdef HAVE_STDIO_H
+  #include <stdio.h>
+#endif
+
+#ifdef HAVE_SYS_TIME_H
+  #include <sys/time.h>
+#endif
+
+#ifdef HAVE_SYS_RESOURCE_H
+  #include <sys/resource.h>
+#endif 
+
+#ifdef HAVE_FLOAT_H
+  #include <float.h>
+#endif 
 
 struct rusage start, end;
 int tpStorage;

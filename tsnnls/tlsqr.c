@@ -5,13 +5,14 @@
  */
 
 #include "tsnnls.h"
+#include <config.h>
 
-#ifdef __APPLE__
-#include <vecLib/vBLAS.h>
-#include <vecLib/clapack.h>
+#ifdef HAVE_DARWIN         /* We're in the Apple environment and will link with Apple's BLAS/LAPACK */
+  #include <vecLib/vBLAS.h>
+  #include <vecLib/clapack.h>
 #else
-#include "gsl_cblas.h"
-#endif // __APPLE__
+  #include "gsl_cblas.h"
+#endif // 
 
 /* This file contains code for the TAUCS version of lsqr, including
    two internal procedures called by the main routine below. 

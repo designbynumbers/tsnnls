@@ -25,9 +25,20 @@
 extern "C" {
 #endif
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <config.h>
+
+#ifdef HAVE_MATH_H
+  #include <math.h>
+#endif
+
+#ifdef STDIO_H
+  #include <stdio.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+  #include <stdlib.h>
+#endif
+
 #include "taucs_basic/taucs.h"
 
 /* 
