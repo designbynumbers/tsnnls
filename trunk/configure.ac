@@ -48,7 +48,7 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for functions
-AC_CHECK_FUNCS([memset,memcpy])
+AC_CHECK_FUNCS([memset memcpy])
 
 # Checks for libraries.
 #AC_CHECK_LIB(m,sqrt)
