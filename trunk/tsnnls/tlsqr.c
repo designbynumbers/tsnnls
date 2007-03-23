@@ -185,8 +185,7 @@ ccs_to_lapack( taucs_ccs_matrix* L, double** lapackL, int* N, int* LDA, double* 
 	else
 		vSize = L->m*L->n;
 	
-	*lapackL = (double*)malloc(sizeof(double)*vSize);
-	bzero(*lapackL, sizeof(double)*vSize);
+	*lapackL = (double*)calloc(vSize,sizeof(double));
 		
 	for( cItr=0; cItr<L->n; cItr++ )
 	{
@@ -234,8 +233,7 @@ t_condest( void* mfR )
 	else
 		vSize = L->m*L->n;
 	
-	lapackL = (double*)malloc(sizeof(double)*vSize);
-	bzero(lapackL, sizeof(double)*vSize);
+	lapackL = (double*)calloc(vSize,sizeof(double));
 		
 	for( cItr=0; cItr<L->n; cItr++ )
 	{
