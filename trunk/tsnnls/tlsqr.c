@@ -7,7 +7,8 @@
 #include "tsnnls.h"
 #include <config.h>
 
-#ifdef HAVE_DARWIN         /* We're in the Apple environment and will link with Apple's BLAS/LAPACK */
+#ifdef HAVE_DARWIN         
+  /* We're in the Apple environment and will link with Apple's BLAS/LAPACK */
   #include <vecLib/vBLAS.h>
   #include <vecLib/clapack.h>
 #else

@@ -31,7 +31,6 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 
 check_PROGRAMS = tsnnls_test
 tsnnls_test_SOURCES = tsnnls_test.c
-
 tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 #if DARWIN
