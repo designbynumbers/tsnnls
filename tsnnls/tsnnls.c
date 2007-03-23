@@ -711,8 +711,23 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 		 * and yg_raw over the x and y vectors, and free everything that
 		 * we can manage to free. 
 		 */
-		bzero(x, sizeof(double)*n);
-		bzero(y, sizeof(double)*n);
+
+		#ifdef HAVE_MEMSET
+
+		  memset(x,0,sizeof(double)*n);
+		  memset(y,0,sizeof(double)*n);
+
+                #else  /* Work around it. */
+		  
+		  for(i=0;i<n;i++) { x[i] = 0; y[i] = 0; }
+
+		#endif
+
+		/* This was done with bzero, but that was scratched for 
+		   portability reasons. */
+
+		/* bzero(x, sizeof(double)*n); Scratched bzero calls for portability */
+		/* bzero(y, sizeof(double)*n); */
 
 		for(i=0;i<sizeF;i++) 
 		{ 
@@ -836,8 +851,10 @@ taucs_rcond( taucs_ccs_matrix* A )
 	else
 		vSize = A->m*A->n;
 	
-	lapackA = (double*)malloc(sizeof(double)*vSize);
-	bzero(lapackA, sizeof(double)*vSize);
+	lapackA = (double*)calloc(vSize,sizeof(double));
+	
+	/*lapackA = (double*)malloc(sizeof(double)*vSize);
+	  bzero(lapackA, sizeof(double)*vSize); */
 		
 	for( cItr=0; cItr<A->n; cItr++ )
 	{
@@ -1087,9 +1104,10 @@ taucs_convert_ccs_to_doubles( const taucs_ccs_matrix* A )
 	else
 		vSize = A->m*A->n;
 	
-	values = (double*)malloc(sizeof(double)*vSize);
+	values = (double*)calloc(vSize,sizeof(double));
 	
-	bzero(values, sizeof(double)*vSize);
+	/*values = (double*)malloc(sizeof(double)*vSize);	
+	  bzero(values, sizeof(double)*vSize); */
 	
 	int rowSize = A->n;
 	
