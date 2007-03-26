@@ -53,47 +53,44 @@
 /* Include files */
 /*---------------*/
 
-#include <config.h>
+#include<stdio.h>
 
-#ifdef HAVE_STDIO_H
-  #include <stdio.h>
-#endif
-
-#ifdef HAVE_STDLIB_H
-  #include <stdlib.h>
-#endif
-
-#ifdef HAVE_MATH_H
-  #include <math.h>
-#endif
-
-
-#ifdef HAVE_LIMITS_H
-  #include <limits.h>
-#endif
-
-#ifdef HAVE_FLOAT_H
-  #include <float.h>
-#endif
+/* Note: These were moved to lsqr.c, since this file will be exposed
+   to all user code which links with libtsnnls, and the header files
+   depend on information computed in the autoconf process. */
 
 /*------------------------*/
 /* User-defined functions */
 /*------------------------*/
 
-#define sqr(a)		( (a) * (a) )
-#define max(a,b)	( (a) < (b) ? (b) : (a) )
-#define min(a,b)	( (a) < (b) ? (a) : (b) )
-#define round(a)        ( (a) > 0.0 ? (int)((a) + 0.5) : (int)((a) - 0.5) )
+#define lsqr_sqr(a)		( (a) * (a) )
+
+/* Notes: These don't seem to be used in the source code, and they cause some 
+   namespace problems on systems where these are provided in the math library. 
+   So they are commented out for now. */
+
+//#define max(a,b)	( (a) < (b) ? (b) : (a) )
+//#define min(a,b)	( (a) < (b) ? (a) : (b) )
+//#define round(a)        ( (a) > 0.0 ? (int)((a) + 0.5) : (int)((a) - 0.5) )
 
 
 /*----------------------*/
 /* Default declarations */
 /*----------------------*/
 
-#define TRUE	(1)
-#define FALSE	(0)
-#define PI      (4.0 * atan(1.0))
+/* Notes: Again, these aren't used in lsqr.c, so I can only assume they are here
+   "on general principles". That's not a very good idea for namespace reasons, so
+   they are commented out for now. */
 
+//#ifndef TRUE 
+//  #define TRUE	(1==1)
+//#endif
+
+//#ifndef FALSE
+//  #define FALSE	(1==0)
+//#endif
+
+//#define PI      (3.141592653589793238462)
 
 /*------------------*/
 /* Type definitions */

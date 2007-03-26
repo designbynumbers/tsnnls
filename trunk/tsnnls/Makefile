@@ -105,9 +105,9 @@ AM_CFLAGS = -g -O3 -Wall
 
 SUBDIRS = taucs_basic
 
-include_HEADERS = tsnnls.h 
-noinst_HEADERS = lsqr.h gsl_cblas.h
-nobase_include_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
+pkginclude_HEADERS = tsnnls.h lsqr.h
+noinst_HEADERS = gsl_cblas.h
+nobase_pkginclude_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
 lib_LTLIBRARIES = libtsnnls.la
 
 libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
@@ -181,15 +181,16 @@ LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = -g -O2
 DIST_SOURCES = $(libtsnnls_la_SOURCES) $(tsnnls_test_SOURCES)
-HEADERS = $(include_HEADERS) $(nobase_include_HEADERS) $(noinst_HEADERS)
+HEADERS = $(nobase_pkginclude_HEADERS) $(noinst_HEADERS) \
+	$(pkginclude_HEADERS)
 
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = $(include_HEADERS) $(nobase_include_HEADERS) \
-	$(noinst_HEADERS) Makefile.am Makefile.in
+DIST_COMMON = $(nobase_pkginclude_HEADERS) $(noinst_HEADERS) \
+	$(pkginclude_HEADERS) Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
 SOURCES = $(libtsnnls_la_SOURCES) $(tsnnls_test_SOURCES)
 
@@ -565,41 +566,41 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-includeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-includeHEADERS: $(include_HEADERS)
+nobase_pkgincludeHEADERS_INSTALL = $(install_sh_DATA)
+install-nobase_pkgincludeHEADERS: $(nobase_pkginclude_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(includedir)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
-	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
-	done
-
-uninstall-includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
-	  rm -f $(DESTDIR)$(includedir)/$$f; \
-	done
-nobase_includeHEADERS_INSTALL = $(install_sh_DATA)
-install-nobase_includeHEADERS: $(nobase_include_HEADERS)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(includedir)
-	@list='$(nobase_include_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(nobase_pkginclude_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="$$p"; \
-	  echo " $(nobase_includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
-	  $(nobase_includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	  echo " $(nobase_pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(nobase_pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
 	done
 
-uninstall-nobase_includeHEADERS:
+uninstall-nobase_pkgincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(nobase_include_HEADERS)'; for p in $$list; do \
+	@list='$(nobase_pkginclude_HEADERS)'; for p in $$list; do \
 	  f="$$p"; \
-	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
-	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
 	done
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -743,7 +744,7 @@ check: check-recursive
 all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(includedir)
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgincludedir) $(DESTDIR)$(pkgincludedir)
 
 install: install-recursive
 install-exec: install-exec-recursive
@@ -787,7 +788,8 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-includeHEADERS install-nobase_includeHEADERS
+install-data-am: install-nobase_pkgincludeHEADERS \
+	install-pkgincludeHEADERS
 
 install-exec-am: install-libLTLIBRARIES
 
@@ -806,8 +808,8 @@ mostlyclean: mostlyclean-recursive
 mostlyclean-am: mostlyclean-compile mostlyclean-generic \
 	mostlyclean-libtool
 
-uninstall-am: uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-nobase_includeHEADERS
+uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES \
+	uninstall-nobase_pkgincludeHEADERS uninstall-pkgincludeHEADERS
 
 uninstall-info: uninstall-info-recursive
 
@@ -819,17 +821,18 @@ uninstall-info: uninstall-info-recursive
 	dvi-recursive info info-am info-recursive install install-am \
 	install-data install-data-am install-data-recursive \
 	install-exec install-exec-am install-exec-recursive \
-	install-includeHEADERS install-info install-info-am \
-	install-info-recursive install-libLTLIBRARIES install-man \
-	install-nobase_includeHEADERS install-recursive install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	installdirs-recursive maintainer-clean maintainer-clean-generic \
+	install-info install-info-am install-info-recursive \
+	install-libLTLIBRARIES install-man \
+	install-nobase_pkgincludeHEADERS install-pkgincludeHEADERS \
+	install-recursive install-strip installcheck installcheck-am \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-generic \
 	maintainer-clean-recursive mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
-	tags tags-recursive uninstall uninstall-am \
-	uninstall-includeHEADERS uninstall-info-am \
+	tags tags-recursive uninstall uninstall-am uninstall-info-am \
 	uninstall-info-recursive uninstall-libLTLIBRARIES \
-	uninstall-nobase_includeHEADERS uninstall-recursive
+	uninstall-nobase_pkgincludeHEADERS uninstall-pkgincludeHEADERS \
+	uninstall-recursive
 
 
 #if DARWIN

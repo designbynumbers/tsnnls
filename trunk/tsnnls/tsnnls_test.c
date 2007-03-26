@@ -1,13 +1,16 @@
 
 
 /*
- * This program is free software distributed under the GPL. A copy of the license should have been included with this 
- * archive in a file named 'LICENSE'. You can read the license there or on the web at: http://www.gnu.org/licenses/gpl.txt
+ * This program is free software distributed under the GPL. A copy of
+ * the license should have been included with this archive in a file
+ * named 'LICENSE'. You can read the license there or on the web at:
+ * http://www.gnu.org/licenses/gpl.txt
  */
  
 /*
- * This program performs several tests on the tsnnls library, providing relative error and timing tests
- * for both constrained and unconstrained solvers with the following matrix input file formats:
+ * This program performs several tests on the tsnnls library,
+ * providing relative error and timing tests for both constrained and
+ * unconstrained solvers with the following matrix input file formats:
  *
  * Note that for both formats, row and column indexing is 1-based.
  *
@@ -31,14 +34,14 @@
  * where valm_n is the value of the mth row and nth column.
  *
  * 
- * Representative files for both of these formats are included in the directory 'test_files' in the distribution
- * root directory.
+ * Representative files for both of these formats are included in the
+ * directory 'test_files' in the distribution root directory.
  */
+
+#include <config.h>
 
 #include "lsqr.h"
 #include "tsnnls.h"
-
-#include <config.h>
 
 #ifdef HAVE_DARWIN          /* We use the Apple BLAS/LAPACK if possible. */
  #include <vecLib/vBLAS.h>
