@@ -21,26 +21,11 @@ tsnnls.h : Header for unconstrained and constrained sparse
 
 */
 
+#ifndef TSNNLS_H
+#define TSNNLS_H 1
+
 #if (__cplusplus || c_plusplus)
 extern "C" {
-#endif
-
-#include <config.h>
-
-#ifdef HAVE_MATH_H
-  #include <math.h>
-#endif
-
-#ifdef HAVE_STDIO_H
-  #include <stdio.h>
-#endif
-
-#ifdef HAVE_STDLIB_H
-  #include <stdlib.h>
-#endif
-
-#ifdef HAVE_STRING_H
-  #include <string.h>
 #endif
 
 #include "taucs_basic/taucs.h"
@@ -111,3 +96,4 @@ taucs_double*		t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 };
 #endif 
 
+#endif

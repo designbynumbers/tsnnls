@@ -55,18 +55,15 @@ AC_CHECK_FUNCS([memset memcpy])
 #AC_CHECK_LIB(argtable2,arg_parse,[have_argtable2=true],[have_argtable2=false])
 
 # Checks for Darwin.
-AC_MSG_CHECKING(whether we should have Accelerate framework)
+AC_MSG_CHECKING(how to link with BLAS and LAPACK)
 AC_CANONICAL_HOST
-# Since foo is currently untested on any os other
-# than solaris, so check the os and quit if not solaris.
-UNSUPPORTED_OS="Will try to set up tsnnls with local BLAS/LAPACK"
+
+echo 
+echo ===========================================================
+echo Setting up build environment for ${host_cpu}${host_os}
+
 case "${host_os}" in
   darwin*)
-    echo yes
-    echo
-    echo ===========================================================
-    echo Setting up build environment for ${host_cpu}${host_os}
-    echo ===========================================================
     AM_CONDITIONAL([DARWIN],[test 1 == 1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
     AC_SUBST([LAPACK_LIBS],["-framework vecLib -lm"])
@@ -77,7 +74,6 @@ case "${host_os}" in
   *)
     echo no
     AM_CONDITIONAL([DARWIN],[test 0 == 1])
-    AC_MSG_WARN($UNSUPPORTED_OS)
     # Gets ready to compile with weird Fortran stuff
     AC_PROG_F77
     AC_F77_LIBRARY_LDFLAGS
@@ -95,6 +91,8 @@ case "${host_os}" in
     ACX_BLAS
     ACX_LAPACK
   esac
+echo    Link with -libtsnnls $LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS
+echo ============================================================
 
 # Checks for header files.
 AC_HEADER_STDC

@@ -10,6 +10,28 @@
 * 08 Sep 1999: First version from James W. Howse <jhowse@lanl.gov>
 */
 
+#include <config.h>
+
+#ifdef HAVE_STDIO_H
+  #include <stdio.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+  #include <stdlib.h>
+#endif
+
+#ifdef HAVE_MATH_H
+  #include <math.h>
+#endif
+
+#ifdef HAVE_LIMITS_H
+  #include <limits.h>
+#endif
+
+#ifdef HAVE_FLOAT_H
+  #include <float.h>
+#endif
+
 #include "lsqr.h"
 
 /*-------------------------------------------------------------------------*/
@@ -564,7 +586,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
       beta = dvec_norm2( input->rhs_vec );
 
         /* accumulate this quantity to estimate Frobenius norm of matrix A */
-      bbnorm += sqr(alpha) + sqr(beta) + sqr(input->damp_val);
+      bbnorm += lsqr_sqr(alpha) + lsqr_sqr(beta) + lsqr_sqr(input->damp_val);
 
       if( beta > 0.0 )
 	{
@@ -588,8 +610,8 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
 *     Use a plane rotation to eliminate the damping parameter.
 *     This alters the diagonal (RHOBAR) of the lower-bidiagonal matrix.
 */
-      cs1 = rhobar / sqrt( sqr(rhobar) + sqr(input->damp_val) );
-      sn1 = input->damp_val / sqrt( sqr(rhobar) + sqr(input->damp_val) );
+      cs1 = rhobar / sqrt( lsqr_sqr(rhobar) + lsqr_sqr(input->damp_val) );
+      sn1 = input->damp_val / sqrt( lsqr_sqr(rhobar) + lsqr_sqr(input->damp_val) );
       
       psi = sn1 * phibar;
       phibar = cs1 * phibar;
@@ -597,8 +619,8 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
 *     Use a plane rotation to eliminate the subdiagonal element (BETA)
 *     of the lower-bidiagonal matrix, giving an upper-bidiagonal matrix.
 */
-      rho = sqrt( sqr(rhobar) + sqr(input->damp_val) + sqr(beta) );
-      cs = sqrt( sqr(rhobar) + sqr(input->damp_val) ) / rho;
+      rho = sqrt( lsqr_sqr(rhobar) + lsqr_sqr(input->damp_val) + lsqr_sqr(beta) );
+      cs = sqrt( lsqr_sqr(rhobar) + lsqr_sqr(input->damp_val) ) / rho;
       sn = beta / rho;
 
       theta = sn * alpha;
@@ -617,12 +639,12 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
 	    work->srch_dir_vec->elements[indx];
 
 	    /* update the standard error estimates vector se */
-	  output->std_err_vec->elements[indx] += sqr( (1.0 / rho) * 
+	  output->std_err_vec->elements[indx] += lsqr_sqr( (1.0 / rho) * 
 	    work->srch_dir_vec->elements[indx] );
 
 	    /* accumulate this quantity to estimate condition number of A 
 */
-	  ddnorm += sqr( (1.0 / rho) * work->srch_dir_vec->elements[indx] );
+	  ddnorm += lsqr_sqr( (1.0 / rho) * work->srch_dir_vec->elements[indx] );
 
 	    /* update the search direction vector w */
 	  work->srch_dir_vec->elements[indx] = 
@@ -639,15 +661,15 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
       zetabar = (phi - delta * zeta) / gammabar;
 
         /* compute an estimate of the solution norm || x || */
-      output->sol_norm = sqrt( xxnorm + sqr(zetabar) );
+      output->sol_norm = sqrt( xxnorm + lsqr_sqr(zetabar) );
 
-      gamma = sqrt( sqr(gammabar) + sqr(theta) );
+      gamma = sqrt( lsqr_sqr(gammabar) + lsqr_sqr(theta) );
       cs2 = gammabar / gamma;
       sn2 = theta / gamma;
       zeta = (phi - delta * zeta) / gamma;
 
         /* accumulate this quantity to estimate solution norm || x || */
-      xxnorm += sqr(zeta);
+      xxnorm += lsqr_sqr(zeta);
 /*
 *     Estimate the Frobenius norm and condition of the matrix A, and the 
 *     Euclidean norms of the vectors r and A^T*r.
@@ -655,8 +677,8 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
       output->frob_mat_norm = sqrt( bbnorm );
       output->mat_cond_num = output->frob_mat_norm * sqrt( ddnorm );
 
-      res += sqr(psi);
-      output->resid_norm = sqrt( sqr(phibar) + res );
+      res += lsqr_sqr(psi);
+      output->resid_norm = sqrt( lsqr_sqr(phibar) + res );
 
       output->mat_resid_norm = alpha * fabs( tau );
 /*
@@ -739,7 +761,7 @@ void lsqr( lsqr_input *input, lsqr_output *output, lsqr_work *work,
   if( input->num_rows > input->num_cols )
     temp = ( double ) ( input->num_rows - input->num_cols );
 
-  if( sqr(input->damp_val) > 0.0 )
+  if( lsqr_sqr(input->damp_val) > 0.0 )
     temp = ( double ) ( input->num_rows );
   
   temp = output->resid_norm / sqrt( temp );
@@ -786,7 +808,7 @@ double dvec_norm2(dvec *vec)
   norm = 0.0;
 
   for(indx = 0; indx < vec->length; indx++)
-    norm += sqr(vec->elements[indx]);
+    norm += lsqr_sqr(vec->elements[indx]);
 
   return sqrt(norm);
 }

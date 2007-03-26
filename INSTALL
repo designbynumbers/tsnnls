@@ -4,6 +4,47 @@ Foundation, Inc.
    This file is free documentation; the Free Software Foundation gives
 unlimited permission to copy, distribute and modify it.
 
+TSNNLS Installation Guide
+=========================
+
+The installation of TSNNLS itself on your system is relatively
+uncomplicated. However, since TSNNLS is linear algebra software, it
+depends on finding a useable local installation of BLAS/LAPACK in
+order to link and run. You will have to link any of your programs
+which use TSNNLS with appropriate libraries in order to run them once
+TSNNLS is installed. Here are some notes for various systems:
+
+OSX/Darwin
+
+At the time of this writing (Mar 2007), all OSX system with the
+Developer Tools installed have a version of Apple's vecLib and
+Accelerate frameworks which include blas and lapack. The tsnnls
+configure script will detect Darwin systems and compile accordingly.
+Your programs should link with (for example)
+
+gcc myprog.c -o myprog -ltsnnls -framework vecLib -lm
+
+Linux systems
+
+In general, Linux users without another BLAS/LAPACK installed on their
+system should install ATLAS (from source) and then LAPACK. More
+information is available on the ATLAS main page:
+
+http://math-atlas.sourceforge.net/
+
+A second option is to install a precompiled version of ATLAS using
+yum. Note that under this option, both the packages "atlas" and
+"atlas-devel" must be installed for tsnnls to detect a linkable
+BLAS/LAPACK installation. 
+
+Other Unix systems
+
+The installer uses the contributed "ACX_BLAS" and "ACX_LAPACK" m4
+macros to detect local BLAS and LAPACK on other systems. We encourage
+feedback on how well this works-- without access to such systems for
+test purposes, the TSNNLS developers have no way to verify that the
+installer will do anything useful in these circumstances. 
+
 Basic Installation
 ==================
 

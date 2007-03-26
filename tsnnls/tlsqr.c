@@ -1,19 +1,47 @@
 
 /*
- * This program is free software distributed under the GPL. A copy of the license should have been included with this 
- * archive in a file named 'LICENSE'. You can read the license there or on the web at: http://www.gnu.org/licenses/gpl.txt
+ * This program is free software distributed under the GPL. A copy of
+ * the license should have been included with this archive in a file
+ * named 'LICENSE'. You can read the license there or on the web at:
+ * http://www.gnu.org/licenses/gpl.txt
  */
 
-#include "tsnnls.h"
 #include <config.h>
 
-#ifdef HAVE_DARWIN         
-  /* We're in the Apple environment and will link with Apple's BLAS/LAPACK */
+#ifdef HAVE_STRING_H
+  #include <string.h>
+#endif
+
+#ifdef HAVE_FLOAT_H
+  #include <float.h>
+#endif 
+
+#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
   #include <vecLib/vBLAS.h>
   #include <vecLib/clapack.h>
 #else
   #include "gsl_cblas.h"
-#endif // 
+#endif 
+
+#ifdef HAVE_MATH_H
+  #include <math.h>
+#endif
+
+#ifdef HAVE_STDIO_H
+  #include <stdio.h>
+#endif
+
+#ifdef HAVE_STDLIB_H
+  #include <stdlib.h>
+#endif
+
+#ifdef HAVE_STRING_H
+  #include <string.h>
+#endif
+
+#include "tsnnls.h"
+
+// 
 
 /* This file contains code for the TAUCS version of lsqr, including
    two internal procedures called by the main routine below. 
