@@ -86,13 +86,21 @@ case "${host_os}" in
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([cblas.h clapack.h atlas/cblas.h atlas/clapack.h])
+AC_CHECK_HEADERS([cblas.h clapack.h atlas/cblas.h atlas/clapack.h vecLib/cblas.h vecLib/clapack.h])
 AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
-AC_TYPE_INT32_T   # Lapack/f77 will expect type integer to be a 32-bit int
-AC_TYPE_UINT32_T  # make sure that we have this type (and the unsigned version)
+
+# Since we are using Autoconf 2.59, go through some stupidity to try to 
+# find which int type is 32 bits. This should be able to be replaced in 
+# Autoconf 2.60 with something like
+
+#AC_TYPE_INT32_T   # Lapack/f77 will expect type integer to be a 32-bit int
+#AC_TYPE_UINT32_T  # make sure that we have this type (and the unsigned version
+
+AC_CHECK_SIZEOF([int])
+AC_CHECK_SIZEOF([long int])
 
 # Can we inline and/or const?
 AC_C_INLINE

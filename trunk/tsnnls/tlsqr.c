@@ -39,6 +39,7 @@
   #include <string.h>
 #endif
 
+#include "acint32_type.h"
 #include "tsnnls.h"
 
 // 
@@ -239,11 +240,11 @@ t_condest( void* mfR )
 {
 	taucs_ccs_matrix* L;
 	double* lapackL;
-	int32_t N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
+	ACINT32_TYPE N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
 	char	UPLO;
 	double  ANORM = 0;
 	double* WORK;
-	int32_t *IWORK;
+	ACINT32_TYPE *IWORK;
 	double  RCOND;
 	
 	L = taucs_supernodal_factor_to_ccs(mfR);
@@ -282,7 +283,7 @@ t_condest( void* mfR )
 	LDA = L->m;
 	UPLO = 'L';
 	WORK = (double*)malloc(sizeof(double)*3*N);
-	IWORK = (int32_t*)malloc(sizeof(int32_t)*N);
+	IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
 	
 	dpocon_( &UPLO, &N, lapackL, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
 		

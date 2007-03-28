@@ -62,12 +62,12 @@ taucs_ccs_matrix*   taucs_construct_sorted_ccs_matrix( double* values, int rowsi
 double*				taucs_convert_ccs_to_doubles( const taucs_ccs_matrix* A );
 
 /* TAUCS version of lsqr  */
-double				taucs_dotcols( const taucs_ccs_matrix* A, int col1, int col2 );
-double*				full_aprime_times_a(double* A, int rows, int cols);
+double		    taucs_dotcols( const taucs_ccs_matrix* A, int col1, int col2 );
+double*		    full_aprime_times_a(double* A, int rows, int cols);
 taucs_ccs_matrix*   taucs_ccs_aprime_times_a( taucs_ccs_matrix* A );
-taucs_double*		t_lsqr(taucs_ccs_matrix *A, taucs_double *b);
-taucs_double*		t_snnlslsqr(taucs_ccs_matrix *A,taucs_double *b, taucs_ccs_matrix* ApA, 
-							int* F, double* outRcond );
+taucs_double*	    t_lsqr(taucs_ccs_matrix *A, taucs_double *b);
+taucs_double*	    t_snnlslsqr(taucs_ccs_matrix *A,taucs_double *b, taucs_ccs_matrix* ApA, 
+				int* F, double* outRcond );
 							
 /* TAUCS version of snnls  */
 double				taucs_rcond( taucs_ccs_matrix* A );
