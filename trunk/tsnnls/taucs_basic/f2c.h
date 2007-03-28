@@ -7,8 +7,14 @@
 #ifndef F2C_INCLUDE
 #define F2C_INCLUDE
 
-typedef long int integer;
-typedef unsigned long int uinteger;
+/* Patch suggested by F. Maia */
+//typedef long int integer;
+//typedef unsigned long int uinteger;
+
+#include"config.h"
+
+typedef int32_t integer;
+typedef uint32_t uinteger;
 typedef char *address;
 typedef short int shortint;
 typedef float real;

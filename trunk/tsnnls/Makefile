@@ -110,7 +110,7 @@ AUTOCONF = ${SHELL} /home/cantarel/tsnnls/missing --run autoconf
 AUTOHEADER = ${SHELL} /home/cantarel/tsnnls/missing --run autoheader
 AUTOMAKE = ${SHELL} /home/cantarel/tsnnls/missing --run automake-1.9
 AWK = gawk
-BLAS_LIBS = -L/usr/lib64/atlas -L/usr/lib/atlas -lcblas -lf77blas -latlas
+BLAS_LIBS = -lcblas -lf77blas -latlas
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2
@@ -139,7 +139,7 @@ INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
 LAPACK_LIBS = -llapack
-LDFLAGS =  -L/usr/lib64/atlas -L/usr/lib/atlas
+LDFLAGS =  -L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas
 LIBOBJS = 
 LIBS = 
 LIBTOOL = $(SHELL) $(top_builddir)/libtool

@@ -14,12 +14,28 @@
   #include <float.h>
 #endif 
 
-#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
-  #include <vecLib/vBLAS.h>
-  #include <vecLib/clapack.h>
+//#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
+//  #include <vecLib/vBLAS.h>
+//  #include <vecLib/clapack.h>
+//#else
+//  #include "gsl_cblas.h"
+//#endif 
+
+#ifdef HAVE_CBLAS_H
+  #include <cblas.h>
 #else
-  #include "gsl_cblas.h"
-#endif 
+  #ifdef HAVE_ATLAS_CBLAS_H
+     #include <atlas/cblas.h>
+  #endif
+#endif
+
+#ifdef HAVE_CLAPACK_H
+  #include <clapack.h>
+#else 
+  #ifdef HAVE_ATLAS_CLAPACK_H
+     #include <atlas/clapack.h>
+  #endif
+#endif
 
 #ifdef HAVE_MATH_H
   #include <math.h>
@@ -842,14 +858,14 @@ double
 taucs_rcond( taucs_ccs_matrix* A )
 {
 	char	NORM = '1';
-	long int	N = 0,AN = 0;     /* These are long to conform with Apple CLAPACK types */
-	long int        LDA = 0;
+	int32_t	N = 0,AN = 0;     /* LAPACK expects 32 bit ints */
+	int32_t LDA = 0;
 	double  ANORM = 0;
 	double  RCOND = 0;
 	double* WORK = NULL;
-	long int* IWORK = NULL;
-	long int	INFO;
-	long int*	IPIV = NULL;
+	int32_t* IWORK = NULL;
+	int32	INFO;
+	int32*	IPIV = NULL;
 	double* lapackA = NULL;
 	
 	/* Construct LAPACK representation of A and compute the 1 norm of A */
@@ -896,10 +912,10 @@ taucs_rcond( taucs_ccs_matrix* A )
 	LDA = A->m;
 	RCOND = 0;
 	WORK = (double*)malloc(sizeof(double)*4*N);
-	IWORK = (long int*)malloc(sizeof(long int)*N);
+	IWORK = (int32_t*)malloc(sizeof(int32_t)*N);
 	INFO = 0;
 
-	IPIV = (long int*)malloc(sizeof(long int)*min(rowCount, A->n));
+	IPIV = (int32_t*)malloc(sizeof(int32_t)*min(rowCount, A->n));
 	
 	dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
 	dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
