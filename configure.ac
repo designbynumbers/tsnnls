@@ -106,6 +106,7 @@ AC_C_INLINE
 AC_C_CONST
 
 # Output
+AC_CONFIG_FILES([tsnnls-libs])    # Write linker info to file. 
 AC_CONFIG_FILES([Makefile
 		tsnnls/Makefile
 		tsnnls/taucs_basic/Makefile])
