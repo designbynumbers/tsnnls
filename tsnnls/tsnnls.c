@@ -26,6 +26,10 @@
 #else
   #ifdef HAVE_ATLAS_CBLAS_H
      #include <atlas/cblas.h>
+  #else
+     #ifdef HAVE_VECLIB_CBLAS_H
+       #include <vecLib/cblas.h>
+     #endif
   #endif
 #endif
 
@@ -34,6 +38,10 @@
 #else 
   #ifdef HAVE_ATLAS_CLAPACK_H
      #include <atlas/clapack.h>
+  #else
+     #ifdef HAVE_VECLIB_CLAPACK_H
+       #include <vecLib/clapack.h>
+     #endif
   #endif
 #endif
 
@@ -53,6 +61,7 @@
   #include <string.h>
 #endif
 
+#include "acint32_type.h"
 #include "lsqr.h"
 #include "tsnnls.h"
 
@@ -858,14 +867,14 @@ double
 taucs_rcond( taucs_ccs_matrix* A )
 {
 	char	NORM = '1';
-	int32_t	N = 0,AN = 0;     /* LAPACK expects 32 bit ints */
-	int32_t LDA = 0;
+	ACINT32_TYPE	N = 0,AN = 0;     /* LAPACK expects 32 bit ints */
+	ACINT32_TYPE LDA = 0;
 	double  ANORM = 0;
 	double  RCOND = 0;
 	double* WORK = NULL;
-	int32_t* IWORK = NULL;
-	int32	INFO;
-	int32*	IPIV = NULL;
+	ACINT32_TYPE*   IWORK = NULL;
+	ACINT32_TYPE	INFO;
+	ACINT32_TYPE*	IPIV = NULL;
 	double* lapackA = NULL;
 	
 	/* Construct LAPACK representation of A and compute the 1 norm of A */
@@ -912,10 +921,10 @@ taucs_rcond( taucs_ccs_matrix* A )
 	LDA = A->m;
 	RCOND = 0;
 	WORK = (double*)malloc(sizeof(double)*4*N);
-	IWORK = (int32_t*)malloc(sizeof(int32_t)*N);
+	IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
 	INFO = 0;
 
-	IPIV = (int32_t*)malloc(sizeof(int32_t)*min(rowCount, A->n));
+	IPIV = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*min(rowCount, A->n));
 	
 	dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
 	dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );

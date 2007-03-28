@@ -12,9 +12,11 @@
 //typedef unsigned long int uinteger;
 
 #include"config.h"
+#include"acint32_type.h"
 
-typedef int32_t integer;
-typedef uint32_t uinteger;
+typedef ACINT32_TYPE integer;
+typedef ACUINT32_TYPE uinteger;
+
 typedef char *address;
 typedef short int shortint;
 typedef float real;
