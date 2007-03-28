@@ -63,8 +63,8 @@ case "${host_os}" in
     echo -framework vecLib
     AM_CONDITIONAL([DARWIN],[test 1 == 1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
-    AC_SUBST([LAPACK_LIBS],["-framework vecLib -lm"])
-    AC_SUBST([LIBS],[" "])
+    LIBS="$LIBS -framework vecLib -lm"
+    AC_SUBST([LAPACK_LIBS],[""])
     AC_SUBST([BLAS_LIBS],[" "])
     AC_SUBST([FLIBS],[" "])
     ;;
@@ -74,13 +74,11 @@ case "${host_os}" in
     # Gets ready to compile with weird Fortran stuff
     AC_PROG_F77
     AC_F77_LIBRARY_LDFLAGS
-    LDFLAGS="$LDFLAGS -L/usr/lib64/atlas -L/usr/lib/atlas"
+    BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
+    LDFLAGS="$LDFLAGS $BLAS_FLAGS"
     ACX_BLAS
     if test "$acx_blas_ok" = no; then 
-	  AC_MSG_ERROR([tsnnls requires a functional BLAS/LAPACK. Configure has searched the usual locations and can't find one. You can use --with-blas=<lib> to point to a blas library in a nonstandard spot.])
-    fi
-    if test "$acx_blas_ok" = yes; then 
-	  BLAS_LIBS="-L/usr/lib64/atlas -L/usr/lib/atlas $BLAS_LIBS"
+	  AC_MSG_ERROR([tsnnls requires a functional CBLAS/CLAPACK. The atlas project will provide thse on any given system if no other is available. Configure has searched the usual locations and can't find one. You can use --with-blas=<lib> to point to a blas library in a nonstandard spot.])
     fi
     ACX_LAPACK
     
@@ -88,10 +86,13 @@ case "${host_os}" in
 
 # Checks for header files.
 AC_HEADER_STDC
+AC_CHECK_HEADERS([cblas.h clapack.h atlas/cblas.h atlas/clapack.h])
 AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
+AC_TYPE_INT32_T   # Lapack/f77 will expect type integer to be a 32-bit int
+AC_TYPE_UINT32_T  # make sure that we have this type (and the unsigned version)
 
 # Can we inline and/or const?
 AC_C_INLINE

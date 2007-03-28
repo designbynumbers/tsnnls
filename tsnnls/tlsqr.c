@@ -239,11 +239,11 @@ t_condest( void* mfR )
 {
 	taucs_ccs_matrix* L;
 	double* lapackL;
-	long int N, LDA, INFO;  /* The Apple CLapack uses long int as the data type. */
+	int32_t N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
 	char	UPLO;
 	double  ANORM = 0;
 	double* WORK;
-	long int* IWORK;
+	int32_t *IWORK;
 	double  RCOND;
 	
 	L = taucs_supernodal_factor_to_ccs(mfR);
@@ -282,7 +282,7 @@ t_condest( void* mfR )
 	LDA = L->m;
 	UPLO = 'L';
 	WORK = (double*)malloc(sizeof(double)*3*N);
-	IWORK = (long int*)malloc(sizeof(long int)*N);
+	IWORK = (int32_t*)malloc(sizeof(int32_t)*N);
 	
 	dpocon_( &UPLO, &N, lapackL, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
 		
