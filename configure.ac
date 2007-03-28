@@ -58,12 +58,9 @@ AC_CHECK_FUNCS([memset memcpy])
 AC_MSG_CHECKING(how to link with BLAS and LAPACK)
 AC_CANONICAL_HOST
 
-echo 
-echo ===========================================================
-echo Setting up build environment for ${host_cpu}${host_os}
-
 case "${host_os}" in
   darwin*)
+    echo -framework vecLib
     AM_CONDITIONAL([DARWIN],[test 1 == 1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
     AC_SUBST([LAPACK_LIBS],["-framework vecLib -lm"])
@@ -72,27 +69,22 @@ case "${host_os}" in
     AC_SUBST([FLIBS],[" "])
     ;;
   *)
-    echo no
+    echo linux
     AM_CONDITIONAL([DARWIN],[test 0 == 1])
     # Gets ready to compile with weird Fortran stuff
     AC_PROG_F77
     AC_F77_LIBRARY_LDFLAGS
-
-    aLIBS="$LIBS"
-    LIBS="$aLIBS -latlas $MATH_LIBS $FLIBS"
-    AC_CHECK_LIB(f77blas, dgemm_, BLAS_LIBS="-lf77blas -latlas $MATH_LIBS $FLIBS",[
-      LIBS="$aLIBS $MATH_LIBS $FLIBS"
-    AC_CHECK_LIB(blas, dgemm_, BLAS_LIBS="-lblas $MATH_LIBS $FLIBS",
-    AC_MSG_ERROR(BLAS basic linear algebra subroutines are not installed on
-        this platform.  Please see the documentation for download locations.))])
-    AC_SUBST(BLAS_LIBS)
-    LIBS="$aLIBS"
-    
+    LDFLAGS="$LDFLAGS -L/usr/lib64/atlas -L/usr/lib/atlas"
     ACX_BLAS
+    if test "$acx_blas_ok" = no; then 
+	  AC_MSG_ERROR([tsnnls requires a functional BLAS/LAPACK. Configure has searched the usual locations and can't find one. You can use --with-blas=<lib> to point to a blas library in a nonstandard spot.])
+    fi
+    if test "$acx_blas_ok" = yes; then 
+	  BLAS_LIBS="-L/usr/lib64/atlas -L/usr/lib/atlas $BLAS_LIBS"
+    fi
     ACX_LAPACK
+    
   esac
-echo    Link with -libtsnnls $LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS
-echo ============================================================
 
 # Checks for header files.
 AC_HEADER_STDC
