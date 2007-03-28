@@ -12,7 +12,15 @@ uncomplicated. However, since TSNNLS is linear algebra software, it
 depends on finding a useable local installation of BLAS/LAPACK in
 order to link and run. You will have to link any of your programs
 which use TSNNLS with appropriate libraries in order to run them once
-TSNNLS is installed. Here are some notes for various systems:
+TSNNLS is installed. You can find out the libraries that TSNNLS' 
+autoconf script used to compile the test programs using the shell script
+
+tsnnls-libs
+
+This script, installed by default, echos the library flags used by
+tsnnls to the command line.
+
+Here are some additional notes for various systems:
 
 OSX/Darwin
 
@@ -20,9 +28,6 @@ At the time of this writing (Mar 2007), all OSX system with the
 Developer Tools installed have a version of Apple's vecLib and
 Accelerate frameworks which include blas and lapack. The tsnnls
 configure script will detect Darwin systems and compile accordingly.
-Your programs should link with (for example)
-
-gcc myprog.c -o myprog -ltsnnls -framework vecLib -lm
 
 Linux systems
 
