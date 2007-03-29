@@ -1,1 +1,1 @@
-echo "-libtsnnls @BLAS_FLAGS@ @LAPACK_LIBS@ @LIBS@ @BLAS_LIBS@ @FLIBS@"
+echo "-libtsnnls @LAPACK_LIBS@ @LIBS@ @BLAS_LIBS@ @FLIBS@"
