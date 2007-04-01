@@ -880,7 +880,9 @@ taucs_rcond( taucs_ccs_matrix* A )
 	/* Construct LAPACK representation of A and compute the 1 norm of A */
 	int vSize;
 	int cItr, rItr;
-	long int rowCount = A->m;
+	//long int rowCount = A->m;
+	ACINT32_TYPE rowCount = A->m;
+
 	double localMax = 0;
 	
 	if( (A->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )

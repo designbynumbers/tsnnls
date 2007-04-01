@@ -101,6 +101,7 @@ AC_C_CONST
 
 AC_CHECK_SIZEOF([int])
 AC_CHECK_SIZEOF([long int])
+AC_CHECK_SIZEOF([double *])
 
 # Can we inline and/or const?
 AC_C_INLINE

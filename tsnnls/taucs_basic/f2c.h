@@ -23,7 +23,10 @@ typedef float real;
 typedef double doublereal;
 typedef struct { real r, i; } complex;
 typedef struct { doublereal r, i; } doublecomplex;
-typedef long int logical;
+
+//typedef long int logical;
+typedef ACINT32_TYPE logical;
+
 typedef short int shortlogical;
 typedef char logical1;
 typedef char integer1;
@@ -50,9 +53,14 @@ typedef short flag;
 typedef short ftnlen;
 typedef short ftnint;
 #else
-typedef long int flag;
-typedef long int ftnlen;
-typedef long int ftnint;
+//typedef long int flag;
+//typedef long int ftnlen;
+//typedef long int ftnint;
+
+typedef ACINT32_TYPE flag;
+typedef ACINT32_TYPE ftnlen;
+typedef ACINT32_TYPE ftnint;
+
 #endif
 
 /*external read, write*/
