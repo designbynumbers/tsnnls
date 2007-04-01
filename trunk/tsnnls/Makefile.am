@@ -2,7 +2,7 @@
 # Makefile.am for /tsnnls directory
 #
 
-AM_CFLAGS = -g -O3 -Wall
+AM_CFLAGS = -g -Wall
 
 SUBDIRS = taucs_basic
 
