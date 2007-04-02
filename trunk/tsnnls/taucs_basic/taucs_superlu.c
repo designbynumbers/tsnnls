@@ -14,6 +14,8 @@
 #include "dsp_defs.h"
 #include "util.h"
 
+#include "taucs_common.h"
+
 typedef struct {
   SuperMatrix L,U;
   int*        perm_c;

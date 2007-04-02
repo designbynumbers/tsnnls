@@ -70,7 +70,9 @@ double taucs_ctime() {
 #include <stdio.h>                                                 
 #include <unistd.h>
 #include <sys/types.h>                                                 
-#include <sys/timeb.h>                                                 
+#include <sys/timeb.h>                  
+
+#include "taucs_common.h"                               
 
 
 /* p5tsc.h -- functions to use Pentium cycle counter for timing of events.

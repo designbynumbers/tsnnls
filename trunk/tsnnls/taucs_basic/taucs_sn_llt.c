@@ -13,7 +13,7 @@
 #define TAUCS_CORE_DOUBLE
 #include "taucs.h"
 
-
+#include "taucs_common.h"
 
 #ifdef TAUCS_CILK
 #pragma lang -C

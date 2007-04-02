@@ -11,6 +11,8 @@
 #define TAUCS_CORE_DOUBLE
 #include "taucs.h"
 
+#include "taucs_common.h"
+
 #define RNDM ((double)rand()/(double)RAND_MAX);
 
 /*ifndef added omer*/

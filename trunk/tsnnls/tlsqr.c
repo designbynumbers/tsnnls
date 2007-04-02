@@ -42,6 +42,10 @@
 #include "acint32_type.h"
 #include "tsnnls.h"
 
+#ifdef WITH_DMALLOC
+  #include <dmalloc.h>
+#endif
+
 // 
 
 /* This file contains code for the TAUCS version of lsqr, including

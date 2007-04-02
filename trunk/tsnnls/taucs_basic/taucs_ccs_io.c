@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "taucs_common.h"
+
 
 /*********************************************************/
 /* read binary                                           */

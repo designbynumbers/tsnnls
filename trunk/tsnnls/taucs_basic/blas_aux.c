@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "taucs_common.h"
+
 int lsame(char* ca, char* cb)
 {
   return (tolower(*ca) == tolower(*cb));

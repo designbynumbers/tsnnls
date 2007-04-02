@@ -33,6 +33,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include "taucs_common.h"
+
 int taucs_maximize_stacksize()
 {
   struct rlimit l;

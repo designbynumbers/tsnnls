@@ -7,7 +7,7 @@ AM_CFLAGS = -g -Wall
 SUBDIRS = taucs_basic
 
 pkginclude_HEADERS = tsnnls.h lsqr.h
-noinst_HEADERS = gsl_cblas.h
+noinst_HEADERS = gsl_cblas.h taucs_basic/taucs_common.h
 nobase_pkginclude_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
 lib_LTLIBRARIES = libtsnnls.la
 
@@ -29,9 +29,12 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
         tsnnls.c \
 	lsqr.c
 
-check_PROGRAMS = tsnnls_test
+check_PROGRAMS = tsnnls_test cblas_test
 tsnnls_test_SOURCES = tsnnls_test.c
 tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+cblas_test_SOURCES = cblas_test.c
+cblas_test_LDFLAGS = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) --bind-at-load
 
 #if DARWIN
 #tsnnls_test_LDFLAGS = -ltsnnls -framework vecLib

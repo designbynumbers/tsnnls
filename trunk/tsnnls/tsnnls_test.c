@@ -43,11 +43,23 @@
 #include "lsqr.h"
 #include "tsnnls.h"
 
-#ifdef HAVE_DARWIN          /* We use the Apple BLAS/LAPACK if possible. */
- #include <vecLib/vBLAS.h>
+#ifdef HAVE_CBLAS_H
+  #include <cblas.h>
 #else
- #include "tsnnls/gsl_cblas.h"
-#endif 
+  #ifdef HAVE_VECLIB_CBLAS_H
+    #include <vecLib/cblas.h>
+  #else
+    #ifdef HAVE_ATLAS_CBLAS_H
+      #include <atlas/cblas.h>
+    #endif
+  #endif
+#endif
+
+//#ifdef HAVE_DARWIN          /* We use the Apple BLAS/LAPACK if possible. */
+// #include <vecLib/vBLAS.h>
+//#else
+// #include "tsnnls/gsl_cblas.h"
+//#endif 
 
 #ifdef HAVE_STRING_H
   #include <string.h>
@@ -72,6 +84,10 @@
 #ifdef HAVE_FLOAT_H
   #include <float.h>
 #endif 
+
+#ifdef WITH_DMALLOC
+  #include <dmalloc.h>
+#endif
 
 struct rusage start, end;
 int tpStorage;
@@ -256,6 +272,10 @@ taucs_snnls_test(FILE* fp)
   double err = 0;
   double expectedError=0;
   {
+
+    fprintf(stderr,"#  matrixdims runtime  relerror (|x'-x|/|x|) worst expected\n");
+    fprintf(stderr,"-----------------------------------------------------------\n");
+
     while( !feof(fp) )
       {
 	double* x;
@@ -276,7 +296,7 @@ taucs_snnls_test(FILE* fp)
 	
 	ttime = end_clock();
 	
-	printf( "%d: Matrix of size: (%d %d) runtime: %f ", ran++, Accs->m, Accs->n, ttime );
+	printf( "%2d %3d x %3d  %6f ", ran++, Accs->m, Accs->n, ttime );
 	if( x == NULL )
 	  {
 	    printf( "Problem %d failed! (Matrix probably not positive definite)\n", pItr );
@@ -303,7 +323,7 @@ taucs_snnls_test(FILE* fp)
 	  expectedError *= expectedError;
 	  expectedError *= __DBL_EPSILON__;
 	  
-	  printf( "relative error ||x'-x||/||x||: %e / worst expected error: %e\n", err, expectedError );
+	  printf( "%8e          %8e\n", err, expectedError );
 	  
 	  if( err > expectedError )
 	    fprintf( stderr, "\t*** WARNING: relative error larger than expected, your build may not function as expected\n" );

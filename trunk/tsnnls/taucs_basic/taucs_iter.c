@@ -8,6 +8,8 @@
 #include <assert.h>
 #include "taucs.h"
 
+#include "taucs_common.h"
+
 #ifdef TAUCS_CORE_DOUBLE
 
 /*********************************************************/
