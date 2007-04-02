@@ -8,6 +8,8 @@
 #undef realloc
 #undef free
 
+#include "taucs_common.h"
+
 void* taucs_malloc_stub (size_t size)               { return malloc(size); }
 void* taucs_calloc_stub (size_t nmemb, size_t size) { return calloc(nmemb,size); }
 void* taucs_realloc_stub(void* ptr, size_t size)    { return realloc(ptr,size); }

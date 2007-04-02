@@ -34,6 +34,10 @@
 
 #include "lsqr.h"
 
+#ifdef WITH_DMALLOC
+  #include <dmalloc.h>
+#endif
+
 /*-------------------------------------------------------------------------*/
 /*                                                                         */
 /*  Define the data type allocation and deallocation functions.            */

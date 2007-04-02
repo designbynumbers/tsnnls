@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include "taucs.h"
+#include "taucs_common.h"
 
 #define HEADER_NROWS   0
 #define HEADER_NCOLS   1

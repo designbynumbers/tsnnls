@@ -5,6 +5,8 @@
 
 #include "f2c.h"
 
+#include "taucs_common.h"
+
 /* Subroutine */ int amdbar_(n, pe, iw, len, iwlen, pfree, nv, next, last, 
 	head, elen, degree, ncmpa, w, iovflo)
 integer *n, *pe, *iw, *len, *iwlen, *pfree, *nv, *next, *last, *head, *elen, *

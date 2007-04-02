@@ -9,6 +9,8 @@
 #include <math.h>
 #include "taucs.h"
 
+#include "taucs_common.h"
+
 typedef struct {
   int     length;
   int*    indices;

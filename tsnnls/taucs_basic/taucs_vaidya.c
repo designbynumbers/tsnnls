@@ -12,6 +12,8 @@
 #include <assert.h>
 #include "taucs.h"
 
+#include "taucs_common.h"
+
 /*long int random(void); omer*/
 
 /*********************************************************/

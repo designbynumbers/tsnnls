@@ -11,6 +11,7 @@
 #define TAUCS_CORE_DOUBLE
 
 #include "taucs.h"
+#include "taucs_common.h"
 
 //#ifndef TAUCS_CORE
 //#error "You must define TAUCS_CORE to compile this file"

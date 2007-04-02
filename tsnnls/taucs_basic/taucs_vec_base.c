@@ -15,6 +15,8 @@
 #error "This is a TAUCS core file: you must define a primitive data type"
 #endif
 
+#include "taucs_common.h"
+
 #define RNDM ((double)random()/(double)RAND_MAX);
 
 #ifndef max /*omer*/

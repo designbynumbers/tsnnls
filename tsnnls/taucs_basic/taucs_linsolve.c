@@ -13,6 +13,7 @@
 #define TAUCS_CORE_CILK
 
 #include "taucs.h"
+#include "taucs_common.h"
 
 #define TRUE 1
 #define FALSE 0

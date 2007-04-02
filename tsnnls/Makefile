@@ -48,7 +48,7 @@ AUTOMAKE = ${SHELL} /Users/cantarel/tsnnls/missing --run automake-1.6
 AUTOHEADER = ${SHELL} /Users/cantarel/tsnnls/missing --run autoheader
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
-INSTALL = /sw/bin/install -c
+INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_DATA = ${INSTALL} -m 644
 install_sh_DATA = $(install_sh) -c -m 644
@@ -64,7 +64,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_alias = 
-host_triplet = powerpc-apple-darwin7.9.0
+host_triplet = powerpc-apple-darwin8.8.0
 
 EXEEXT = 
 OBJEXT = o
@@ -81,12 +81,12 @@ DEPDIR = .deps
 DLLTOOL = @DLLTOOL@
 ECHO = echo
 EGREP = grep -E
-F77 = g77
+F77 = 
 FLIBS =  
 GCJ = @GCJ@
 GCJFLAGS = @GCJFLAGS@
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
-LAPACK_LIBS = 
+LAPACK_LIBS = -framework vecLib
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIB_VERSION = 1:0:1
 LN_S = ln -s
@@ -100,12 +100,12 @@ am__include = include
 am__quote = 
 install_sh = /Users/cantarel/tsnnls/install-sh
 
-AM_CFLAGS = -g -O3 -Wall
+AM_CFLAGS = -g -Wall
 
 SUBDIRS = taucs_basic
 
 pkginclude_HEADERS = tsnnls.h lsqr.h
-noinst_HEADERS = gsl_cblas.h
+noinst_HEADERS = gsl_cblas.h taucs_basic/taucs_common.h
 nobase_pkginclude_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
 lib_LTLIBRARIES = libtsnnls.la
 
@@ -128,9 +128,12 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 	lsqr.c
 
 
-check_PROGRAMS = tsnnls_test
+check_PROGRAMS = tsnnls_test cblas_test
 tsnnls_test_SOURCES = tsnnls_test.c
 tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+cblas_test_SOURCES = cblas_test.c
+cblas_test_LDFLAGS = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) --bind-at-load
 subdir = tsnnls
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
@@ -145,7 +148,11 @@ am_libtsnnls_la_OBJECTS = taucs_logging.lo taucs_malloc.lo \
 	genmmd.lo taucs_timer.lo taucs_sn_llt.lo taucs_ccs_base.lo \
 	tlsqr.lo tsnnls.lo lsqr.lo
 libtsnnls_la_OBJECTS = $(am_libtsnnls_la_OBJECTS)
-check_PROGRAMS = tsnnls_test$(EXEEXT)
+check_PROGRAMS = tsnnls_test$(EXEEXT) cblas_test$(EXEEXT)
+am_cblas_test_OBJECTS = cblas_test.$(OBJEXT)
+cblas_test_OBJECTS = $(am_cblas_test_OBJECTS)
+cblas_test_LDADD = $(LDADD)
+cblas_test_DEPENDENCIES =
 am_tsnnls_test_OBJECTS = tsnnls_test.$(OBJEXT)
 tsnnls_test_OBJECTS = $(am_tsnnls_test_OBJECTS)
 tsnnls_test_LDADD = $(LDADD)
@@ -155,13 +162,13 @@ DEFS = -DHAVE_CONFIG_H
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 CPPFLAGS = 
 LDFLAGS = 
-LIBS =  -framework vecLib -lm
+LIBS = 
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 DEP_FILES = ./$(DEPDIR)/amdbar.Plo ./$(DEPDIR)/amdexa.Plo \
-	./$(DEPDIR)/amdtru.Plo ./$(DEPDIR)/colamd.Plo \
-	./$(DEPDIR)/genmmd.Plo ./$(DEPDIR)/lsqr.Plo \
-	./$(DEPDIR)/taucs_ccs_base.Plo \
+	./$(DEPDIR)/amdtru.Plo ./$(DEPDIR)/cblas_test.Po \
+	./$(DEPDIR)/colamd.Plo ./$(DEPDIR)/genmmd.Plo \
+	./$(DEPDIR)/lsqr.Plo ./$(DEPDIR)/taucs_ccs_base.Plo \
 	./$(DEPDIR)/taucs_ccs_ops.Plo \
 	./$(DEPDIR)/taucs_ccs_order.Plo \
 	./$(DEPDIR)/taucs_complex.Plo \
@@ -180,7 +187,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = -g -O2
-DIST_SOURCES = $(libtsnnls_la_SOURCES) $(tsnnls_test_SOURCES)
+DIST_SOURCES = $(libtsnnls_la_SOURCES) $(cblas_test_SOURCES) \
+	$(tsnnls_test_SOURCES)
 HEADERS = $(nobase_pkginclude_HEADERS) $(noinst_HEADERS) \
 	$(pkginclude_HEADERS)
 
@@ -192,7 +200,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 DIST_COMMON = $(nobase_pkginclude_HEADERS) $(noinst_HEADERS) \
 	$(pkginclude_HEADERS) Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(libtsnnls_la_SOURCES) $(tsnnls_test_SOURCES)
+SOURCES = $(libtsnnls_la_SOURCES) $(cblas_test_SOURCES) $(tsnnls_test_SOURCES)
 
 all: all-recursive
 
@@ -254,6 +262,9 @@ clean-checkPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+cblas_test$(EXEEXT): $(cblas_test_OBJECTS) $(cblas_test_DEPENDENCIES) 
+	@rm -f cblas_test$(EXEEXT)
+	$(LINK) $(cblas_test_LDFLAGS) $(cblas_test_OBJECTS) $(cblas_test_LDADD) $(LIBS)
 tsnnls_test$(EXEEXT): $(tsnnls_test_OBJECTS) $(tsnnls_test_DEPENDENCIES) 
 	@rm -f tsnnls_test$(EXEEXT)
 	$(LINK) $(tsnnls_test_LDFLAGS) $(tsnnls_test_OBJECTS) $(tsnnls_test_LDADD) $(LIBS)
@@ -267,6 +278,7 @@ distclean-compile:
 include ./$(DEPDIR)/amdbar.Plo
 include ./$(DEPDIR)/amdexa.Plo
 include ./$(DEPDIR)/amdtru.Plo
+include ./$(DEPDIR)/cblas_test.Po
 include ./$(DEPDIR)/colamd.Plo
 include ./$(DEPDIR)/genmmd.Plo
 include ./$(DEPDIR)/lsqr.Plo

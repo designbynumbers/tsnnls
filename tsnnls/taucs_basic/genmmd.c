@@ -4,6 +4,7 @@
 */
 
 #include "f2c.h"
+#include "taucs_common.h"
 
 /* Sivan: I modified INTEGER*2 -> INTEGER*4 */
 /* *************************************************************** */

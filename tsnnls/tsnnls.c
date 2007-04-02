@@ -65,6 +65,10 @@
 #include "lsqr.h"
 #include "tsnnls.h"
 
+#ifdef WITH_DMALLOC
+  #include <dmalloc.h>
+#endif
+
 /*
 
     File contains an implementation of the block-pivoting non-negative least squares

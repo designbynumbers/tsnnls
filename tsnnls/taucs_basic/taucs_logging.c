@@ -12,6 +12,7 @@
 
 #define TAUCS_CORE
 #include "taucs.h"
+#include "taucs_common.h"
 
 #ifndef OSTYPE_win32
 #include <unistd.h>
