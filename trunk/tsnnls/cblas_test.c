@@ -42,7 +42,7 @@ installation on this system is functional.
 #endif
 
 #define VECLEN 1024
-#define MATDIM 2
+#define MATDIM 256
 
 int main()
 {
@@ -154,8 +154,14 @@ int main()
 
     for(j=0;j<MATDIM;j++) {
 
-      Csto[i + MATDIM*j] = C[i + MATDIM*j] = drand48();
       newAnewAT[i + MATDIM*j] = 0;
+
+    }
+
+    for(j=i;j<MATDIM;j++) { /* C is a MATDIM*MATDIM symmetric matrix */
+
+      Csto[i + MATDIM*j] = Csto[j + MATDIM*i] = 
+	C[i + MATDIM*j] = C[j + MATDIM*i] = drand48();
 
     }
 
@@ -190,7 +196,7 @@ int main()
 
   for(i=0;i<MATDIM;i++) {
 
-    for(j=0;j<MATDIM;j++) {
+    for(j=i;j<MATDIM;j++) {  /* Only the upper triangle is set by dsyrk */
 
       if (fabs(newAnewAT[i + MATDIM*j] - C[i + MATDIM*j]) > 1e-12) {
 
