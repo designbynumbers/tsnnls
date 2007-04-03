@@ -42,7 +42,7 @@ installation on this system is functional.
 #endif
 
 #define VECLEN 1024
-#define MATDIM 256
+#define MATDIM 73
 
 int main()
 {
@@ -144,7 +144,7 @@ int main()
 
   /* This tests an NxK matrix newA, where N = MATDIM, K = 2*MATDIM. */
 
-  double newA[MATDIM*2*MATDIM],C[MATDIM*MATDIM],newAnewAT[MATDIM*MATDIM],Csto[MATDIM*MATDIM];
+  double newA[4*MATDIM*2*MATDIM],C[4*MATDIM*MATDIM],newAnewAT[MATDIM*MATDIM],Csto[MATDIM*MATDIM];
   enum CBLAS_TRANSPOSE trans = CblasNoTrans;
   int k;
 
