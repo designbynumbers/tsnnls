@@ -63,8 +63,8 @@ case "${host_os}" in
     echo -framework vecLib
     AM_CONDITIONAL([DARWIN],[test 1 == 1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
-    LIBS="$LIBS -framework vecLib -lm"
-    AC_SUBST([LAPACK_LIBS],[""])
+#    LIBS="$LIBS -framework vecLib"
+    AC_SUBST([LAPACK_LIBS],["-framework vecLib"])
     AC_SUBST([BLAS_LIBS],[" "])
     AC_SUBST([FLIBS],[" "])
     ;;
@@ -106,6 +106,12 @@ AC_CHECK_SIZEOF([double *])
 # Can we inline and/or const?
 AC_C_INLINE
 AC_C_CONST
+
+# Enable debugging support for dmalloc, if we configure --with-dmalloc
+AM_WITH_DMALLOC
+
+# Now add remaining libs
+# LIBS="$LAPACK_LIBS $LIBS $BLAS_LIBS $FLIBS"
 
 # Output
 AC_CONFIG_FILES([tsnnls-libs])    # Write linker info to file. 

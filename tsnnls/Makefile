@@ -161,8 +161,8 @@ tsnnls_test_DEPENDENCIES =
 DEFS = -DHAVE_CONFIG_H
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 CPPFLAGS = 
-LDFLAGS = 
-LIBS = 
+LDFLAGS =  -g
+LIBS =  -ldmalloc
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 DEP_FILES = ./$(DEPDIR)/amdbar.Plo ./$(DEPDIR)/amdexa.Plo \
@@ -186,7 +186,7 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-CFLAGS = -g -O2
+CFLAGS = -g -Wall
 DIST_SOURCES = $(libtsnnls_la_SOURCES) $(cblas_test_SOURCES) \
 	$(tsnnls_test_SOURCES)
 HEADERS = $(nobase_pkginclude_HEADERS) $(noinst_HEADERS) \
