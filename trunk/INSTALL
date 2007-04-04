@@ -20,6 +20,23 @@ tsnnls-libs
 This script, installed by default, echos the library flags used by
 tsnnls to the command line.
 
+The library expects to call BLAS routines both through the CBLAS
+interface AND by linking directly to a copy of the f77blas. For that
+reason, both libraries are specified when linking. To link FORTRAN
+code from the C code in the library, we must be aware that FORTRAN
+compilers mangle the names of functions at compile time, usually by
+converting them into a standard case and adding one or more trailing
+underscores. We attempt to detect the mangling scheme using the
+Autoconf macro AC_F77_FUNC. However, this macro is broken on Darwin
+systems, and in this case we fall back on the g77 mangling convention:
+convert the name to lowercase and add one trailing underscore. 
+
+We are in the process of centralizing all of the mangled names in a
+new header but in the meantime, especially in the taucs portion of
+the code, some calls may be hardcoded to the g77 conventions. Let us
+know if you fail to compile the library and your BLAS/LAPACK was
+compiled in another Fortran environment.
+
 Here are some additional notes for various systems:
 
 OSX/Darwin

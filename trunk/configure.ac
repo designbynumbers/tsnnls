@@ -50,9 +50,9 @@ AC_PROG_LIBTOOL
 # Checks for functions
 AC_CHECK_FUNCS([memset memcpy])
 
-# Checks for libraries.
-#AC_CHECK_LIB(m,sqrt)
-#AC_CHECK_LIB(argtable2,arg_parse,[have_argtable2=true],[have_argtable2=false])
+# Checks for FORTRAN.
+AC_PROG_F77		
+AC_F77_LIBRARY_LDFLAGS
 
 # Checks for Darwin.
 AC_MSG_CHECKING(how to link with BLAS and LAPACK)
@@ -66,14 +66,19 @@ case "${host_os}" in
 #    LIBS="$LIBS -framework vecLib"
     AC_SUBST([LAPACK_LIBS],["-framework vecLib"])
     AC_SUBST([BLAS_LIBS],[" "])
-    AC_SUBST([FLIBS],[" "])
+    # $FLIBS was set above by AC_F77_PROG  
+
+    # How can I work around the damaged gcc on Darwin by not linking lcrt2.o?
+    # By editing flibs to remove -lcrt2.o, of course!  
+    # (I realize that this is a total hack.)
+
+    FLIBS=`echo $FLIBS | sed s/-lcrt2.o//g` 
     ;;
   *)
     echo linux
     AM_CONDITIONAL([DARWIN],[test 0 == 1])
     # Gets ready to compile with weird Fortran stuff
-    AC_PROG_F77
-    AC_F77_LIBRARY_LDFLAGS
+
     BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
     LDFLAGS="$LDFLAGS $BLAS_FLAGS"
     ACX_BLAS
@@ -83,6 +88,31 @@ case "${host_os}" in
     ACX_LAPACK
     
   esac
+
+# We'll need to call F77 functions from C, find out how to mangle their names
+AC_F77_FUNC([daxpy],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="daxpy_"
+fi
+AC_DEFINE_UNQUOTED([DAXPY_F77],[$fname],[Name of daxpy after mangling])
+AC_MSG_CHECKING([name of daxpy after mangling])
+echo "$fname"
+
+AC_F77_FUNC([dsyrk],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dsyrk_"
+fi
+AC_DEFINE_UNQUOTED([DSYRK_F77],[$fname],[Name of dsyrk after mangling])
+AC_MSG_CHECKING([name of dsyrk after mangling])
+echo "$fname"
+
+AC_F77_FUNC([dsymv],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dsymv_"
+fi
+AC_DEFINE_UNQUOTED([DSYMV_F77],[$fname],[Name of dsymv after mangling])
+AC_MSG_CHECKING([name of dsymv after mangling])
+echo "$fname"
 
 # Checks for header files.
 AC_HEADER_STDC
