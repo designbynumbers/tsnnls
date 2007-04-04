@@ -36,7 +36,7 @@ extern "C" /* Avoid C++ name mangling */
 //#define DSYRK_F77 F77_FUNC (dsyrk,DSYRK)
 
 extern void DAXPY_F77(int *N,double *alpha,double *vecX, \
-		      int *incX,double *vecY,int *vecY);
+		      int *incX,double *vecY,int *incY);
 
 extern void DSYMV_F77(char *uplo,int *N,double *alpha, \
 		      double *matA, int *lda, double *vecX, int *incX, \
@@ -60,7 +60,7 @@ int main()
 
   /* L1 BLAS test for "daxpy" */
 
-  fprintf(stderr,"%s test... ",F77_DAXPY);
+  fprintf(stderr,"%s test... ","DAXPY_F77");
 
   for(i=0;i<VECLEN;i++) {
 
@@ -69,7 +69,7 @@ int main()
 
   }
 
-  F77_DAXPY(&N,&alpha,vecB,&incB,vecA,&incA);  /* vecA += alpha*vecB */
+  DAXPY_F77(&N,&alpha,vecB,&incB,vecA,&incA);  /* vecA += alpha*vecB */
 
   for(i=0;i<VECLEN;i++) {
     
@@ -90,10 +90,10 @@ int main()
 
   double vecX[MATDIM],vecY[MATDIM],A[MATDIM*MATDIM],vecYsto[MATDIM],vecCheck[MATDIM];
   int j,lda = {MATDIM},incX={1},incY={1};
-  char uplo[1] = 'U';
+  char uplo = {'U'};
   double beta = 1.66;
 
-  fprintf(stderr,"%s test... ",F77_DSYMV);
+  fprintf(stderr,"%s test... ","DSYMV_F77");
 
   for(i=0;i<MATDIM;i++) {
 
@@ -113,7 +113,7 @@ int main()
 
   }
 
-  F77_DSYMV(&uplo,&N,&alpha,&A,&lda,vecX,&incX,&beta,vecY,&incY);
+  DSYMV_F77(&uplo,&N,&alpha,A,&lda,vecX,&incX,&beta,vecY,&incY);
 
   /* Should compute vecY = alpha A vecX + beta vecY */
 
@@ -149,11 +149,11 @@ int main()
 
   double newA[MATDIM*2*MATDIM],C[MATDIM*MATDIM], \
     newAnewAT[MATDIM*MATDIM],Csto[MATDIM*MATDIM];
-  char trans[1] = 'N';
+  char trans = 'N';
   int k;
   int K = {2*MATDIM};
 
-  fprintf(stderr,"%s test... ",F77_DSYRK);
+  fprintf(stderr,"%s test... ","DSYRK_F77");
 
   for(i=0;i<MATDIM;i++) {
 
@@ -178,7 +178,7 @@ int main()
 
   }
 
-  F77_DSYRK(&uplo,&trans,&N,&K,&alpha,&newA,&N,&beta,&C,&N);
+  DSYRK_F77(&uplo,&trans,&N,&K,&alpha,newA,&N,&beta,C,&N);
 
   /* Computes C = alpha newAnewA^T + beta C, which is a MATDIM*MATDIM matrix. */
 
