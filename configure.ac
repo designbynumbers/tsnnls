@@ -68,7 +68,7 @@ case "${host_os}" in
     AC_SUBST([BLAS_LIBS],[" "])
     # $FLIBS was set above by AC_F77_PROG  
 
-    # How can I work around the damaged gcc on Darwin by not linking lcrt2.o?
+    # How can I work around the damaged g77 on Darwin by not linking lcrt2.o?
     # By editing flibs to remove -lcrt2.o, of course!  
     # (I realize that this is a total hack.)
 
@@ -79,11 +79,12 @@ case "${host_os}" in
     AM_CONDITIONAL([DARWIN],[test 0 == 1])
     # Gets ready to compile with weird Fortran stuff
 
-    BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
+    #BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
+    BLAS_FLAGS="-L/home/cantarel/ATLAS/lib/Linux_UNKNOWNSSE2 -I/home/cantarel/ATLAS/include"
     LDFLAGS="$LDFLAGS $BLAS_FLAGS"
     ACX_BLAS
     if test "$acx_blas_ok" = no; then 
-	  AC_MSG_ERROR([tsnnls requires a functional CBLAS/CLAPACK. The atlas project will provide thse on any given system if no other is available. Configure has searched the usual locations and can't find one. You can use --with-blas=<lib> to point to a blas library in a nonstandard spot.])
+	  AC_MSG_ERROR([tsnnls requires a functional CBLAS/CLAPACK. The ATLAS project will provide these on any given system if no other is available. Configure has searched the usual locations and can't find one. You can use --with-blas=<lib> to point to a blas library in a nonstandard spot.])
     fi
     ACX_LAPACK
     
