@@ -144,7 +144,8 @@ int main()
 
   /* This tests an NxK matrix newA, where N = MATDIM, K = 2*MATDIM. */
 
-  double newA[4*MATDIM*2*MATDIM],C[4*MATDIM*MATDIM],newAnewAT[MATDIM*MATDIM],Csto[MATDIM*MATDIM];
+  double newA[4*MATDIM*2*MATDIM],C[4*MATDIM*MATDIM]; /* Extra to if it helps dsyrk */
+  double newAnewAT[MATDIM*MATDIM],Csto[MATDIM*MATDIM];
   enum CBLAS_TRANSPOSE trans = CblasNoTrans;
   int k;
 
@@ -173,6 +174,8 @@ int main()
 
   }
 
+  /*printf("\nCalling cblas_dsyrk(%d,%d,%d,%d,%d,%g,%p,%d,%g,%p,%d).\n",
+    ord,uplo,trans,MATDIM,2*MATDIM,alpha,newA,MATDIM,beta,C,MATDIM);*/
   cblas_dsyrk(ord,uplo,trans,MATDIM,2*MATDIM,alpha,newA,MATDIM,beta,C,MATDIM);
 
   /* Computes C = alpha newAnewA^T + beta C, which is a MATDIM*MATDIM matrix. */
@@ -183,7 +186,8 @@ int main()
 
       for(k=0;k<2*MATDIM;k++) {
 
-	newAnewAT[i + MATDIM*j] += newA[i + MATDIM*k] * newA[j + MATDIM*k]; /* newAnewA^T(i,j) */
+	newAnewAT[i + MATDIM*j] += newA[i + MATDIM*k] * newA[j + MATDIM*k]; 
+	/* newAnewA^T(i,j) */
 
       }
 
