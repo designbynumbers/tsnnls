@@ -29,12 +29,15 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
         tsnnls.c \
 	lsqr.c
 
-check_PROGRAMS = tsnnls_test cblas_test
+check_PROGRAMS = tsnnls_test cblas_test f77blas_test
 tsnnls_test_SOURCES = tsnnls_test.c
 tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 cblas_test_SOURCES = cblas_test.c
-cblas_test_LDFLAGS = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) --bind-at-load
+cblas_test_LDFLAGS = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) 
+
+f77blas_test_SOURCES = f77blas_test.c
+f77blas_test_LDFLAGS = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 #if DARWIN
 #tsnnls_test_LDFLAGS = -ltsnnls -framework vecLib
