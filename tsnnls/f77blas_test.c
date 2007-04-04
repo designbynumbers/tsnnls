@@ -88,12 +88,15 @@ int main()
 
   /* L2 BLAS check for dsymv */
 
-  double vecX[MATDIM],vecY[MATDIM],A[MATDIM*MATDIM],vecYsto[MATDIM],vecCheck[MATDIM];
+  double vecX[MATDIM],vecY[MATDIM],A[MATDIM*MATDIM],\
+    vecYsto[MATDIM],vecCheck[MATDIM];
   int j,lda = {MATDIM},incX={1},incY={1};
   char uplo = {'U'};
   double beta = 1.66;
 
   fprintf(stderr,"%s test... ","DSYMV_F77");
+
+  N = MATDIM; /* Reset N to dimension of NxN matrix A */
 
   for(i=0;i<MATDIM;i++) {
 
