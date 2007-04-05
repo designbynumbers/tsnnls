@@ -35,7 +35,9 @@ taucs_vec_norm2(int n, int flags, void* x)
   int one = 1;
 #ifdef TAUCS_CONFIG_DREAL
   if (flags & TAUCS_DOUBLE)
-    return (taucs_double) taucs_blas_name(dnrm2)(&n, x, &one);
+    return (taucs_double) taucs_dnrm2(&n, x, &one);
+  // Modified from original TAUCS code to replace taucs_blas_name(dnrm2) -- JC  
+
 #endif
 
 #ifdef TAUCS_CONFIG_SREAL

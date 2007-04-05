@@ -7,6 +7,8 @@ unlimited permission to copy, distribute and modify it.
 TSNNLS Installation Guide
 =========================
 
+System requirements: gcc and a working fortran compiler
+
 The installation of TSNNLS itself on your system is relatively
 uncomplicated. However, since TSNNLS is linear algebra software, it
 depends on finding a useable local installation of BLAS/LAPACK in
@@ -41,7 +43,7 @@ Here are some additional notes for various systems:
 
 OSX/Darwin
 
-At the time of this writing (Mar 2007), all OSX system with the
+At the time of this writing (Mar 2007), all OSX systems with the
 Developer Tools installed have a version of Apple's vecLib and
 Accelerate frameworks which include blas and lapack. The tsnnls
 configure script will detect Darwin systems and compile accordingly.
@@ -57,7 +59,9 @@ http://math-atlas.sourceforge.net/
 A second option is to install a precompiled version of ATLAS using
 yum. Note that under this option, both the packages "atlas" and
 "atlas-devel" must be installed for tsnnls to detect a linkable
-BLAS/LAPACK installation. 
+BLAS/LAPACK installation. Our configure script will detect the yum
+atlas headers, but we note that we have had serious problems with
+these on an Intel x86_64 system. 
 
 Other Unix systems
 
