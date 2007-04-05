@@ -17,65 +17,106 @@ Contents
 4. Supporting functions
 5. References
 
-0. 
-tsnnls is a fast solver for least-squares problems in the form Ax = b under the constraint that all entries in the solution vector x are non-negative. The solver works for the case when the matrix A has full column rank (and so there is a unique solution). The tsnnls code is primarily designed for large sparse problems, but works well for dense problems too. We designed tsnnls to be called from larger applications, and are including it in a large simulation ourselves. We would be interested to hear about your application for tsnnls-- please feel free to write to us and tell us about your uses for the code!
+0.  tsnnls is a fast solver for least-squares problems in the form Ax
+= b under the constraint that all entries in the solution vector x are
+non-negative. The solver works for the case when the matrix A has full
+column rank (and so there is a unique solution). The tsnnls code is
+primarily designed for large sparse problems, but works well for dense
+problems too. We designed tsnnls to be called from larger
+applications, and are including it in a large simulation ourselves. We
+would be interested to hear about your application for tsnnls-- please
+feel free to write to us and tell us about your uses for the code!
 
-The tsnnls library also includes a fast unconstrained least-squares solver based on the method of normal equations. For well-conditioned problems, this is a reasonable solution. For ill-conditioned problems, you are probably better off with an iterative method like the Stanford LSQR code, which is also freely available on the web.
+The tsnnls library also includes a fast unconstrained least-squares
+solver based on the method of normal equations. For well-conditioned
+problems, this is a reasonable solution. For ill-conditioned problems,
+you are probably better off with an iterative method like the Stanford
+LSQR code, which is also freely available on the web.
 
-The current implementation of tsnnls does not have direct support for multiprocessor machines. For a more complete report on tsnnls, see our paper "tsnnls: A solver for large sparse least squares problems with non-negative variables", which is available on the web from the same location as this library.
+The current implementation of tsnnls does not have direct support for
+multiprocessor machines. For a more complete report on tsnnls, see our
+paper "tsnnls: A solver for large sparse least squares problems with
+non-negative variables", which is available on the web from the same
+location as this library.
 
 
 1. Building
 
-tsnnls is designed to build out of the box on Mac OS X and x86 Linux with minimal dependencies (a usual gcc 3.x toolchain should do). To build the library, libtsnnls.a, a testing application, tsnnls_tester, and run several accuracy tests, simply type 'make' from a terminal in the tsnnls distribution directory.*IMPORTANT* - If you are having trouble integrating tsnnls into your own application due to link errors against BLAS/LAPACK, be sure that you are linking the BLAS/LAPACK libraries (as tsnnls does not include them for performance reasons) and that you are linking in the correct order. An example of link order is provided in the test target of the makefile. The proper order for our bundled libraries is: -ltsnnls -llapacklinux -lblaslinux -lf77blas -lgslcblas -latlas -lg2c -lm.
+See the file INSTALL in the main distribution directory.
 
-Although we have designed the distribution to build as easily as possible by default, significant performance gains can be achieved by tuning the build procedure for your specific platform. The computational core of tsnnls is based largely on LAPACK and BLAS library functions. On platforms other than Apple's OS X, runtime can be greatly reduced by using tuned version of BLAS and LAPACK. Build instructions for optimized versions of these libraries can be found at http://www.netlib.org/lapack/
-
-On Mac OS X, the default compilation behavior is to compile with Apple's vecLib, which includes ATLAS tuned BLAS and optimized LAPACK functions. These are already heavily optimized and are kept up to date with new hardware releases, so no external LAPACK or BLAS library is needed. We also provide an xcode project on OS X for convenience.
-
-Also note that included with our distribution is a limited version of the TAUCS package for sparse matrix manipulation. Future updates to this library may provide performance benefits for tsnnls. See http://www.tau.ac.il/~stoledo/taucs/ for information on the TAUCS library. We include source from version 2.2. A statement regarding the TAUCS license and availability information is provided in 'TAUCS_LICENSE_AND_AVAILABILITY' in the same directory as this readme.
-
+Also note that included with our distribution is a limited version of
+the TAUCS package for sparse matrix manipulation. Future updates to
+this library may provide performance benefits for tsnnls. See
+http://www.tau.ac.il/~stoledo/taucs/ for information on the TAUCS
+library. We include source from version 2.2. A statement regarding the
+TAUCS license and availability information is provided in
+'TAUCS_LICENSE_AND_AVAILABILITY' in the same directory as this readme.
 
 2. License
 
-This software is distributed under the terms of the GNU GPL. A full description of the terms of this license can be found in the file 'LICENSE' in the same directory as this readme, or the license can be read on the web at http://www.gnu.org/licenses/gpl.txt
+This software is distributed under the terms of the GNU GPL. A full
+description of the terms of this license can be found in the file
+'LICENSE' in the same directory as this readme, or the license can be
+read on the web at http://www.gnu.org/licenses/gpl.txt
 
 
 3. Quick start
 
-Once you have built the library, the main functionality is exposed through the header tsnnls.h. The functions of primary interest are:
+Once you have built the library, the main functionality is exposed
+through the header tsnnls.h. The functions of primary interest are:
 
 taucs_ccs_matrix*   
 taucs_construct_sorted_ccs_matrix( double* values, int cols, int rows );
 
-This function takes an array of double values in row major order representing a dense matrix of size rows by cols and converts it into a compressed column structure for use with our algorithm. For a complete discussion of the taucs_ccs_matrix structure, see the taucs.pdf documentation included with this package.
+This function takes an array of double values in row major order
+representing a dense matrix of size rows by cols and converts it into
+a compressed column structure for use with our algorithm. For a
+complete discussion of the taucs_ccs_matrix structure, see the
+taucs.pdf documentation included with this package.
 
-taucs_double*	
-t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings );
+taucs_double* t_snnls( taucs_ccs_matrix *A_original_ordering,
+taucs_double *b, double* outResidualNorm, double inRelErrTolerance,
+int inPrintErrorWarnings );
 
-This function solves the problem Ax = b in the least squares sense subject to the contraint that x > 0. The value returned is an array of doubles of size A->n, where A->n is the number of columns of the matrix A. b must be of size A->m where A-> is the number of rows of the matrix A. residualNorm is the 2-norm of the residual b-Ax. inRelErrTolerance is the threshold for relative error (estimated using (condition number)^2*(machine epsilon)) at which to use the more numerically sensitive LSQR algorithm (see references). If you *never* wish to use LSQR steps (for maximum speed) pass a value greater than 1 for this parameter. If you always want to perform a final LSQR step (for maximum accuracy), pass a value less than 0 for this parameter. The latter practice is recommended.
+This function solves the problem Ax = b in the least squares sense
+subject to the contraint that x > 0. The value returned is an array of
+doubles of size A->n, where A->n is the number of columns of the
+matrix A. b must be of size A->m where A-> is the number of rows of
+the matrix A. residualNorm is the 2-norm of the residual
+b-Ax. inRelErrTolerance is the threshold for relative error (estimated
+using (condition number)^2*(machine epsilon)) at which to use the more
+numerically sensitive LSQR algorithm (see references). If you *never*
+wish to use LSQR steps (for maximum speed) pass a value greater than 1
+for this parameter. If you always want to perform a final LSQR step
+(for maximum accuracy), pass a value less than 0 for this
+parameter. The latter practice is recommended.
 
-double*		
-t_lsqr(taucs_ccs_matrix *A, taucs_double *b);
+double* t_lsqr(taucs_ccs_matrix *A, taucs_double *b);
 
-This function solves the unconstrained problem Ax=b in the least squares sense using a Cholesky factorization.
+This function solves the unconstrained problem Ax=b in the least
+squares sense using a Cholesky factorization.
 
-For examples of how these functions can be used in practice, see the tsnnls test application source in the file 'tsnnls_test.c' in the same directory as this readme.
+For examples of how these functions can be used in practice, see the
+tsnnls test application source in the file 'tsnnls_test.c' in the same
+directory as this readme.
 
 
 4. Supporting functions
 
-A variety of debugging and support functions are included with tsnnls that may be useful in your application. We describe several here:
+A variety of debugging and support functions are included with tsnnls
+that may be useful in your application. We describe several here:
 
 double
 taucs_rcond( taucs_ccs_matrix* A );
 
-This function returns an estimate of the reciprocal condition number of A as computed by LAPACK.
+This function returns an estimate of the reciprocal condition number
+of A as computed by LAPACK.
 
 double*	
 taucs_convert_ccs_to_doubles( const taucs_ccs_matrix* A );
 
-This function converts a sparse matrix A to an array of doubles in row major order of size A->m*A->n.
+This function converts a sparse matrix A to an array of doubles in row
+major order of size A->m*A->n.
 
 taucs_ccs_matrix*  
 taucs_ccs_transpose( const taucs_ccs_matrix* A );
@@ -85,9 +126,11 @@ This function returns a sparse representation of the transpose of A.
 void		
 taucs_print_ccs_matrix( const taucs_ccs_matrix* A );
 
-This function prints a representation of the sparse matrix A on stdout.
+This function prints a representation of the sparse matrix A on
+stdout.
 
-See the tsnnls.h header for a complete list of functions available from the library.
+See the tsnnls.h header for a complete list of functions available
+from the library.
 
 
 5. References
@@ -111,7 +154,8 @@ Further information on the tsnnls algorithm:
   MRNUMBER = {95a:90059},
 The paper is stored on JSTOR.
 
-LSQR sparse unconstrained least squares algorithm: http://www.stanford.edu/group/SOL/software.html
+LSQR sparse unconstrained least squares algorithm:
+http://www.stanford.edu/group/SOL/software.html
 
 LAPACK and BLAS: http://www.netlib.org/lapack/
 

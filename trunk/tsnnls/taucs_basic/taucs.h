@@ -3,7 +3,7 @@
 /* Author: Sivan Toledo                                  */
 /*********************************************************/
 
-#include "taucs_config_tests.h"
+// #include "taucs_config_tests.h"
 #include "taucs_config_build.h"
 
 /*********************************************************/
@@ -810,25 +810,6 @@ extern int finite(double);
 #ifndef isinf
 extern int isinf(double);
 #endif
-
-extern int taucs_potrf(char*, int*, taucs_datatype*, int*, int*);
-extern int taucs_trsm(char *, char *, char *, char *, 
-			int*, int*, taucs_datatype*, taucs_datatype*, int *, 
-			taucs_datatype*, int *);
-extern int taucs_gemm(char *, char *, int*, int*, int *,
-			taucs_datatype*, taucs_datatype*, int *, taucs_datatype*, int *, 
-			taucs_datatype*, taucs_datatype*, int*);
-extern int taucs_herk(char *, char *, 
-		      int *, int *, 
-		      taucs_real_datatype*, 
-		      taucs_datatype*, int *, 
-		      taucs_real_datatype*, 
-		      taucs_datatype*, int *);
-
-taucs_double taucs_blas_name(dnrm2)(int*, taucs_double*, int*);
-taucs_single taucs_blas_name(snrm2)(int*, taucs_single*, int*);
-taucs_double taucs_blas_name(dznrm2)(int*, taucs_dcomplex*, int*);
-taucs_single taucs_blas_name(scnrm2)(int*, taucs_scomplex*, int*);
 
 /*********************************************************/
 /*                                                       */

@@ -67,7 +67,6 @@ case "${host_os}" in
     AC_SUBST([LAPACK_LIBS],["-framework vecLib"])
     AC_SUBST([BLAS_LIBS],[" "])
     # $FLIBS was set above by AC_F77_PROG  
-
     # How can I work around the damaged g77 on Darwin by not linking lcrt2.o?
     # By editing flibs to remove -lcrt2.o, of course!  
     # (I realize that this is a total hack.)
@@ -81,6 +80,9 @@ case "${host_os}" in
 
     #BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
     BLAS_FLAGS="-L/home/cantarel/ATLAS/lib/Linux_UNKNOWNSSE2 -I/home/cantarel/ATLAS/include"
+    AC_MSG_WARN([TEMPORARILY linking manually with ATLAS BLAS in home account. FIX ME!!!!])
+    #Should swap back in the commented line once BLAS issues are resolved on george. 
+
     LDFLAGS="$LDFLAGS $BLAS_FLAGS"
     ACX_BLAS
     if test "$acx_blas_ok" = no; then 
@@ -113,6 +115,46 @@ if test "$fname" = "unknown"; then   # Assume g77 conventions
 fi
 AC_DEFINE_UNQUOTED([DSYMV_F77],[$fname],[Name of dsymv after mangling])
 AC_MSG_CHECKING([name of dsymv after mangling])
+echo "$fname"
+
+# dgemm
+
+AC_F77_FUNC([dgemm],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dgemm_"
+fi
+AC_DEFINE_UNQUOTED([DGEMM_F77],[$fname],[Name of dgemm after mangling])
+AC_MSG_CHECKING([name of dgemm after mangling])
+echo "$fname"
+
+# dtrsm
+ 
+AC_F77_FUNC([dtrsm],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dtrsm_"
+fi
+AC_DEFINE_UNQUOTED([DTRSM_F77],[$fname],[Name of dtrsm after mangling])
+AC_MSG_CHECKING([name of dtrsm after mangling])
+echo "$fname"
+
+# dpotrf
+
+AC_F77_FUNC([dpotrf],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dpotrf_"
+fi
+AC_DEFINE_UNQUOTED([DPOTRF_F77],[$fname],[Name of dpotrf after mangling])
+AC_MSG_CHECKING([name of dpotrf after mangling])
+echo "$fname"
+
+# dnrm2
+
+AC_F77_FUNC([dnrm2],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dnrm2_"
+fi
+AC_DEFINE_UNQUOTED([DNRM2_F77],[$fname],[Name of dnrm2 after mangling])
+AC_MSG_CHECKING([name of dnrm2 after mangling])
 echo "$fname"
 
 # Checks for header files.
