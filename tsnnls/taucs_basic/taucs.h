@@ -3,7 +3,7 @@
 /* Author: Sivan Toledo                                  */
 /*********************************************************/
 
-// #include "taucs_config_tests.h"
+#include "taucs_config_tests.h"
 #include "taucs_config_build.h"
 
 /*********************************************************/
@@ -483,10 +483,13 @@ extern taucs_scomplex taucs_cminusone_const;
 #define taucs_one_real_const      taucs_done_const
 #define taucs_minusone_real_const taucs_dminusone_const
 
-#define taucs_gemm  taucs_blas_name(dgemm)
-#define taucs_potrf taucs_blas_name(dpotrf)
-#define taucs_herk  taucs_blas_name(dsyrk)
-#define taucs_trsm  taucs_blas_name(dtrsm)
+//#define taucs_gemm  taucs_blas_name(dgemm)
+//#define taucs_potrf taucs_blas_name(dpotrf)
+//#define taucs_herk  taucs_blas_name(dsyrk)
+//#define taucs_trsm  taucs_blas_name(dtrsm)
+
+// These are machine-specific and so are defined in an internal (not
+// installed) header called taucs_common.h
 #endif
 
 /*

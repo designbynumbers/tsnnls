@@ -858,7 +858,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	return x;
 }
 
-#pragma mark -
+//#pragma mark -
 
 #ifndef taucs_add
 #define taucs_add(x,y) ((x)+(y))
