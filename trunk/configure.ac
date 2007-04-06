@@ -157,9 +157,29 @@ AC_DEFINE_UNQUOTED([DNRM2_F77],[$fname],[Name of dnrm2 after mangling])
 AC_MSG_CHECKING([name of dnrm2 after mangling])
 echo "$fname"
 
+# ddot
+
+AC_F77_FUNC([ddot],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="ddot_"
+fi
+AC_DEFINE_UNQUOTED([DDOT_F77],[$fname],[Name of ddot after mangling])
+AC_MSG_CHECKING([name of ddot after mangling])
+echo "$fname"
+
+# dscal
+
+AC_F77_FUNC([dscal],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dscal_"
+fi
+AC_DEFINE_UNQUOTED([DSCAL_F77],[$fname],[Name of dscal after mangling])
+AC_MSG_CHECKING([name of dscal after mangling])
+echo "$fname"
+
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([cblas.h clapack.h atlas/cblas.h atlas/clapack.h vecLib/cblas.h vecLib/clapack.h])
+AC_CHECK_HEADERS([clapack.h atlas/clapack.h vecLib/clapack.h])
 AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
