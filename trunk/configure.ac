@@ -79,16 +79,29 @@ case "${host_os}" in
     # Gets ready to compile with weird Fortran stuff
 
     #BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
-    BLAS_FLAGS="-L/home/cantarel/ATLAS/lib/Linux_UNKNOWNSSE2 -I/home/cantarel/ATLAS/include"
-    AC_MSG_WARN([TEMPORARILY linking manually with ATLAS BLAS in home account. FIX ME!!!!])
+    #BLAS_FLAGS="-L/home/cantarel/ATLAS/lib/Linux_UNKNOWNSSE2 -I/home/cantarel/ATLAS/include"
+    #AC_MSG_WARN([TEMPORARILY linking manually with ATLAS BLAS in home account. FIX ME!!!!])
     #Should swap back in the commented line once BLAS issues are resolved on george. 
+    #LDFLAGS="$LDFLAGS $BLAS_FLAGS"
 
-    LDFLAGS="$LDFLAGS $BLAS_FLAGS"
     ACX_BLAS
     if test "$acx_blas_ok" = no; then 
-	  AC_MSG_ERROR([tsnnls requires a functional CBLAS/CLAPACK. The ATLAS project will provide these on any given system if no other is available. Configure has searched the usual locations and can't find one. You can use --with-blas=<lib> to point to a blas library in a nonstandard spot.])
+	  AC_MSG_ERROR([tsnnls requires an F77BLAS. The ATLAS project
+will provide these on any given system if no other is
+available. Configure has searched the usual locations and can't find
+one. You can use --with-blas=<lib> to point to a blas library in a
+nonstandard spot. This test may fail even if you have BLAS if you
+don't have a FORTRAN compiler (preferably g77) on your default path.])
     fi
-    ACX_LAPACK
+
+    # Now look for a full (or minimal ATLAS) lapack
+    AC_F77_FUNC(dpotrf)
+    ACX_LAPACK([],AC_CHECK_LIB([lapack],$dpotrf,[atlas_lapack=yes 
+       LAPACK_LIBS="-llapack -lcblas -lf77blas -latlas"
+       AC_DEFINE_UNQUOTED([HAVE_ATLAS_LAPACK],[1],[ATLAS (instead of full) LAPACK])
+       ],[atlas_lapack=no],[-lcblas -lf77blas -latlas $FLIBS -lm]))
+    AC_MSG_CHECKING([for minimal ATLAS lapack])
+    echo $atlas_lapack
     
   esac
 

@@ -70,6 +70,7 @@
     #ifdef HAVE_ATLAS_CLAPACK_H
       #include "atlas/clapack.h"
     #endif
+  #endif
 #endif
 
 #ifdef HAVE_STRING_H
