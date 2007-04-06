@@ -306,9 +306,10 @@ t_condest( void* mfR )
 }
 
 /*
- * This is a custom version of the TAUCS based lsqr solver for use with the t_snnls() block principle pivoting
- * function, which precomputes several values of interest to lsqr so as to not repeat their calcuation during
- * the multiple pivots which can occur.
+ * This is a custom version of the TAUCS based lsqr solver for use
+ * with the t_snnls() block principle pivoting function, which
+ * precomputes several values of interest to lsqr so as to not repeat
+ * their calcuation during the multiple pivots which can occur.
  */
 taucs_double*
 t_snnlslsqr(taucs_ccs_matrix *A,

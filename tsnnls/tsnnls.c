@@ -1,7 +1,9 @@
 
 /*
- * This program is free software distributed under the GPL. A copy of the license should have been included with this 
- * archive in a file named 'LICENSE'. You can read the license there or on the web at: http://www.gnu.org/licenses/gpl.txt
+ * This program is free software distributed under the GPL. A copy of
+ * the license should have been included with this archive in a file
+ * named 'LICENSE'. You can read the license there or on the web at:
+ * http://www.gnu.org/licenses/gpl.txt
  */
 
 #include <config.h>
@@ -896,77 +898,77 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 double
 taucs_rcond( taucs_ccs_matrix* A )
 {
-	char	NORM = '1';
-	ACINT32_TYPE	N = 0,AN = 0;     /* LAPACK expects 32 bit ints */
-	ACINT32_TYPE LDA = 0;
-	double  ANORM = 0;
-	double  RCOND = 0;
-	double* WORK = NULL;
-	ACINT32_TYPE*   IWORK = NULL;
-	ACINT32_TYPE	INFO;
-	ACINT32_TYPE*	IPIV = NULL;
-	double* lapackA = NULL;
-	
-	/* Construct LAPACK representation of A and compute the 1 norm of A */
-	int vSize;
-	int cItr, rItr;
-	//long int rowCount = A->m;
-	ACINT32_TYPE rowCount = A->m;
-
-	double localMax = 0;
-	
-	if( (A->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
+  char	NORM = '1';
+  ACINT32_TYPE	N = 0,AN = 0;     /* LAPACK expects 32 bit ints */
+  ACINT32_TYPE LDA = 0;
+  double  ANORM = 0;
+  double  RCOND = 0;
+  double* WORK = NULL;
+  ACINT32_TYPE*   IWORK = NULL;
+  ACINT32_TYPE	INFO;
+  ACINT32_TYPE*	IPIV = NULL;
+  double* lapackA = NULL;
+  
+  /* Construct LAPACK representation of A and compute the 1 norm of A */
+  int vSize;
+  int cItr, rItr;
+  //long int rowCount = A->m;
+  ACINT32_TYPE rowCount = A->m;
+  
+  double localMax = 0;
+  
+  if( (A->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
+    {
+      vSize = A->n*A->n;
+      rowCount = A->n;
+    }
+  else
+    vSize = A->m*A->n;
+  
+  lapackA = (double*)calloc(vSize,sizeof(double));
+  
+  /*lapackA = (double*)malloc(sizeof(double)*vSize);
+    bzero(lapackA, sizeof(double)*vSize); */
+  
+  for( cItr=0; cItr<A->n; cItr++ )
+    {
+      localMax = 0;
+      for( rItr=A->colptr[cItr]; rItr<A->colptr[cItr+1]; rItr++ )
 	{
-		vSize = A->n*A->n;
-		rowCount = A->n;
+	  int index = -1;
+	  index = A->rowind[rItr] + cItr*rowCount;
+	  if( index > vSize )
+	    {
+	      fprintf( stderr, "Rcond memory error!\n" );
+	      exit(-1);
+	    }
+	  lapackA[index] = A->values.d[rItr];
+	  localMax += fabs(A->values.d[rItr]);
 	}
-	else
-		vSize = A->m*A->n;
-	
-	lapackA = (double*)calloc(vSize,sizeof(double));
-	
-	/*lapackA = (double*)malloc(sizeof(double)*vSize);
-	  bzero(lapackA, sizeof(double)*vSize); */
-		
-	for( cItr=0; cItr<A->n; cItr++ )
-	{
-		localMax = 0;
-		for( rItr=A->colptr[cItr]; rItr<A->colptr[cItr+1]; rItr++ )
-		{
-			int index = -1;
-			index = A->rowind[rItr] + cItr*rowCount;
-			if( index > vSize )
-			{
-				fprintf( stderr, "Rcond memory error!\n" );
-				exit(-1);
-			}
-			lapackA[index] = A->values.d[rItr];
-			localMax += fabs(A->values.d[rItr]);
-		}
-		if( localMax > ANORM )
-			ANORM = localMax;
-	}
-
-	NORM = '1';
-	N = A->n;
-	AN = A->n;
-	LDA = A->m;
-	RCOND = 0;
-	WORK = (double*)malloc(sizeof(double)*4*N);
-	IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
-	INFO = 0;
-
-	IPIV = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*min(rowCount, A->n));
-	
-	dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
-	dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
-
-	free(IPIV);
-	free(IWORK);
-	free(WORK);
-	free(lapackA);
-
-	return RCOND;
+      if( localMax > ANORM )
+	ANORM = localMax;
+    }
+  
+  NORM = '1';
+  N = A->n;
+  AN = A->n;
+  LDA = A->m;
+  RCOND = 0;
+  WORK = (double*)malloc(sizeof(double)*4*N);
+  IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
+  INFO = 0;
+  
+  IPIV = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*min(rowCount, A->n));
+  
+  dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
+  dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
+  
+  free(IPIV);
+  free(IWORK);
+  free(WORK);
+  free(lapackA);
+  
+  return RCOND;
 }
 
 void
