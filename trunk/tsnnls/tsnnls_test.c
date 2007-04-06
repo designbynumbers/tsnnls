@@ -42,7 +42,6 @@
 
 #include "lsqr.h"
 #include "tsnnls.h"
-#include "tsnnls_blas_wrappers.h"
 
 //#ifdef HAVE_CBLAS_H
 //  #include <cblas.h>
@@ -66,8 +65,11 @@
   #include "clapack.h"
 #else
   #ifdef HAVE_VECLIB_CLAPACK_H
-    #include "clapack.h"
-  #endif
+    #include "vecLib/clapack.h"
+  #else
+    #ifdef HAVE_ATLAS_CLAPACK_H
+      #include "atlas/clapack.h"
+    #endif
 #endif
 
 #ifdef HAVE_STRING_H
@@ -93,6 +95,8 @@
 #ifdef HAVE_FLOAT_H
   #include <float.h>
 #endif 
+
+#include "tsnnls_blas_wrappers.h"
 
 #ifdef WITH_DMALLOC
   #include <dmalloc.h>
