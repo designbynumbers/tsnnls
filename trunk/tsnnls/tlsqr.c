@@ -7,6 +7,7 @@
  */
 
 #include <config.h>
+#include "tsnnls_blas_wrappers.h"
 
 #ifdef HAVE_STRING_H
   #include <string.h>
@@ -93,27 +94,32 @@ taucs_dotcols( const taucs_ccs_matrix* A, int col1, int col2 )
 }
 
 /* 
- * This routine computes A'*A for full A. This is useful for comparing sparse/nonsparse
- * performance to determine if your problem can benefit from a different representation.
- * It is left in the archive as a convenience
+ * This routine computes A'*A for full A. This is useful for comparing
+ * sparse/nonsparse performance to determine if your problem can
+ * benefit from a different representation.  It is left in the archive
+ * as a convenience
  */
 double* 
 full_aprime_times_a( double* A, int rows, int cols )
 {
-	int rItr, cItr, colOffset;
-	double* result = (double*)calloc(cols*cols, sizeof(double));
-  		
-	colOffset = 0;
-			
-	for( cItr=0; cItr<cols; cItr++ )
-	{
-		for( rItr=cItr; rItr<cols; rItr++ )
-		{
-			result[rItr*cols + cItr] = cblas_ddot( rows, &A[cItr], cols, &A[rItr], cols );
-		}
-	}
-  	
-	return result;
+  int rItr, cItr, colOffset;
+  double* result = (double*)calloc(cols*cols, sizeof(double));
+  int incX,incY,N;
+
+  colOffset = 0;
+  N = rows; 
+  incX = incY = cols;
+  
+  for( cItr=0; cItr<cols; cItr++ )  {
+    for( rItr=cItr; rItr<cols; rItr++ ) {
+      //result[rItr*cols + cItr] = cblas_ddot( rows, &A[cItr], 
+      //                                       cols, &A[rItr], cols );
+      result[rItr*cols + cItr] = DDOT_F77(&N, &A[cItr], &incX, 
+			                  &A[rItr], &incY);
+    }
+  }
+  
+  return result;
 }
 
 /* 
@@ -203,100 +209,100 @@ taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
 static void
 ccs_to_lapack( taucs_ccs_matrix* L, double** lapackL, int* N, int* LDA, double* ANORM )
 {	
-	/* Construct LAPACK representation of A and compute the 1 norm of A */
-	int vSize;
-	int cItr, rItr;
-	int rowCount = L->m;
-	double localMax = 0;
+  /* Construct LAPACK representation of A and compute the 1 norm of A */
+  int vSize;
+  int cItr, rItr;
+  int rowCount = L->m;
+  double localMax = 0;
+  
+  *ANORM = 0;
+  
+  if( (L->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
+    {
+      vSize = L->n*L->n;
+      rowCount = L->n;
+    }
+  else
+    vSize = L->m*L->n;
 	
-	*ANORM = 0;
-	
-	if( (L->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
+  *lapackL = (double*)calloc(vSize,sizeof(double));
+  
+  for( cItr=0; cItr<L->n; cItr++ )
+    {
+      localMax = 0;
+      for( rItr=L->colptr[cItr]; rItr<L->colptr[cItr+1]; rItr++ )
 	{
-		vSize = L->n*L->n;
-		rowCount = L->n;
+	  int index = -1;
+	  index = L->rowind[rItr] + cItr*rowCount;
+	  (*lapackL)[index] = L->values.d[rItr];
+	  localMax += fabs(L->values.d[rItr]);
 	}
-	else
-		vSize = L->m*L->n;
-	
-	*lapackL = (double*)calloc(vSize,sizeof(double));
-		
-	for( cItr=0; cItr<L->n; cItr++ )
-	{
-		localMax = 0;
-		for( rItr=L->colptr[cItr]; rItr<L->colptr[cItr+1]; rItr++ )
-		{
-			int index = -1;
-			index = L->rowind[rItr] + cItr*rowCount;
-			(*lapackL)[index] = L->values.d[rItr];
-			localMax += fabs(L->values.d[rItr]);
-		}
-		if( localMax > *ANORM )
-			*ANORM = localMax;
-	}
-	
-	*N = L->n;
-	*LDA = rowCount;
+      if( localMax > *ANORM )
+	*ANORM = localMax;
+    }
+  
+  *N = L->n;
+  *LDA = rowCount;
 }
 
 static double
 t_condest( void* mfR )
 {
-	taucs_ccs_matrix* L;
-	double* lapackL;
-	ACINT32_TYPE N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
-	char	UPLO;
-	double  ANORM = 0;
-	double* WORK;
-	ACINT32_TYPE *IWORK;
-	double  RCOND;
-	
-	L = taucs_supernodal_factor_to_ccs(mfR);
-	
-	/* Construct LAPACK representation of A and compute the 1 norm of A */
-	int vSize;
-	int cItr, rItr;
-	int rowCount = L->m;
-	double localMax = 0;
-	
-	if( (L->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
-	{
-		vSize = L->n*L->n;
-		rowCount = L->n;
+  taucs_ccs_matrix* L;
+  double* lapackL;
+  ACINT32_TYPE N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
+  char	UPLO;
+  double  ANORM = 0;
+  double* WORK;
+  ACINT32_TYPE *IWORK;
+  double  RCOND;
+  
+  L = taucs_supernodal_factor_to_ccs(mfR);
+  
+  /* Construct LAPACK representation of A and compute the 1 norm of A */
+  int vSize;
+  int cItr, rItr;
+  int rowCount = L->m;
+  double localMax = 0;
+  
+  if( (L->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
+    {
+      vSize = L->n*L->n;
+      rowCount = L->n;
 	}
-	else
-		vSize = L->m*L->n;
-	
-	lapackL = (double*)calloc(vSize,sizeof(double));
-		
-	for( cItr=0; cItr<L->n; cItr++ )
+  else
+    vSize = L->m*L->n;
+  
+  lapackL = (double*)calloc(vSize,sizeof(double));
+  
+  for( cItr=0; cItr<L->n; cItr++ )
+    {
+      localMax = 0;
+      for( rItr=L->colptr[cItr]; rItr<L->colptr[cItr+1]; rItr++ )
 	{
-		localMax = 0;
-		for( rItr=L->colptr[cItr]; rItr<L->colptr[cItr+1]; rItr++ )
-		{
-			int index = -1;
-			index = L->rowind[rItr] + cItr*rowCount;
-			lapackL[index] = L->values.d[rItr];
-			localMax += fabs(L->values.d[rItr]);
-		}
-		if( localMax > ANORM )
-			ANORM = localMax;
+	  int index = -1;
+	  index = L->rowind[rItr] + cItr*rowCount;
+	  lapackL[index] = L->values.d[rItr];
+	  localMax += fabs(L->values.d[rItr]);
 	}
-
-	N = L->n;
-	LDA = L->m;
-	UPLO = 'L';
-	WORK = (double*)malloc(sizeof(double)*3*N);
-	IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
-	
-	dpocon_( &UPLO, &N, lapackL, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
-		
-	free(WORK);
-	free(IWORK);
-	taucs_ccs_free(L);
-	free(lapackL);
-	
-	return RCOND;
+      if( localMax > ANORM )
+	ANORM = localMax;
+    }
+  
+  N = L->n;
+  LDA = L->m;
+  UPLO = 'L';
+  WORK = (double*)malloc(sizeof(double)*3*N);
+  IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
+  
+  dpocon_( &UPLO, &N, lapackL, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
+  
+  free(WORK);
+  free(IWORK);
+  taucs_ccs_free(L);
+  free(lapackL);
+  
+  return RCOND;
 }
 
 /*
@@ -306,106 +312,120 @@ t_condest( void* mfR )
  */
 taucs_double*
 t_snnlslsqr(taucs_ccs_matrix *A,
-			taucs_double *b, 
-			taucs_ccs_matrix* ApA, 
-			int* F,
-			double* outRcond )
+	    taucs_double *b, 
+	    taucs_ccs_matrix* ApA, 
+	    int* F,
+	    double* outRcond )
 {
-	taucs_ccs_matrix	*ApAperm;
-	void				*Apb /*n x 1*/, *ApAx /*n x 1*/, *x /* n x 1 */, *Itstep /*n x 1*/; 
-	double				*x_unscrambled;
-	void				*mfR; /* The Cholesky factor R, stored by TAUCS. */
-	int					*perm, *invperm;
-	char				*ordering;
+  taucs_ccs_matrix   *ApAperm;
+  void *Apb /*n x 1*/, \
+    *ApAx /*n x 1*/, \
+    *x /* n x 1 */, \
+    *Itstep /*n x 1*/; 
+  double	   *x_unscrambled;
+  void		   *mfR; /* The Cholesky factor R, stored by TAUCS. */
+  int		   *perm, *invperm;
+  char		   *ordering;
+  
+  ordering = getenv("COL_ORDERING");
+  if( ordering == NULL )
+    {
+      /* use amd ordering if the user hasn't specified anything else */
+      setenv("COL_ORDERING", "amd", 0);
+      ordering = getenv("COL_ORDERING");
+    }
+  taucs_ccs_order(ApA, &perm, &invperm, ordering);
+  ApAperm = taucs_ccs_permute_symmetrically(ApA, perm, invperm);
+  
+  Apb = calloc(A->m, sizeof(taucs_double));
+  
+  mfR = taucs_ccs_factor_llt_mf(ApAperm);
+  if( mfR == NULL )
+    {
+      // free the memory we've allocated so far and return
+      taucs_ccs_free(ApAperm);
+      free(Apb);
+      free(perm);
+      free(invperm);
+      return NULL;
+    }
+  
+  if( outRcond != NULL )
+    *outRcond = t_condest(mfR);
+  
+  /* We now solve the first equation: x = R\(A'*A*b). */
+  x = calloc(A->n,sizeof(taucs_double));
+  
+  taucs_transpose_vec_times_matrix_nosub(b, A, Apb);
+  // we have to permute A'b to be meaningful.
+  {
+    double* apbperm = Apb;
+    Apb = malloc(sizeof(double)*A->n);
+    taucs_vec_permute(A->n, TAUCS_DOUBLE, apbperm, Apb, perm);
+    free(apbperm);
+  }
+  
+  taucs_supernodal_solve_llt(mfR,x,Apb);  /* n x n * n x 1 = n x 1 */
+  
+  /* Given the base solution, we now update it by refinement. */
+  ApAx = (taucs_double*)malloc(sizeof(double)*A->n);
+  Itstep = calloc(A->n,sizeof(taucs_double)); 
 	
-	ordering = getenv("COL_ORDERING");
-	if( ordering == NULL )
-	{
-		/* use amd ordering if the user hasn't specified anything else */
-		setenv("COL_ORDERING", "amd", 0);
-		ordering = getenv("COL_ORDERING");
-	}
-	taucs_ccs_order(ApA, &perm, &invperm, ordering);
-	ApAperm = taucs_ccs_permute_symmetrically(ApA, perm, invperm);
+  double* scratch = (double*)malloc(sizeof(double)*ApAperm->n);
+  memcpy(scratch, Apb, sizeof(double)*ApAperm->n);
+  
+  ourtaucs_ccs_times_vec(ApAperm,x,ApAx);  /* n x n * n x 1 = n * 1. */
 
-	Apb = calloc(A->m, sizeof(taucs_double));
+  double alpha = {-1.0};
+  int    incX = {1},incY = {1};
 
-	mfR = taucs_ccs_factor_llt_mf(ApAperm);
-	if( mfR == NULL )
-	{
-		// free the memory we've allocated so far and return
-		taucs_ccs_free(ApAperm);
-		free(Apb);
-		free(perm);
-		free(invperm);
-		return NULL;
-	}
-	
-    if( outRcond != NULL )
-		*outRcond = t_condest(mfR);
-	
-	/* We now solve the first equation: x = R\(A'*A*b). */
-	x = calloc(A->n,sizeof(taucs_double));
-	
-	taucs_transpose_vec_times_matrix_nosub(b, A, Apb);
-	// we have to permute A'b to be meaningful.
-	{
-		double* apbperm = Apb;
-		Apb = malloc(sizeof(double)*A->n);
-		taucs_vec_permute(A->n, TAUCS_DOUBLE, apbperm, Apb, perm);
-		free(apbperm);
-	}
-	
-	taucs_supernodal_solve_llt(mfR,x,Apb);  /* n x n * n x 1 = n x 1 */
+  //cblas_daxpy(A->n,-1.0,(double *)(ApAx),1,(double *)(scratch),1); 
+  /* Apb = Apb - ApAx */
+  DAXPY_F77(&(A->n),&alpha,(double *)(ApAx),&incX,(double *)(scratch),&incY);
 
-	/* Given the base solution, we now update it by refinement. */
-	ApAx = (taucs_double*)malloc(sizeof(double)*A->n);
-	Itstep = calloc(A->n,sizeof(taucs_double)); 
-	
-	double* scratch = (double*)malloc(sizeof(double)*ApAperm->n);
-		
-	memcpy(scratch, Apb, sizeof(double)*ApAperm->n);
-	
-	ourtaucs_ccs_times_vec(ApAperm,x,ApAx);  /* n x n * n x 1 = n * 1. */
-	cblas_daxpy(A->n,-1.0,(double *)(ApAx),1,(double *)(scratch),1); /* Apb = Apb - ApAx */
-	//refinementEps = cblas_dnrm2(A->n, scratch, 1);
-	taucs_supernodal_solve_llt(mfR,Itstep,scratch);                 /* Itstep = R\Apb. */
-	cblas_daxpy(A->n,1.0,(double *)(Itstep),1,(double *)(x),1);  /* x = x + Itstep */
-			
-	free(scratch);
-	free(Itstep);
-	free(ApAx);
+  //refinementEps = cblas_dnrm2(A->n, scratch, 1);
+  taucs_supernodal_solve_llt(mfR,Itstep,scratch); /* Itstep = R\Apb. */
 
-	/* We now have a solution, but must clean up the memory we allocated
-	 * and unscramble x 
-	 */
-	x_unscrambled = malloc(sizeof(double)*ApA->n);
-	taucs_vec_permute(ApA->n, TAUCS_DOUBLE, x, x_unscrambled, invperm);
-
-	taucs_ccs_free(ApAperm);
-	free(Apb); 
-	free(perm);
-	free(invperm);
-	free(x);
-	taucs_supernodal_factor_free(mfR);
-
-	return x_unscrambled;
+  alpha = 1.0;
+  //cblas_daxpy(A->n,1.0,(double *)(Itstep),1,(double *)(x),1);  
+  DAXPY_F77(&(A->n),&alpha,(double *)(Itstep),&incX,(double *)(x),&incY);
+  /* x = x + Itstep */
+  
+  free(scratch);
+  free(Itstep);
+  free(ApAx);
+  
+  /* We now have a solution, but must clean up the memory we allocated
+   * and unscramble x 
+   */
+  x_unscrambled = malloc(sizeof(double)*ApA->n);
+  taucs_vec_permute(ApA->n, TAUCS_DOUBLE, x, x_unscrambled, invperm);
+  
+  taucs_ccs_free(ApAperm);
+  free(Apb); 
+  free(perm);
+  free(invperm);
+  free(x);
+  taucs_supernodal_factor_free(mfR);
+  
+  return x_unscrambled;
 }
 
 taucs_double*
 t_lsqr(taucs_ccs_matrix *A, taucs_double *b)
 {
-	int *F;
-	int i;
-	double* x;
-	taucs_ccs_matrix* apda;
-	F = malloc(sizeof(int)*A->n);
-	for( i=0; i<A->n; i++ )
-		F[i] = i;
-	apda = taucs_ccs_aprime_times_a(A);
-	x = t_snnlslsqr(A, b, apda, F, NULL);
-	taucs_ccs_free(apda);
-	free(F);
-	
-	return x;
+  int *F;
+  int i;
+  double* x;
+  taucs_ccs_matrix* apda;
+
+  F = malloc(sizeof(int)*A->n);
+  for( i=0; i<A->n; i++ )
+    F[i] = i;
+  apda = taucs_ccs_aprime_times_a(A);
+  x = t_snnlslsqr(A, b, apda, F, NULL);
+  taucs_ccs_free(apda);
+  free(F);
+  
+  return x;
 }

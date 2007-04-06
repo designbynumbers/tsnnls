@@ -6,6 +6,8 @@
 
 #include <config.h>
 
+#include "tsnnls_blas_wrappers.h"
+
 #ifdef HAVE_STRING_H
   #include <string.h>
 #endif
@@ -21,17 +23,17 @@
 //  #include "gsl_cblas.h"
 //#endif 
 
-#ifdef HAVE_CBLAS_H
-  #include <cblas.h>
-#else
-  #ifdef HAVE_ATLAS_CBLAS_H
-     #include <atlas/cblas.h>
-  #else
-     #ifdef HAVE_VECLIB_CBLAS_H
-       #include <vecLib/cblas.h>
-     #endif
-  #endif
-#endif
+//#ifdef HAVE_CBLAS_H
+//  #include <cblas.h>
+//#else
+//  #ifdef HAVE_ATLAS_CBLAS_H
+//     #include <atlas/cblas.h>
+//  #else
+//     #ifdef HAVE_VECLIB_CBLAS_H
+//       #include <vecLib/cblas.h>
+//     #endif
+//  #endif
+//#endif
 
 #ifdef HAVE_CLAPACK_H
   #include <clapack.h>
@@ -491,371 +493,395 @@ taucs_double*
 t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
 	 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
 {
-	taucs_ccs_matrix  *Af;
-	int               p, ninf, pbar = {3};
-	int               m,n,i, maxSize;
-	
-	int				A_rows, A_cols;
-
-	int              *F, *G, *H1, *H2, SCR[1];
-	int              sizeF, sizeG, sizeH1, sizeH2, sizeSCR = {1};
-	int				lsqrStep=0;
-	double			rcond=1;
-
-	/* These variables are subsets of the column indices of the matrix A, 
-	 * always stored in sorted order, and sized by the corresponding
-	 * "size" integers. 
-	 * 
-	 * Like the row indices themselves, they are 0-based. 
-	 */
-	taucs_double     *x,*y, *xf_raw = NULL, *yg_raw, *residual;
+  taucs_ccs_matrix  *Af;
+  int               p, ninf, pbar = {3};
+  int               m,n,i, maxSize;
   
-	int AprimeDotA_cols;
-
-	taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
-	taucs_ccs_matrix*   lsqrApA;
-	
-	/* create a copy of AprimeDotA memory wise to store the tlsqr submatrices */
-	{
-		lsqrApA = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
-		lsqrApA->n = AprimeDotA->n;
-		lsqrApA->flags = TAUCS_DOUBLE;
-		lsqrApA->flags = lsqrApA->flags | TAUCS_SYMMETRIC;
-		lsqrApA->flags = lsqrApA->flags | TAUCS_LOWER; // rep the lower half
-		lsqrApA->colptr = (int*)malloc(sizeof(int)*(lsqrApA->n+1));
-		/* This is the number of nonzeros in A'*A, which we cannot overflow with a submatrix */
-		maxSize = AprimeDotA->colptr[AprimeDotA->n]; 
-		lsqrApA->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
-		lsqrApA->rowind = (int*)malloc(sizeof(int)*maxSize);
-	}
-	
-	if( inRelErrTolerance <= 0 )
-		lsqrStep = 1;
-	
-	A_rows = A_original_ordering->m;
-	A_cols = A_original_ordering->n;
-		
-	AprimeDotA_cols = A_cols;
-
-	m = A_original_ordering->m;
-	n = A_original_ordering->n;
-	
-	// This initial values is suggested by PJV
-	ninf = n+1;
+  int				A_rows, A_cols;
   
-	/* We first allocate space. */
-	F   = calloc(n,sizeof(int));
-	G   = calloc(n,sizeof(int));
-	H1  = calloc(n,sizeof(int));
-	H2  = calloc(n,sizeof(int));
-
-	x   = calloc(n,sizeof(taucs_double));
-	y   = calloc(m,sizeof(taucs_double));
-
-	/* submatrix allocation actually takes bit of time during profiling, so we reuse
-	 * an allocation that cannot be overflowed by submatrices. Note that
-	 * A_original_ordering->colptr[A_original_ordering->n] is the number of
-	 * nonzero entries in A
-	 */
-	Af = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
-	Af->colptr = (int*)malloc(sizeof(int)*(A_cols+1));
-	Af->rowind = (int*)malloc(sizeof(int)*(A_original_ordering->colptr[A_original_ordering->n]));
-	Af->values.d = (double*)malloc(sizeof(double)*A_original_ordering->colptr[A_original_ordering->n]);
-
-	/* Next we initialize variables. */
-	for(i=0;i<n;i++) 
-	{
-		G[i] = i;
-	}
-	sizeF = 0; sizeG = n;  
-	p = pbar;
-
-	/* Set y = A'b, which is the same as y=b'A. We perform that computation as it is faster */
-//	transpose_vec_times_matrix(b, A, G, A_original_ordering->n, A_original_ordering->m, A_original_ordering->n, y);
-	taucs_transpose_vec_times_matrix(b, A_original_ordering, G, A_cols, y);
+  int              *F, *G, *H1, *H2, SCR[1];
+  int              sizeF, sizeG, sizeH1, sizeH2, sizeSCR = {1};
+  int				lsqrStep=0;
+  double			rcond=1;
   
-	cblas_dscal(n,-1.0,y,1);      /* Scalar multiply y *= -1. */
-
+  /* These variables are subsets of the column indices of the matrix A, 
+   * always stored in sorted order, and sized by the corresponding
+   * "size" integers. 
+   * 
+   * Like the row indices themselves, they are 0-based. 
+   */
+  taucs_double     *x,*y, *xf_raw = NULL, *yg_raw, *residual;
+  
+  int AprimeDotA_cols;
+  
+  taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
+  taucs_ccs_matrix*   lsqrApA;
+  
+  /* create a copy of AprimeDotA memory wise to store the tlsqr submatrices */
+  {
+    lsqrApA = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+    lsqrApA->n = AprimeDotA->n;
+    lsqrApA->flags = TAUCS_DOUBLE;
+    lsqrApA->flags = lsqrApA->flags | TAUCS_SYMMETRIC;
+    lsqrApA->flags = lsqrApA->flags | TAUCS_LOWER; // rep the lower half
+    lsqrApA->colptr = (int*)malloc(sizeof(int)*(lsqrApA->n+1));
+    /* This is the number of nonzeros in A'*A, which we cannot overflow with a submatrix */
+    maxSize = AprimeDotA->colptr[AprimeDotA->n]; 
+    lsqrApA->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
+    lsqrApA->rowind = (int*)malloc(sizeof(int)*maxSize);
+  }
+  
+  if( inRelErrTolerance <= 0 )
+    lsqrStep = 1;
+  
+  A_rows = A_original_ordering->m;
+  A_cols = A_original_ordering->n;
+  
+  AprimeDotA_cols = A_cols;
+  
+  m = A_original_ordering->m;
+  n = A_original_ordering->n;
+  
+  // This initial values is suggested by PJV
+  ninf = n+1;
+  
+  /* We first allocate space. */
+  F   = calloc(n,sizeof(int));
+  G   = calloc(n,sizeof(int));
+  H1  = calloc(n,sizeof(int));
+  H2  = calloc(n,sizeof(int));
+  
+  x   = calloc(n,sizeof(taucs_double));
+  y   = calloc(m,sizeof(taucs_double));
+  
+  /* submatrix allocation actually takes bit of time during profiling,
+   * so we reuse an allocation that cannot be overflowed by
+   * submatrices. Note that
+   * A_original_ordering->colptr[A_original_ordering->n] is the number
+   * of nonzero entries in A
+   */
+  Af = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+  Af->colptr = (int*)malloc(sizeof(int)*(A_cols+1));
+  Af->rowind = (int*)malloc(sizeof(int)*(A_original_ordering->colptr[A_original_ordering->n]));
+  Af->values.d = (double*)malloc(sizeof(double)*A_original_ordering->colptr[A_original_ordering->n]);
+  
+  /* Next we initialize variables. */
+  for(i=0;i<n;i++) 
+    {
+      G[i] = i;
+    }
+  sizeF = 0; sizeG = n;  
+  p = pbar;
+  
+  /* Set y = A'b, which is the same as y=b'A. We perform that computation as it is faster */
+  //	transpose_vec_times_matrix(b, A, G, A_original_ordering->n, A_original_ordering->m, A_original_ordering->n, y);
+  taucs_transpose_vec_times_matrix(b, A_original_ordering, G, A_cols, y);
+  
+  int incY = {1};
+  double alpha = {-1.0};
+  
+  //cblas_dscal(n,-1.0,y,1);      /* Scalar multiply y *= -1. */
+  DSCAL_F77(&n,&alpha,y,&incY);
+  
   /* Now we enter the main loop. */
-	infeasible(F,x,sizeF,H1,&sizeH1);  
-	infeasible(G,y,sizeG,H2,&sizeH2);
-
-	for( ; sizeH1 > 0 || sizeH2 > 0 ;
-		infeasible(F,x,sizeF,H1,&sizeH1),  
-		infeasible(G,y,sizeG,H2,&sizeH2)  ) 
-	{
-		
-
-		/* We found infeasible variables. We're going to swap them 
-		   between F and G according to one of the schemes below. */
-
-		if (sizeH1 + sizeH2 < ninf) 
-		{  
-			/* The number of infeasibles _decreased_ since the last try. */
-			/* This is good. We reset the counters and swap all infeasibles. */
-			ninf = sizeH1 + sizeH2;
-			p = pbar;
-
-			int_union(F,sizeF,H2,sizeH2,&sizeF);
-			int_difference(F,sizeF,H1,sizeH1,&sizeF);
-
-			int_union(G,sizeG,H1,sizeH1,&sizeG);
-			int_difference(G,sizeG,H2,sizeH2,&sizeG);
-		} 
-		else 
-		{  
-			if( p > 0 ) 
-			{  
-				/* Things didn't go well last time-- we _increased_ the number */
-				/* of infeasibles. But we haven't run out of chances yet, so   */
-				/* we'll decrement the counter, and try the large swap again.  */
-				p--;
-
-				int_union(F,sizeF,H2,sizeH2,&sizeF);
-				int_difference(F,sizeF,H1,sizeH1,&sizeF);
-
-				int_union(G,sizeG,H1,sizeH1,&sizeG);
-				int_difference(G,sizeG,H2,sizeH2,&sizeG);
-			} /* (p>0) */
-			else 
-			{
-				/* Real trouble. Large swaps aren't reducing the number of     */
-				/* infeasibles, even after pbar tries. So this time, we'll     */
-				/* revert to the slower "Murty's Method", and move only one    */
-				/* guy-- the guy with the highest column index. */
-				
-				if( sizeH1 > 0 && sizeH2 > 0 )
-				{
-					if ( H1[sizeH1 - 1] > H2[sizeH2 - 1] ) 
-					{  
-						/* H1 contains the last column index. */
-
-						SCR[0] = H1[sizeH1-1];
-						
-						int_difference(F,sizeF,SCR,sizeSCR,&sizeF);
-						int_union(G,sizeG,SCR,sizeSCR,&sizeG);
-					} 
-					else 
-					{
-						/* H2 contains the last column index. */
-
-						SCR[0] = H2[sizeH2-1];
-						
-						int_union(F,sizeF,SCR,sizeSCR,&sizeF);
-						int_difference(G,sizeG,SCR,sizeSCR,&sizeG);
-					}
-				}
-				else if( sizeH1 == 0 )
-				{
-					SCR[0] = H2[sizeH2-1];
-					
-					int_union(F,sizeF,SCR,sizeSCR,&sizeF);
-					int_difference(G,sizeG,SCR,sizeSCR,&sizeG);
-				}
-				else
-				{
-					SCR[0] = H1[sizeH1-1];
-
-					int_difference(F,sizeF,SCR,sizeSCR,&sizeF);
-					int_union(G,sizeG,SCR,sizeSCR,&sizeG);
-				}		
-				/* p is still 0, and will remain so until we start making */
-				/* progress at reducing the number of infeasibilities. */
-			} /* else (p>0) */
-		} /* else (sizeH1 + sizeH2 < ninf) */
-
-		/* We have now altered F and G, and are ready to recompute everything. */
-		/* We first clear x and y, since we won't need them anymore. */
-		for(i=0;i<n;i++) 
-		{ 
-			x[i] = y[i] = 0.0; 
-		}
-		
-		/* 
-		 *
-		 * By (7) in PJV, x_F should be the solution of the unconstrained
-		 * least squares problem:
-		 * 
-		 * min || A_F x_F - b ||,
-		 * 
-		 * where A_F is the submatrix of A containing the columns of A 
-		 * with column indices in F. 
-		 * 
-		 * And by (8) in PJV, the y_F should be (A_G)'*(A_F x_F - b). 
-		 * 
-		 * We first solve the lsqr problem.
-		 * 
-		 */
-		taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
-		
-		if( sizeF != 0 )
-		{
-			/* we compute these values based on selections based on F since it's faster
-			 * than recalculating them in lsqr. This requires the use of a custom lsqr 
-			 * solver that expects extra parameters from snnls, however.
-			 */
-				
-			selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
-						
-			xf_raw = NULL;
-			if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
-				xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
-			else
-			{
-				xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, &rcond );
-				if( (1/rcond)*(1/rcond)*__DBL_EPSILON__ < inRelErrTolerance )
-					lsqrStep = 1;
-			}
-			if( xf_raw == NULL )
-				return NULL; // matrix probably not positive definite
-																		
-			/* taucs_snnls requires us to handle in some way the case where values
-			 * returned from lsqr that are within error tolerance of zero get continually
-			 * swapped between x and y because our comparison to zero is numerically more 
-			 * precise in the infeasibles computation. In order to terminate, we must 
-			 * handle this case. For our usage of snnls, it is most efficient to simply
-			 * zero values within some epsilon of zero as returned from lsqr, but this 
-			 * solution may not be the best for all possible applications.
-			 */
-			fix_zeros(xf_raw, Af->n, rcond, inPrintErrorWarnings);
-			
-			/* Now compute the residual A_F x_F - b. This is an m-vector. */
-			residual = (taucs_double *)calloc(m,sizeof(taucs_double));
-			ourtaucs_ccs_times_vec(Af,xf_raw,residual);
-		}
-		else
-		{	  
-			/* 
-			 * if sizeF is 0, the meaning of residual changes (since there really is _no_ matrix),
-			 * so we'll just set the residual to -b, but we still need a zeroed residual to do
-			 * the below computation to make that happen, which calloc does here
-			 */
-			residual = (taucs_double *)calloc(m,sizeof(taucs_double));
-		}
-		
-		cblas_daxpy(m,-1.0,b, 1, residual, 1);
-		
-		/* We now compute (A_G)'. */
-		/* And finally take (A_G)'*residual. This is a sizeG-vector. */
-		yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
-
-		/* 
-		 * We now should compute (A_G)', and take (A_G)'*residual, but 
-		 * A_G'*residual = residual'*A_G, and that's faster. 
-		 * taucs_transpose_vec_times_matrix also incorporates the 
-		 * selection of columns of G from which to form A_G so that 
-		 * we do not have to incur the computational expense of creating
-		 * a submatrix.
-		 */
-		taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
-		
-		fix_zeros(yg_raw, sizeG, rcond, inPrintErrorWarnings);
-
-		/* We're now done. It remains to scatter the entries in xf_raw
-		 * and yg_raw over the x and y vectors, and free everything that
-		 * we can manage to free. 
-		 */
-
-		#ifdef HAVE_MEMSET
-
-		  memset(x,0,sizeof(double)*n);
-		  memset(y,0,sizeof(double)*n);
-
-                #else  /* Work around it. */
-		  
-		  for(i=0;i<n;i++) { x[i] = 0; y[i] = 0; }
-
-		#endif
-
-		/* This was done with bzero, but that was scratched for 
-		   portability reasons. */
-
-		/* bzero(x, sizeof(double)*n); Scratched bzero calls for portability */
-		/* bzero(y, sizeof(double)*n); */
-
-		for(i=0;i<sizeF;i++) 
-		{ 
-			x[F[i]] = xf_raw[i]; 
-		}
-		for(i=0;i<sizeG;i++) 
-		{ 
-			y[G[i]] = yg_raw[i]; 
-		}
-
-		free(yg_raw);
-		if( sizeF != 0 )
-		{
-			free(xf_raw);
-		}
-		free(residual);
-
-		sizeH1 = sizeH2 = 0;
-	} // for
-	
-	if( lsqrStep != 0 )
-	{
-		lsqr_input   *lsqr_in;
-		lsqr_output  *lsqr_out;
-		lsqr_work    *lsqr_work;
-		lsqr_func    *lsqr_func;
-		int bItr;
-						
-		alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, Af->m, Af->n );
-		
-		/* we let lsqr() itself handle the 0 values in this structure */
-		lsqr_in->num_rows = Af->m;
-		lsqr_in->num_cols = Af->n;
-		lsqr_in->damp_val = 0;
-		lsqr_in->rel_mat_err = 0;
-		lsqr_in->rel_rhs_err = 0;
-		lsqr_in->cond_lim = 1e16;
-		lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
-		lsqr_in->lsqr_fp_out = NULL;	
-		for( bItr=0; bItr<Af->m; bItr++ )
-		{
-			lsqr_in->rhs_vec->elements[bItr] = b[bItr];
-		}
-		/* Here we set the initial solution vector guess, which is 
-		 * a simple 1-vector. You might want to adjust this value for fine-tuning
-		 * t_snnls() for your application
-		 */
-		for( bItr=0; bItr<Af->n; bItr++ )
-		{
-			lsqr_in->sol_vec->elements[bItr] = 1; 
-		}
-		
-		/* This is a function pointer to the matrix-vector multiplier */
-		lsqr_func->mat_vec_prod = sparse_lsqr_mult;
-		
-		lsqr( lsqr_in, lsqr_out, lsqr_work, lsqr_func, Af );
-		
-		for( bItr=0; bItr<Af->n; bItr++ ) // not really bItr here, but hey
-			x[F[bItr]] = lsqr_out->sol_vec->elements[bItr];
-		
-		free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
-	}
-	
-	if( outResidualNorm != NULL )
-	{
-		double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
-		ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
-		cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
-		*outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
-		free(finalresidual);
-	}
-
-	/* We conclude with a little more memory freeing. */
-	taucs_ccs_free(Af);
-	free(F); 
-	free(G);     
-	free(H1); 
-	free(H2);
-	taucs_ccs_free(AprimeDotA);
-	taucs_ccs_free(lsqrApA);
+  infeasible(F,x,sizeF,H1,&sizeH1);  
+  infeasible(G,y,sizeG,H2,&sizeH2);
   
-	free(y);
+  for( ; sizeH1 > 0 || sizeH2 > 0 ;
+       infeasible(F,x,sizeF,H1,&sizeH1),  
+	 infeasible(G,y,sizeG,H2,&sizeH2)  ) 
+    {
+      
+      
+      /* We found infeasible variables. We're going to swap them 
+	 between F and G according to one of the schemes below. */
+      
+      if (sizeH1 + sizeH2 < ninf) 
+	{  
+	  /* The number of infeasibles _decreased_ since the last try. */
+	  /* This is good. We reset the counters and swap all infeasibles. */
+	  ninf = sizeH1 + sizeH2;
+	  p = pbar;
+	  
+	  int_union(F,sizeF,H2,sizeH2,&sizeF);
+	  int_difference(F,sizeF,H1,sizeH1,&sizeF);
+	  
+	  int_union(G,sizeG,H1,sizeH1,&sizeG);
+	  int_difference(G,sizeG,H2,sizeH2,&sizeG);
+	} 
+      else 
+	{  
+	  if( p > 0 ) 
+	    {  
+	      /* Things didn't go well last time-- we _increased_ the number */
+	      /* of infeasibles. But we haven't run out of chances yet, so   */
+	      /* we'll decrement the counter, and try the large swap again.  */
+	      p--;
+	      
+	      int_union(F,sizeF,H2,sizeH2,&sizeF);
+	      int_difference(F,sizeF,H1,sizeH1,&sizeF);
+	      
+	      int_union(G,sizeG,H1,sizeH1,&sizeG);
+	      int_difference(G,sizeG,H2,sizeH2,&sizeG);
+			} /* (p>0) */
+	  else 
+	    {
+	      /* Real trouble. Large swaps aren't reducing the number of     */
+	      /* infeasibles, even after pbar tries. So this time, we'll     */
+	      /* revert to the slower "Murty's Method", and move only one    */
+	      /* guy-- the guy with the highest column index. */
+	      
+	      if( sizeH1 > 0 && sizeH2 > 0 )
+		{
+		  if ( H1[sizeH1 - 1] > H2[sizeH2 - 1] ) 
+		    {  
+		      /* H1 contains the last column index. */
 
-	return x;
+		      SCR[0] = H1[sizeH1-1];
+		      
+		      int_difference(F,sizeF,SCR,sizeSCR,&sizeF);
+		      int_union(G,sizeG,SCR,sizeSCR,&sizeG);
+		    } 
+		  else 
+		    {
+		      /* H2 contains the last column index. */
+		      
+		      SCR[0] = H2[sizeH2-1];
+						
+		      int_union(F,sizeF,SCR,sizeSCR,&sizeF);
+		      int_difference(G,sizeG,SCR,sizeSCR,&sizeG);
+		    }
+		}
+	      else if( sizeH1 == 0 )
+		{
+		  SCR[0] = H2[sizeH2-1];
+		  
+		  int_union(F,sizeF,SCR,sizeSCR,&sizeF);
+		  int_difference(G,sizeG,SCR,sizeSCR,&sizeG);
+		}
+	      else
+		{
+		  SCR[0] = H1[sizeH1-1];
+		  
+		  int_difference(F,sizeF,SCR,sizeSCR,&sizeF);
+		  int_union(G,sizeG,SCR,sizeSCR,&sizeG);
+				}		
+	      /* p is still 0, and will remain so until we start making */
+	      /* progress at reducing the number of infeasibilities. */
+	    } /* else (p>0) */
+	} /* else (sizeH1 + sizeH2 < ninf) */
+      
+      /* We have now altered F and G, and are ready to recompute everything. */
+      /* We first clear x and y, since we won't need them anymore. */
+      for(i=0;i<n;i++) 
+	{ 
+	  x[i] = y[i] = 0.0; 
+	}
+      
+      /* 
+       *
+       * By (7) in PJV, x_F should be the solution of the unconstrained
+       * least squares problem:
+       * 
+       * min || A_F x_F - b ||,
+       * 
+       * where A_F is the submatrix of A containing the columns of A 
+       * with column indices in F. 
+       * 
+       * And by (8) in PJV, the y_F should be (A_G)'*(A_F x_F - b). 
+       * 
+       * We first solve the lsqr problem.
+       * 
+       */
+      taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
+      
+      if( sizeF != 0 )
+	{
+	  /* we compute these values based on selections based on F
+	   * since it's faster than recalculating them in lsqr. This
+	   * requires the use of a custom lsqr solver that expects
+	   * extra parameters from snnls, however.
+	   */
+	  
+	  selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
+	  
+	  xf_raw = NULL;
+	  if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
+	    xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
+	  else
+	    {
+	      xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, &rcond );
+	      if( (1/rcond)*(1/rcond)*__DBL_EPSILON__ < inRelErrTolerance )
+		lsqrStep = 1;
+	    }
+	  if( xf_raw == NULL )
+	    return NULL; // matrix probably not positive definite
+	  
+	  /* taucs_snnls requires us to handle in some
+	   * way the case where values returned from
+	   * lsqr that are within error tolerance of
+	   * zero get continually swapped between x and
+	   * y because our comparison to zero is
+	   * numerically more precise in the infeasibles
+	   * computation. In order to terminate, we must
+	   * handle this case. For our usage of snnls,
+	   * it is most efficient to simply zero values
+	   * within some epsilon of zero as returned
+	   * from lsqr, but this solution may not be the
+	   * best for all possible applications.
+	   */
+	  fix_zeros(xf_raw, Af->n, rcond, inPrintErrorWarnings);
+	  
+	  /* Now compute the residual A_F x_F - b. This is an m-vector. */
+	  residual = (taucs_double *)calloc(m,sizeof(taucs_double));
+	  ourtaucs_ccs_times_vec(Af,xf_raw,residual);
+	}
+      else
+	{	  
+	  /* 
+	   * if sizeF is 0, the meaning of residual changes (since
+	   * there really is _no_ matrix), so we'll just set the
+	   * residual to -b, but we still need a zeroed residual to do
+	   * the below computation to make that happen, which calloc
+	   * does here
+	   */
+	  residual = (taucs_double *)calloc(m,sizeof(taucs_double));
+	}
+      
+      double alpha = {-1.0};
+      int incX = {1}, incY = {1};
+      
+      //cblas_daxpy(m,-1.0,b, 1, residual, 1);
+      DAXPY_F77(&m,&alpha,b,&incX,residual,&incY);
+      
+      /* We now compute (A_G)'. */
+      /* And finally take (A_G)'*residual. This is a sizeG-vector. */
+      yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
+      
+      /* 
+       * We now should compute (A_G)', and take (A_G)'*residual, but 
+       * A_G'*residual = residual'*A_G, and that's faster. 
+       * taucs_transpose_vec_times_matrix also incorporates the 
+       * selection of columns of G from which to form A_G so that 
+       * we do not have to incur the computational expense of creating
+       * a submatrix.
+       */
+      taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
+      
+      fix_zeros(yg_raw, sizeG, rcond, inPrintErrorWarnings);
+      
+      /* We're now done. It remains to scatter the entries in xf_raw
+       * and yg_raw over the x and y vectors, and free everything that
+       * we can manage to free. 
+       */
+      
+#ifdef HAVE_MEMSET
+      
+      memset(x,0,sizeof(double)*n);
+      memset(y,0,sizeof(double)*n);
+      
+#else  /* Work around it. */
+      
+      for(i=0;i<n;i++) { x[i] = 0; y[i] = 0; }
+      
+#endif
+
+      /* This was done with bzero, but that was scratched for 
+	 portability reasons. */
+      
+      /* bzero(x, sizeof(double)*n); Scratched bzero calls for portability */
+      /* bzero(y, sizeof(double)*n); */
+      
+      for(i=0;i<sizeF;i++) 
+	{ 
+	  x[F[i]] = xf_raw[i]; 
+	}
+      for(i=0;i<sizeG;i++) 
+	{ 
+	  y[G[i]] = yg_raw[i]; 
+	}
+      
+      free(yg_raw);
+      if( sizeF != 0 )
+	{
+	  free(xf_raw);
+	}
+      free(residual);
+
+      sizeH1 = sizeH2 = 0;
+    } // for
+  
+  if( lsqrStep != 0 )
+    {
+      lsqr_input   *lsqr_in;
+      lsqr_output  *lsqr_out;
+      lsqr_work    *lsqr_work;
+      lsqr_func    *lsqr_func;
+      int bItr;
+      
+      alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, Af->m, Af->n );
+      
+      /* we let lsqr() itself handle the 0 values in this structure */
+      lsqr_in->num_rows = Af->m;
+      lsqr_in->num_cols = Af->n;
+      lsqr_in->damp_val = 0;
+      lsqr_in->rel_mat_err = 0;
+      lsqr_in->rel_rhs_err = 0;
+      lsqr_in->cond_lim = 1e16;
+      lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
+      lsqr_in->lsqr_fp_out = NULL;	
+      for( bItr=0; bItr<Af->m; bItr++ )
+	{
+	  lsqr_in->rhs_vec->elements[bItr] = b[bItr];
+	}
+      /* Here we set the initial solution vector guess, which is 
+       * a simple 1-vector. You might want to adjust this value for fine-tuning
+       * t_snnls() for your application
+       */
+      for( bItr=0; bItr<Af->n; bItr++ )
+	{
+	  lsqr_in->sol_vec->elements[bItr] = 1; 
+	}
+      
+      /* This is a function pointer to the matrix-vector multiplier */
+      lsqr_func->mat_vec_prod = sparse_lsqr_mult;
+      
+      lsqr( lsqr_in, lsqr_out, lsqr_work, lsqr_func, Af );
+      
+      for( bItr=0; bItr<Af->n; bItr++ ) // not really bItr here, but hey
+	x[F[bItr]] = lsqr_out->sol_vec->elements[bItr];
+		
+      free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
+    }
+  
+  if( outResidualNorm != NULL )
+    {
+      double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
+      ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
+
+      //cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
+      int incX;
+      alpha = -1; incX = 1; incY = 1; 
+      DAXPY_F77(&m,&alpha,b,&incX,finalresidual,&incY);
+
+      //*outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
+      *outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
+
+      free(finalresidual);
+    }
+  
+  /* We conclude with a little more memory freeing. */
+  taucs_ccs_free(Af);
+  free(F); 
+  free(G);     
+  free(H1); 
+  free(H2);
+  taucs_ccs_free(AprimeDotA);
+  taucs_ccs_free(lsqrApA);
+  
+  free(y);
+  
+  return x;
 }
 
 //#pragma mark -
@@ -944,12 +970,23 @@ taucs_rcond( taucs_ccs_matrix* A )
 }
 
 void
-transpose_vec_times_matrix(double* b, double* A, int* F, int A_cols, int rows, int cols, double* result)
+transpose_vec_times_matrix(double* b, double* A, int* F, int A_cols, \
+			   int rows, int cols, double* result)
 {
-	// result = b'*A
-	int cItr;
-	for( cItr=0; cItr<cols; cItr++ )
-		result[cItr] = cblas_ddot( rows, b, 1, &A[F[cItr]], A_cols );
+  // result = b'*A
+  int cItr;
+  int incX = {1};
+  int incY;
+  int N;
+
+  N = rows;
+  incY = A_cols;
+
+  for( cItr=0; cItr<cols; cItr++ ) {
+   
+    //result[cItr] = cblas_ddot( rows, b, 1, &A[F[cItr]], A_cols );
+    result[cItr] = DDOT_F77(&N,b,&incX,&A[F[cItr]],&incY); 
+  }
 }
 
 // here cols doubles for sizeF, since F is a selection of columns from A
@@ -972,25 +1009,32 @@ taucs_transpose_vec_times_matrix(double* b, taucs_ccs_matrix* A, int* F, int col
 void
 transpose_vec_times_matrix_nosub(double* b, double* A, int A_cols, int rows, double* result)
 {
-	// result = b'*A
-	int cItr;
-	for( cItr=0; cItr<A_cols; cItr++ )
-		result[cItr] = cblas_ddot( rows, b, 1, &A[cItr], A_cols );
+  // result = b'*A
+  int cItr;
+  int N;
+  int incX = {1}, incY;
+
+  N = rows; incY = A_cols;
+
+  for( cItr=0; cItr<A_cols; cItr++ ) {
+    //result[cItr] = cblas_ddot( rows, b, 1, &A[cItr], A_cols );
+    result[cItr] = DDOT_F77(&N,b,&incX,&A[cItr],&incY);
+  }
 }
 
 void
 taucs_transpose_vec_times_matrix_nosub(double* b, taucs_ccs_matrix* A, double* result)
 {
-	int cItr, rItr;
-	for( cItr=0; cItr<A->n; cItr++ )
+  int cItr, rItr;
+  for( cItr=0; cItr<A->n; cItr++ )
+    {
+      result[cItr] = 0;
+      for( rItr=0; rItr<A->colptr[cItr+1]-A->colptr[cItr]; rItr++ )
 	{
-		result[cItr] = 0;
-		for( rItr=0; rItr<A->colptr[cItr+1]-A->colptr[cItr]; rItr++ )
-		{
-			int tRow = A->rowind[A->colptr[cItr] + rItr];
-			result[cItr] += b[tRow] * A->values.d[A->colptr[cItr] + rItr];
-		}
+	  int tRow = A->rowind[A->colptr[cItr] + rItr];
+	  result[cItr] += b[tRow] * A->values.d[A->colptr[cItr] + rItr];
 	}
+    }
 }
 
 void
