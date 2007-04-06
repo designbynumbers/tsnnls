@@ -10,6 +10,7 @@ installation on this system is functional.
 */
 
 #include <config.h>
+#include "tsnnls_blas_wrappers.h"
 
 #ifdef HAVE_MATH_H
   #include <math.h>
@@ -34,17 +35,6 @@ extern "C" /* Avoid C++ name mangling */
 //#define DAXPY_F77 F77_FUNC (daxpy,DAXPY)
 //#define DSYMV_F77 F77_FUNC (dsymv,DSYMV)
 //#define DSYRK_F77 F77_FUNC (dsyrk,DSYRK)
-
-extern void DAXPY_F77(int *N,double *alpha,double *vecX, \
-		      int *incX,double *vecY,int *incY);
-
-extern void DSYMV_F77(char *uplo,int *N,double *alpha, \
-		      double *matA, int *lda, double *vecX, int *incX, \
-		      double *beta, double *vecY, int *incY);
-
-extern void DSYRK_F77(char *uplo,char *trans,int *N,int *K, \
-		      double *alpha, double *matA, int *ldA, \
-		      double *beta, double *matC, int *ldC);
 
 #define VECLEN 1024
 #define MATDIM 73

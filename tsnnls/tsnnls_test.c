@@ -42,24 +42,33 @@
 
 #include "lsqr.h"
 #include "tsnnls.h"
+#include "tsnnls_blas_wrappers.h"
 
-#ifdef HAVE_CBLAS_H
-  #include <cblas.h>
-#else
-  #ifdef HAVE_VECLIB_CBLAS_H
-    #include <vecLib/cblas.h>
-  #else
-    #ifdef HAVE_ATLAS_CBLAS_H
-      #include <atlas/cblas.h>
-    #endif
-  #endif
-#endif
+//#ifdef HAVE_CBLAS_H
+//  #include <cblas.h>
+//#else
+//  #ifdef HAVE_VECLIB_CBLAS_H
+//    #include <vecLib/cblas.h>
+//  #else
+//    #ifdef HAVE_ATLAS_CBLAS_H
+//      #include <atlas/cblas.h>
+//    #endif
+//  #endif
+//#endif
 
 //#ifdef HAVE_DARWIN          /* We use the Apple BLAS/LAPACK if possible. */
 // #include <vecLib/vBLAS.h>
 //#else
 // #include "tsnnls/gsl_cblas.h"
 //#endif 
+
+#ifdef HAVE_CLAPACK_H
+  #include "clapack.h"
+#else
+  #ifdef HAVE_VECLIB_CLAPACK_H
+    #include "clapack.h"
+  #endif
+#endif
 
 #ifdef HAVE_STRING_H
   #include <string.h>
@@ -313,8 +322,12 @@ taucs_snnls_test(FILE* fp)
 	  for( xItr=0; xItr<Accs->n; xItr++ )
 	    diff[xItr] = realx[xItr] - x[xItr];
 	  
-	  err = cblas_dnrm2( Accs->n, diff, 1 );
-	  err /= cblas_dnrm2( Accs->n, realx, 1 );
+	  int incX = {1};
+	  //err = cblas_dnrm2( Accs->n, diff, 1 );
+	  //err /= cblas_dnrm2( Accs->n, realx, 1 );
+
+	  err = DNRM2_F77(&(Accs->n),diff,&incX);
+	  err /= DNRM2_F77(&(Accs->n),realx,&incX);
 	  
 	  /* Expected relative error given from theory is approx. cond^2*eps */
 	  expectedError = taucs_rcond(Accs);
@@ -394,9 +407,13 @@ taucs_tlsqr_test(FILE* fp)
 	    diff[xItr] = realx[xItr] - x[xItr];
 	  
 	  double err = 0;
+	  int incX = {1};
 	  
-	  err = cblas_dnrm2( Accs->n, diff, 1 );
-	  err /= cblas_dnrm2( Accs->n, realx, 1 );
+	  //err = cblas_dnrm2( Accs->n, diff, 1 );
+	  //err /= cblas_dnrm2( Accs->n, realx, 1 );
+
+	  err = DNRM2_F77(&(Accs->n),diff,&incX);
+	  err /= DNRM2_F77(&(Accs->n),realx,&incX);
 	  
 	  /* Expected relative error given from theory is approx. cond^2*eps */
 	  expectedError = ((double)1.0/taucs_rcond(Accs));
