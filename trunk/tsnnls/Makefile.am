@@ -33,6 +33,7 @@ check_PROGRAMS = tsnnls_test f77blas_test
 tsnnls_test_SOURCES = tsnnls_test.c
 tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
+#nodist_PROGRAMS = cblas_test
 #cblas_test_SOURCES = cblas_test.c
 #cblas_test_LDFLAGS = $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS) 
 

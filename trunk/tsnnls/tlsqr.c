@@ -41,6 +41,7 @@
 #endif
 
 #include "acint32_type.h"
+#include "lsqr.h"
 #include "tsnnls.h"
 
 #ifdef WITH_DMALLOC
@@ -145,7 +146,7 @@ taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
   result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
   
   currentSize = A->colptr[A->n]*2; // start with the number of entries in A*2 and see if we need more
-  result->values.d = (double*)malloc(sizeof(taucs_double)*currentSize);
+  result->values.d = (double*)calloc(sizeof(taucs_double),currentSize); // Changed to track down UIval bug
   result->rowind = (int*)malloc(sizeof(int)*currentSize);
   
   colOffset = 0;
@@ -158,51 +159,44 @@ taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
   // int* Arowptrs = A->rowind;
   // int stopPoint, interiorStopPoint;
   
-  for( cItr=0; cItr<Acols; cItr++ )
-    {
-      colptrs[cItr] = colOffset;
+  for( cItr=0; cItr<Acols; cItr++ ) {
+    
+    colptrs[cItr] = colOffset;
+    
+    for( rItr=cItr; rItr<Acols; rItr++ ) {
+      v = taucs_dotcols(A,cItr,rItr);
       
-      for( rItr=cItr; rItr<Acols; rItr++ )
-	{
-	  v = taucs_dotcols(A,cItr,rItr);
+      if( v == 0.0 ) {
+	continue;
+      }
+      else {
+	valsPtr[colOffset] = v;
+	rowptrs[colOffset] = rItr;
+	colOffset++;
+	
+	if( colOffset < currentSize )
+	  continue;
+	else {
+	  /* we need to increase our allocation size.  */
+	  newSize = 2*currentSize;
+	  int* newRows = (int*)realloc(rowptrs, sizeof(int)*newSize);
+	  double* newVals = (double*)realloc(valsPtr, sizeof(double)*newSize);
 	  
-	  if( v == 0.0 )
-	    {
-	      continue;
-	    }
-	  else
-	    {
-	      valsPtr[colOffset] = v;
-	      rowptrs[colOffset] = rItr;
-	      colOffset++;
-	      
-	      if( colOffset < currentSize )
-		continue;
-	      else
-		{
-		  /* we need to increase our allocation size.  */
-		  newSize = 2*currentSize;
-		  int* newRows = (int*)realloc(rowptrs, sizeof(int)*newSize);
-		  double* newVals = (double*)realloc(valsPtr, sizeof(double)*newSize);
-		  
-		  currentSize = newSize;
-		  
-		  if( newRows == NULL || newVals == NULL )
-		    {
-		      fprintf( stderr, "tsnnls: Out of memory!\n" );
-		    }
-		  
-		  result->values.d = newVals;
-		  valsPtr = newVals;
-		  result->rowind = newRows;
-		  rowptrs = newRows;
-		}
-	    }
+	  currentSize = newSize;
+	  
+	  if( newRows == NULL || newVals == NULL ) {
+	    fprintf( stderr, "tsnnls: Out of memory!\n" );
+	  }
+	  
+	  result->values.d = newVals;
+	  valsPtr = newVals;
+	  result->rowind = newRows;
+	  rowptrs = newRows;
 	}
+      }
     }
-  colptrs[cItr] = colOffset;
-  
-  
+  }
+  colptrs[cItr] = colOffset; 
   return result;
 }
 
@@ -248,6 +242,10 @@ ccs_to_lapack( taucs_ccs_matrix* L, double** lapackL, int* N, int* LDA, double* 
 static double
 t_condest( void* mfR )
 {
+  #ifndef HAVE_ATLAS_LAPACK 
+
+  /* If we have a full LAPACK available, use dpocon to estimate condition number. */
+  
   taucs_ccs_matrix* L;
   double* lapackL;
   ACINT32_TYPE N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
@@ -303,6 +301,61 @@ t_condest( void* mfR )
   free(lapackL);
   
   return RCOND;
+
+  #else 
+
+  /* We have only a limited ATLAS LAPACK available, which doesn't include the condition
+     number estimating code. We can still get a condition number estimate from lsqr. */
+ 
+  taucs_ccs_matrix *A;
+
+  lsqr_input   *lsqr_in;
+  lsqr_output  *lsqr_out;
+  lsqr_work    *lsqr_work;
+  lsqr_func    *lsqr_func;
+  int bItr;
+  
+  double        cond;
+
+  extern void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
+
+  A = taucs_supernodal_factor_to_ccs(mfR);  
+  alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, A->m, A->n );
+  
+  /* we let lsqr() itself handle the 0 values in this structure */
+  lsqr_in->num_rows = A->m;
+  lsqr_in->num_cols = A->n;
+  lsqr_in->damp_val = 0;
+  lsqr_in->rel_mat_err = 0;
+  lsqr_in->rel_rhs_err = 0;
+  lsqr_in->cond_lim = 1e16;
+  lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
+  lsqr_in->lsqr_fp_out = NULL;	
+  
+  for( bItr=0; bItr<A->m; bItr++ )
+    {
+      lsqr_in->rhs_vec->elements[bItr] = 1;  /* We will solve Ax = [1 1 .... 1]^T. */
+    }
+  /* Here we set the initial solution vector guess, which is 
+   * a simple 1-vector. You might want to adjust this value for fine-tuning
+   * t_snnls() for your application
+   */
+  for( bItr=0; bItr<A->n; bItr++ ) {
+    lsqr_in->sol_vec->elements[bItr] = 1; 
+  }
+  
+  /* This is a function pointer to the matrix-vector multiplier */
+  lsqr_func->mat_vec_prod = sparse_lsqr_mult;
+  
+  lsqr( lsqr_in, lsqr_out, lsqr_work, lsqr_func, A );  
+  cond = lsqr_out->mat_cond_num;
+  
+  free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
+  taucs_ccs_free(A);
+  
+  return cond;
+
+  #endif
 }
 
 /*
