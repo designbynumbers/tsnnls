@@ -898,6 +898,12 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 double
 taucs_rcond( taucs_ccs_matrix* A )
 {
+  #ifndef HAVE_ATLAS_LAPACK 
+
+  /* We have two different versions of this function. In this version,
+     we have a full LAPACK, so we use dgecon and dpocon to get the
+     job done. */
+  
   char	NORM = '1';
   ACINT32_TYPE	N = 0,AN = 0;     /* LAPACK expects 32 bit ints */
   ACINT32_TYPE LDA = 0;
@@ -969,6 +975,55 @@ taucs_rcond( taucs_ccs_matrix* A )
   free(lapackA);
   
   return RCOND;
+
+  #else 
+
+  /* We have only a limited ATLAS LAPACK available. In this case, we use lsqr to 
+     estimate the condition number of A. */
+  
+  lsqr_input   *lsqr_in;
+  lsqr_output  *lsqr_out;
+  lsqr_work    *lsqr_work;
+  lsqr_func    *lsqr_func;
+  int bItr;
+  
+  double        rcond;
+  
+  alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, A->m, A->n );
+  
+  /* we let lsqr() itself handle the 0 values in this structure */
+  lsqr_in->num_rows = A->m;
+  lsqr_in->num_cols = A->n;
+  lsqr_in->damp_val = 0;
+  lsqr_in->rel_mat_err = 0;
+  lsqr_in->rel_rhs_err = 0;
+  lsqr_in->cond_lim = 1e16;
+  lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
+  lsqr_in->lsqr_fp_out = NULL;	
+  
+  for( bItr=0; bItr<A->m; bItr++ )
+    {
+      lsqr_in->rhs_vec->elements[bItr] = 1;  /* We will solve Ax = [1 1 .... 1]^T. */
+    }
+  /* Here we set the initial solution vector guess, which is 
+   * a simple 1-vector. You might want to adjust this value for fine-tuning
+   * t_snnls() for your application
+   */
+  for( bItr=0; bItr<A->n; bItr++ ) {
+    lsqr_in->sol_vec->elements[bItr] = 1; 
+  }
+  
+  /* This is a function pointer to the matrix-vector multiplier */
+  lsqr_func->mat_vec_prod = sparse_lsqr_mult;
+  
+  lsqr( lsqr_in, lsqr_out, lsqr_work, lsqr_func, A );  
+  rcond = 1/lsqr_out->mat_cond_num;
+  
+  free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
+  
+  return rcond;
+  
+#endif
 }
 
 void

@@ -149,8 +149,8 @@ read_sparsetp( FILE* fp, taucs_ccs_matrix** outMatrix, double** b, double** x )
   
   result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
   result->rowind = (int*)malloc(sizeof(int)*nnz);
-  result->values.d = (double*)malloc(sizeof(double)*nnz);
-  
+  result->values.d = (double*)malloc(sizeof(double)*nnz);  
+   
   vals = (double*)calloc(nnz,sizeof(double));
   colels = (double**)calloc(result->n,sizeof(double*));
   colrows = (int**)calloc(result->n,sizeof(int*));
