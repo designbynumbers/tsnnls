@@ -13,8 +13,19 @@
 void* taucs_malloc_stub (size_t size)               { return malloc(size); }
 void* taucs_calloc_stub (size_t nmemb, size_t size) { return calloc(nmemb,size); }
 void* taucs_realloc_stub(void* ptr, size_t size)    { return realloc(ptr,size); }
-// we set ptr to NULL to work around a double-free bug in TAUCS that is easiest to manage this way
-void  taucs_free_stub   (void* ptr)                 { free(ptr); ptr = NULL; }
+// we set ptr to NULL to work around a double-free bug in TAUCS that
+// is easiest to manage this way
+// Unfortunately, freeing a NULL pointer is dangerous on many Unix systems,
+// so I modified this to check for NULL before freeing. --JC
+
+void  taucs_free_stub   (void* ptr)           
+{ 
+  if (ptr != NULL) {
+    
+    free(ptr); ptr = NULL; 
+    
+  }
+}
 
 #if !defined(TAUCS_MEMORY_TEST_yes)
 
