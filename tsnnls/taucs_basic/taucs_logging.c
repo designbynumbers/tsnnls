@@ -10,13 +10,14 @@
 #include <math.h>
 #include <stdarg.h>
 
+#ifndef OSTYPE_win32
+#include <unistd.h>
+#endif
+
 #define TAUCS_CORE
 #include "taucs.h"
 #include "taucs_common.h"
 
-#ifndef OSTYPE_win32
-#include <unistd.h>
-#endif
 
 /*********************************************************/
 /* logging                                               */
