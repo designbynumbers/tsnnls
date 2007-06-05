@@ -17,12 +17,24 @@
   #include <float.h>
 #endif 
 
-#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
-  #include <vecLib/vBLAS.h>
-  #include <vecLib/clapack.h>
-#else
-  #include "gsl_cblas.h"
-#endif 
+//#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
+//  #include <vecLib/vBLAS.h>
+//  #include <vecLib/clapack.h>
+//#else
+//  #include "gsl_cblas.h"
+//#endif 
+
+#ifdef HAVE_CLAPACK_H
+  #include <clapack.h>
+#else 
+  #ifdef HAVE_ATLAS_CLAPACK_H
+     #include <atlas/clapack.h>
+  #else
+     #ifdef HAVE_VECLIB_CLAPACK_H
+       #include <vecLib/clapack.h>
+     #endif
+  #endif
+#endif
 
 #ifdef HAVE_MATH_H
   #include <math.h>
