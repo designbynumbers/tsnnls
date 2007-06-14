@@ -103,6 +103,14 @@
 
 */
 
+void tsnnls_version( char *version, size_t strlen) {
+  if (version == NULL) {
+    printf("tsnnls Version: %s\n",PACKAGE_VERSION);
+  } else {
+    (void)snprintf(version,strlen,PACKAGE_VERSION);
+  }
+}
+
 void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
 
 
