@@ -307,6 +307,7 @@ taucs_snnls_test(FILE* fp)
 	 * step with LSQR. 
 	 */
 	x = t_snnls(Accs, b, &residual, 0.0, 0 );
+	// x = t_block3(Accs, b, &residual, 0.0, 0 );
 	
 	ttime = end_clock();
 	

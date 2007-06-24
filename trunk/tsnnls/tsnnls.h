@@ -106,6 +106,11 @@ extern "C" {
 			       double inRelErrTolerance, 
 			       int inPrintErrorWarnings );
 
+  taucs_double*	      t_block3( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
+			       double* outResidualNorm, 
+			       double inRelErrTolerance, 
+			       int inPrintErrorWarnings );
+
 /* Utility Functions for CCS matrices */
 void taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, 
 			  const int inColCount, taucs_ccs_matrix* result);

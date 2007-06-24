@@ -894,6 +894,531 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   return x;
 }
 
+
+/* This comparison function is needed for qsort, it does descending */
+int
+compare_taucs_doubles (const void *a, const void *b)
+{
+  const taucs_double *da = (const taucs_double *) a;
+  const taucs_double *db = (const taucs_double *) b;
+  
+  return (*da < *db) - (*da > *db);
+}
+
+
+
+// This is an implementation of the block3 algorithm due to Adlers
+// See http://citeseer.ist.psu.edu/385071.html
+// Sparse Least Squares Problems with Box Constraints
+// by  Mikael Adlers
+// The supposed advantage of the block3 algorithm over the t_snnls
+// algorithm is that block3 is suppose to avoid cycling behavior.
+
+taucs_double*
+t_block3( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
+	 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
+{
+  taucs_ccs_matrix  *Af;
+  int               m,n,i, maxSize;
+  int              A_cols;
+  int              *F, *G, *H1, *H2;
+  int              sizeF, sizeG, sizeH1, sizeH2;
+  int				lsqrStep=0;
+  double			rcond=1;
+
+
+  taucs_double *p;
+  taucs_double *alpha;
+  double qofx, qofxplusalphap;
+  double bb;
+
+  // these are just to speed up some stuff below ever so slightly
+  taucs_double tmp;
+  int itmp;
+
+  // I suppose one could double use incTmp and alphadog, but it 
+  // shouldn't make much of a difference
+  double incTmp = {-1.0};
+  int incX = {1}, incY = {1};
+  double alphadog = {-1.0};
+  int alphaItr = {0};
+
+  /* These variables are subsets of the column indices of the matrix A, 
+   * always stored in sorted order, and sized by the corresponding
+   * "size" integers. 
+   * 
+   * Like the row indices themselves, they are 0-based. 
+   */
+  taucs_double     *x, *y, *xf_raw = NULL, *yg_raw, *residual;
+  taucs_double *Apb, *ApAx, *xplusalphap;
+  
+  int AprimeDotA_cols;
+  
+  taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
+  taucs_ccs_matrix*   lsqrApA;
+  
+  /* create a copy of AprimeDotA memory wise to store the tlsqr submatrices */
+  {
+    lsqrApA = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+    lsqrApA->n = AprimeDotA->n;
+    lsqrApA->flags = TAUCS_DOUBLE;
+    lsqrApA->flags = lsqrApA->flags | TAUCS_SYMMETRIC;
+    lsqrApA->flags = lsqrApA->flags | TAUCS_LOWER; // rep the lower half
+    lsqrApA->colptr = (int*)malloc(sizeof(int)*(lsqrApA->n+1));
+    /* This is the number of nonzeros in A'*A, which we cannot overflow with a submatrix */
+    maxSize = AprimeDotA->colptr[AprimeDotA->n]; 
+    lsqrApA->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
+    lsqrApA->rowind = (int*)malloc(sizeof(int)*maxSize);
+  }
+  
+  if( inRelErrTolerance <= 0.0 )
+    lsqrStep = 1;
+  
+  // A_rows = A_original_ordering->m;
+  A_cols = A_original_ordering->n;
+  
+  AprimeDotA_cols = A_cols;
+  
+  m = A_original_ordering->m;
+  n = A_original_ordering->n;
+  
+  /* We first allocate space. */
+  F   = calloc(n,sizeof(int));
+  G   = calloc(n,sizeof(int));
+  H1  = calloc(n,sizeof(int));
+  H2  = calloc(n,sizeof(int));
+  
+  x    = calloc(n,sizeof(taucs_double));
+  y    = calloc(m,sizeof(taucs_double));
+  Apb  = calloc(n,sizeof(taucs_double));
+  ApAx  = calloc(n,sizeof(taucs_double));
+  xplusalphap  = calloc(n,sizeof(taucs_double));
+  p = calloc(n,sizeof(taucs_double));
+  alpha = calloc(n,sizeof(taucs_double));
+
+
+  /* submatrix allocation actually takes bit of time during profiling,
+   * so we reuse an allocation that cannot be overflowed by
+   * submatrices. Note that
+   * A_original_ordering->colptr[A_original_ordering->n] is the number
+   * of nonzero entries in A
+   */
+  Af = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+  Af->colptr = (int*)malloc(sizeof(int)*(A_cols+1));
+  Af->rowind = (int*)malloc(sizeof(int)*(A_original_ordering->colptr[A_original_ordering->n]));
+  Af->values.d = (double*)malloc(sizeof(double)*A_original_ordering->colptr[A_original_ordering->n]);
+  
+  /* Next we initialize variables, Adlers suggests starting with everything
+     in the free set.*/
+#ifdef HAVE_MEMSET
+      
+  memset(x,0,sizeof(taucs_double)*n);
+  for(i=0; i<n; i++){
+    F[i] = i;
+  }
+      
+#else  /* Work around it. */
+      
+  for(i=0;i<n;i++){ 
+    x[i] = 0.0;
+    F[i] = i;
+  }
+  
+#endif
+
+  sizeG = 0; sizeF = n;  
+  
+  /* here we'll precompute A'b since we have F filled up with
+     all of the columns */
+  /* Set y = A'b, which is the same as y=b'A. We perform that 
+     computation as it is faster */
+  taucs_transpose_vec_times_matrix(b,A_original_ordering, F, n, Apb);
+
+  
+  int gflag = {1};
+  int fflag;
+  
+  while(gflag != 0){
+
+    fflag = 1;
+
+    while(fflag != 0){
+
+      /* ***************************************** */
+      /* solve for xf_raw in unconstrained problem */
+      /* ***************************************** */
+      
+      taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
+      
+      if( sizeF != 0 ){
+	/* we compute these values based on selections based on F
+	 * since it's faster than recalculating them in lsqr. This
+	 * requires the use of a custom lsqr solver that expects
+	 * extra parameters from snnls, however.
+	 */
+	
+	selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
+	
+	xf_raw = NULL;
+	if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
+	  xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
+	else
+	  {
+	    xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, &rcond );
+	    if( (1/rcond)*(1/rcond)*__DBL_EPSILON__ < inRelErrTolerance )
+	      lsqrStep = 1;
+	  }
+	if( xf_raw == NULL )
+	  return NULL; // matrix probably not positive definite
+	
+      }
+      else{	  
+	/* if sizeF is 0, then we need to go to the outer loop */
+	fflag = 0;
+	break;
+      }
+
+      /* **************************************************** */
+      /* Compute p = xf_raw - x, but all in the right places  */
+      /* **************************************************** */
+
+#ifdef HAVE_MEMSET
+      
+      memset(p,0,sizeof(taucs_double)*n);
+      
+#else  /* Work around it. */
+      
+      for(i=0;i<n;i++){ 
+	p[i] = 0.0;
+      }
+#endif
+
+      
+      /* we also compute the alpha[i] values while we are in here */
+      /* alpha will be a sizeF vector */
+      for(i=0; i<sizeF; i++){
+	itmp = F[i];
+	p[itmp] = xf_raw[i] - x[itmp];
+
+	// Alternately, could use some tolerance
+	if(p[itmp] != 0){
+	  alpha[i] = xf_raw[i]/p[itmp];
+	}
+	else{
+	  // If the old and the new are the same, then we'll set
+	  // alpha[i] to 88.0 and this will just get skipped
+	  alpha[i] = 88.0;
+	}
+      }
+
+
+      /* ******************************************************* */
+      /* We know the alpha_i values, so determine biggest step   */
+      /* in the direction p which reduces the value of q.  We    */
+      /* skip anything bigger than one since that will be picked */
+      /* up by the first time through the loop.                  */
+      /* ******************************************************* */
+
+      /* we'll reuse the value of q(x), so we might as well hold on to it */
+
+      /* So here's the deal, we want to compute q(x) which is
+	 q(x) = 1/2*x'A'Ax-x'A'b = x'(0.5*A'Ax - A'b)
+	 We know A'A stored as AprimeDotA
+	 We'll assume that ourtaucs_ccs_times_vec is quicker for computing
+	 A'Ax and then we'll dot with x manually.
+	 For the right side, we've precomputed A'b, so we just need to dot
+	 with x.
+      */
+
+      // Note: x has not been updated, so it is the version from
+      // the last time through the loop
+
+      ourtaucs_ccs_times_vec(AprimeDotA,x,ApAx);
+      
+
+      /* Note: there might be some fanciness that makes this quicker
+	 computing q(x) and the x+alpha*p value for the first 
+	 run through the loop, where alpha=1.0
+      */
+
+      qofx = 0.0;
+
+      for(i=0; i<n; i++){
+	qofx += x[i] * (0.5*ApAx[i]-Apb[i]);
+	xplusalphap[i] = x[i] + p[i];
+      }
+
+      // printf("qofx %f\n",qofx);
+
+      /* reusing ApAx here for convenience, but it is really
+	 A'A*(x+p) */
+#ifdef HAVE_MEMSET
+
+      memset(ApAx,0,sizeof(taucs_double)*n);
+
+#else
+      for(i=0; i<n; i++){
+	ApAx[i] = 0.0;
+      }
+#endif
+
+      ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAx);
+
+      qofxplusalphap = 0.0;
+      
+      for(i=0; i<n; i++){
+	qofxplusalphap += xplusalphap[i] * (0.5*ApAx[i]-Apb[i]);
+      }
+
+      /* if we have improvement in q, we need not do the following */
+      alphaItr = 0;
+
+      if(qofxplusalphap > qofx){
+
+	/* darn, that didn't work, so we need to sort the alpha's */
+	qsort(alpha,sizeF,sizeof(taucs_double),compare_taucs_doubles);
+
+	/* burn the ones where alpha >= 1 */
+	alphaItr = 0;
+	while(alpha[alphaItr] >= 1.0){
+	  alphaItr++;
+	}
+
+	/* now we see if the step of size alpha[i] improves q */
+	for(; alphaItr<sizeF; alphaItr++){
+	  tmp = alpha[alphaItr];
+
+	  for(i=0; i<n; i++){
+	    xplusalphap[i] = x[i] + tmp*p[i];
+	  }
+
+#ifdef HAVE_MEMSET
+
+	  memset(ApAx,0,sizeof(taucs_double)*n);
+
+#else
+	  for(i=0; i<n; i++){
+	    ApAx[i] = 0.0;
+	  }
+#endif
+
+	  ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAx);
+
+	  qofxplusalphap = 0.0;
+      
+	  for(i=0; i<n; i++){
+	    qofxplusalphap += xplusalphap[i] * (0.5*ApAx[i]-Apb[i]);
+	  }
+	}
+
+	if(alphaItr >= sizeF){
+	  // I don't know if this is an error, none of the alpha_i worked
+	  printf("Warning: No improvement with alphas\n");
+
+	  // This is a total hack, but it hasn't happened ever in 
+	  // trivial levels of testing.  We'll assume it happens
+	  // so infrequently, that this doesn't affect performance.
+	  // Basically, this is going to force a double copy.
+	  memcpy(xplusalphap,x,sizeof(taucs_double)*n);
+	}
+
+      }// end (qofxplusalphap > qofx)
+
+      /* ************************************************* */
+      /* well, we got a reduction in q, so now we update x */
+      /* for the next (potential) round                    */
+      /* ************************************************* */
+
+      memcpy(x,xplusalphap,sizeof(taucs_double)*n);
+      
+
+      /* ************************************************* */
+      /* now we see if any of the frees want to be bounded */
+      /* ************************************************* */
+
+      infeasible(F,x,sizeF,H1,&sizeH1);
+      
+      if(sizeH1 == 0){
+	fflag = 0;
+	break;
+      }
+      else{
+	int_difference(F,sizeF,H1,sizeH1,&sizeF);
+	int_union(G,sizeG,H1,sizeH1,&sizeG);
+
+	// Need to zero out the stuff that turned up negative
+	for(i=0; i<sizeH1; i++){
+	  x[H1[i]] = 0.0;
+	}
+      }
+
+    } // end inner fflag loop
+
+
+    /* Now we need to compute y_G and see if shifting anything out
+       of F has created infeasibles in G */
+
+    taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
+
+    // update xf_raw to include alpha*p
+
+    for(i=0; i<sizeF; i++){
+      xf_raw[i] = x[F[i]];
+    }
+
+
+    // Note: it might be simpler to allocate residual up front
+    // then we'd zero it out here
+    if(sizeF != 0){
+      /* Now compute the residual A_F x_F - b. This is an m-vector. */
+      residual = (taucs_double *)calloc(m,sizeof(taucs_double));
+      ourtaucs_ccs_times_vec(Af,xf_raw,residual);
+    }
+    else{	  
+      /* 
+       * if sizeF is 0, the meaning of residual changes (since
+       * there really is _no_ matrix), so we'll just set the
+       * residual to -b, but we still need a zeroed residual to do
+       * the below computation to make that happen, which calloc
+       * does here
+       */
+      residual = (taucs_double *)calloc(m,sizeof(taucs_double));
+    }
+
+    DAXPY_F77(&m,&incTmp,b,&incX,residual,&incY);
+
+    // Note: We could allocate this up front as well
+    /* We now compute (A_G)'. */
+    /* And finally take (A_G)'*residual. This is a sizeG-vector. */
+    yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
+
+    /* 
+     * We now should compute (A_G)', and take (A_G)'*residual, but 
+     * A_G'*residual = residual'*A_G, and that's faster. 
+     * taucs_transpose_vec_times_matrix also incorporates the 
+     * selection of columns of G from which to form A_G so that 
+     * we do not have to incur the computational expense of creating
+     * a submatrix.
+     */
+    taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
+
+    /* Note, this shouldn't change, this was a check during debugging
+    infeasible(F,x,sizeF,H1,&sizeH1);  
+
+    if(sizeH1 > 0){
+      // error, error, this shouldn't change
+      printf("sizeH1 > 0 after the inner loop\n");
+      exit(-1);
+    }
+    */
+
+    // Note: if we rewrote infeasible, we could avoid computing y at all.
+    // But for the sake of ease, we'll leave it like this
+
+    /* here we are setting up y */
+    for(i=0; i<sizeF; i++){
+      y[F[i]] = 0.0;
+    }
+    
+    for(i=0; i<sizeG; i++){
+      y[G[i]] = yg_raw[i];
+    }
+
+    infeasible(G,y,sizeG,H2,&sizeH2);
+
+    if(sizeH2 == 0){
+      gflag = 0;
+      break;
+    }
+    else{
+      int_union(F,sizeF,H2,sizeH2,&sizeF);
+      int_difference(G,sizeG,H2,sizeH2,&sizeG);
+    }
+  } // while gflag
+
+
+  if( lsqrStep != 0 )
+    {
+      lsqr_input   *lsqr_in;
+      lsqr_output  *lsqr_out;
+      lsqr_work    *lsqr_work;
+      lsqr_func    *lsqr_func;
+      int bItr;
+      
+      alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, Af->m, Af->n );
+      
+      /* we let lsqr() itself handle the 0 values in this structure */
+      lsqr_in->num_rows = Af->m;
+      lsqr_in->num_cols = Af->n;
+      lsqr_in->damp_val = 0;
+      lsqr_in->rel_mat_err = 0;
+      lsqr_in->rel_rhs_err = 0;
+      lsqr_in->cond_lim = 1e16;
+      lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
+      lsqr_in->lsqr_fp_out = NULL;	
+      for( bItr=0; bItr<Af->m; bItr++ )
+	{
+	  lsqr_in->rhs_vec->elements[bItr] = b[bItr];
+	}
+      /* Here we set the initial solution vector guess, which is 
+       * a simple 1-vector. You might want to adjust this value for fine-tuning
+       * t_snnls() for your application
+       */
+      for( bItr=0; bItr<Af->n; bItr++ )
+	{
+	  lsqr_in->sol_vec->elements[bItr] = 1; 
+	}
+      
+      /* This is a function pointer to the matrix-vector multiplier */
+      lsqr_func->mat_vec_prod = sparse_lsqr_mult;
+      
+      lsqr( lsqr_in, lsqr_out, lsqr_work, lsqr_func, Af );
+      
+      for( bItr=0; bItr<Af->n; bItr++ ) // not really bItr here, but hey
+	x[F[bItr]] = lsqr_out->sol_vec->elements[bItr];
+		
+      free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
+    }
+  
+  if( outResidualNorm != NULL )
+    {
+      double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
+      ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
+
+      //cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
+      // int incX, alphadog;
+      alphadog = -1; incX = 1; incY = 1; 
+      DAXPY_F77(&m,&alphadog,b,&incX,finalresidual,&incY);
+
+      //*outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
+      *outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
+
+      free(finalresidual);
+    }
+  // free memory
+
+  free(F);
+  free(G);
+  free(H1);
+  free(H2);
+  taucs_ccs_free(AprimeDotA);
+  taucs_ccs_free(lsqrApA);
+  taucs_ccs_free(Af);
+
+  free(y);
+  free(Apb);
+  free(ApAx);
+  free(xplusalphap);
+  free(p);
+  free(alpha);
+  free(residual);
+  free(yg_raw);
+
+  return x;
+
+}
+
+
 //#pragma mark -
 
 #ifndef taucs_add
