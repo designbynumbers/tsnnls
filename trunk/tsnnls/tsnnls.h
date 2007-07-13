@@ -133,6 +133,9 @@ taucs_ccs_matrix*   taucs_construct_sorted_ccs_matrix( double* values, int rowsi
 						       int rows );
 double*	taucs_convert_ccs_to_doubles( const taucs_ccs_matrix* A );
 
+/* We can call SOL lsqr using a taucs_ccs_matrix using this matrix/vector product */
+extern void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
+
 /* TAUCS version of lsqr  */
 double		    taucs_dotcols( const taucs_ccs_matrix* A, int col1, int col2 );
 double*		    full_aprime_times_a(double* A, int rows, int cols);
