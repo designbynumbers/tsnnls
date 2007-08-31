@@ -213,7 +213,8 @@ echo "$fname"
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([clapack.h atlas/clapack.h vecLib/clapack.h])
+AC_CHECK_HEADERS([clapack.h vecLib/clapack.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
+AC_CHECK_HEADERS([atlas/clapack.h])
 AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
