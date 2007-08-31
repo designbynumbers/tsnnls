@@ -1731,6 +1731,14 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
 taucs_ccs_matrix*
 taucs_construct_sorted_ccs_matrix( double* values, int rowsize, int rows )
+
+/* Converts an array of doubles in C (row-major) storage order to a taucs_ccs_matrix. */
+/* That is, we expect the matrix to read 
+
+      A(1,1) A(1,2) A(1,3) ... A(1,rowsize) A(2,1) ... A(rows, 1) .. A(rows, rowsize)
+     
+*/
+
 {
   taucs_ccs_matrix* result = NULL;
   int nnz = 0;

@@ -48,20 +48,21 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for functions
-AC_CHECK_FUNCS([memset memcpy])
+AC_CHECK_FUNCS([memset memcpy rand srand])
 
 # Checks for FORTRAN.
 AC_PROG_F77		
 AC_F77_LIBRARY_LDFLAGS
 
 # Checks for Darwin.
-AC_MSG_CHECKING(how to link with BLAS and LAPACK)
 AC_CANONICAL_HOST
+AC_MSG_CHECKING(how to link with BLAS and LAPACK)
 
 case "${host_os}" in
   darwin*)
     echo -framework vecLib
-    AM_CONDITIONAL([DARWIN],[test 1 == 1])
+    AM_CONDITIONAL([DARWIN],[test 1 = 1])
+    AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
 #    LIBS="$LIBS -framework vecLib"
     AC_SUBST([LAPACK_LIBS],["-framework vecLib"])
@@ -96,7 +97,7 @@ don't have a FORTRAN compiler (preferably g77) on your default path.])
 
     # Now look for a full (or minimal ATLAS) lapack
     AC_F77_FUNC(dpotrf)
-    ACX_LAPACK([],AC_CHECK_LIB([lapack],$dpotrf,[atlas_lapack=yes 
+    ACX_LAPACK(AM_CONDITIONAL([HAVE_LAPACK],[test 1 == 1]),AC_CHECK_LIB([lapack],$dpotrf,[atlas_lapack=yes 
        LAPACK_LIBS="-llapack -lcblas -lf77blas -latlas"
        AC_DEFINE_UNQUOTED([HAVE_ATLAS_LAPACK],[1],[ATLAS (instead of full) LAPACK])
        ],[atlas_lapack=no],[-lcblas -lf77blas -latlas $FLIBS -lm]))
@@ -140,6 +141,16 @@ AC_DEFINE_UNQUOTED([DGEMM_F77],[$fname],[Name of dgemm after mangling])
 AC_MSG_CHECKING([name of dgemm after mangling])
 echo "$fname"
 
+# dgemv
+
+AC_F77_FUNC([dgemv],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dgemv_"
+fi
+AC_DEFINE_UNQUOTED([DGEMV_F77],[$fname],[Name of dgemv after mangling])
+AC_MSG_CHECKING([name of dgemv after mangling])
+echo "$fname"
+
 # dtrsm
  
 AC_F77_FUNC([dtrsm],[fname])
@@ -158,6 +169,16 @@ if test "$fname" = "unknown"; then   # Assume g77 conventions
 fi
 AC_DEFINE_UNQUOTED([DPOTRF_F77],[$fname],[Name of dpotrf after mangling])
 AC_MSG_CHECKING([name of dpotrf after mangling])
+echo "$fname"
+
+# dgels
+
+AC_F77_FUNC([dgels],[fname])
+if test "$fname" = "unknown"; then   # Assume g77 conventions 
+  fname="dgels_"
+fi
+AC_DEFINE_UNQUOTED([DGELS_F77],[$fname],[Name of dgels after mangling])
+AC_MSG_CHECKING([name of dgels after mangling])
 echo "$fname"
 
 # dnrm2
