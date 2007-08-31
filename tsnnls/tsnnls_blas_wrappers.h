@@ -24,6 +24,12 @@ extern void DSCAL_F77(int *N, double *alpha, double *vecX, int *incX);
 
 extern double DNRM2_F77(int *N, double *vecX, int *incX);
 
+extern void DGEMV_F77(char *trans, int *M, int *N, double *alpha, double *A, 
+		      int *ldA, double *X, int *incX, double *beta, double *Y,
+		      int *incY);
+
+
+
 /* Subroutine */ 
 //int dpocon_(char *uplo, __CLPK_integer *n, 
 //	    __CLPK_doublereal *a, __CLPK_integer *lda, 
