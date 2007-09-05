@@ -48,7 +48,7 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for functions
-AC_CHECK_FUNCS([memset memcpy rand srand])
+AC_CHECK_FUNCS([memset memcpy rand srand time])
 
 # Checks for FORTRAN.
 AC_PROG_F77		
@@ -215,7 +215,7 @@ echo "$fname"
 AC_HEADER_STDC
 AC_CHECK_HEADERS([clapack.h vecLib/clapack.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
 AC_CHECK_HEADERS([atlas/clapack.h])
-AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h])
+AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
