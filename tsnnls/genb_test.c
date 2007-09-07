@@ -14,9 +14,9 @@
   Note that this file isn't even made if we don't have a full LAPACK.
 */
 
-#define NUM_TESTS 33
-#define Msize 57
-#define Nsize 23
+#define NUM_TESTS 512
+#define Msize 152
+#define Nsize 67
 
 #include<config.h>
 
@@ -267,13 +267,38 @@ void random_x_y(int m, int n, double **x, double **y)
   }
 
 }
+
+double *fliporder(int m, int n, double *A)
+
+/* Changes order from the column-major ordering of LAPACK to the row-major
+   ordering expected by tsnnls. */
+
+{
+  double *Aflip;
+  int i, j;
+
+  Aflip = calloc(Msize*Nsize,sizeof(double));
+  
+  for(i=0;i<Msize;i++) {
+    
+    for(j=0;j<Nsize;j++) {
       
+      Aflip[j + Nsize*i] = A[i + Msize*j];  /* Flip for taucs_construct... */
+
+    }
+    
+  }
+
+  return Aflip;
+
+}
+  
 int main() 
 
 {
   double *x,*y,*A,*b,*Aflip;
   int     npass = 0;
-  int     i,j,test;
+  int     i,test;
 
   taucs_ccs_matrix *Accs;
   taucs_double *tsnnlsX;
@@ -284,8 +309,6 @@ int main()
 
   double err;
 
-  Aflip = calloc(Msize*Nsize,sizeof(double));
-  
   fprintf(stderr,"genb_tests\n\n");
   fprintf(stderr,
 	  "Creating %d random test %d x %d test problems using \n"
@@ -297,8 +320,8 @@ int main()
 	  "We require an error less than 1e-8 to pass the test.\n\n");
 
   fprintf(stderr,
-	  "#   M    N    Error   Result \n"
-	  "---------------------------- \n");
+	  "#    M    N     Error         Result \n"
+	  "------------------------------------ \n");
 
 #ifdef HAVE_TIME
 
@@ -320,18 +343,11 @@ int main()
 
     /* Now feed the problem to tsnnls. */
 
-    for(i=0;i<Msize;i++) {
+    Aflip = fliporder(Msize,Nsize,A);
+    Accs = taucs_construct_sorted_ccs_matrix(Aflip,Nsize,Msize);
+    /*tsnnlsX = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);*/
+    tsnnlsX = t_block3(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
 
-      for(j=0;j<Nsize;j++) {
-
-	Aflip[j + Nsize*i] = A[i + Msize*j];  /* Flip for taucs_construct... */
-
-      }
-
-    }
-
-    Accs = taucs_construct_sorted_ccs_matrix(A,Nsize,Msize);
-    tsnnlsX = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
 
     /* Now we compare the solution with our guess. */
 
@@ -339,7 +355,7 @@ int main()
     for(i=0;i<Nsize;i++) { err += pow(tsnnlsX[i] - x[i],2.0); }
     err = sqrt(err);
 
-    fprintf(stderr,"%2d  %5d %5d %7g ",test,Msize,Nsize,err); 
+    fprintf(stderr,"%3d  %-4d %-4d % 7e ",test+1,Msize,Nsize,err); 
 
     if (err < 1e-8) {
 
@@ -357,17 +373,15 @@ int main()
 
   }
 
-  fprintf(stderr,"\n\n");
+  fprintf(stderr,"\n");
   fprintf(stderr,"%d (of %d) tests passed.\n",npass,NUM_TESTS);
 
   if (npass == NUM_TESTS) {
 
-    fprintf(stderr,"Overall result: PASS.\n");
     exit(0);
 
   } else {
 
-    fprintf(stderr,"Overall result: FAIL.\n");
     exit(1);
 
   }

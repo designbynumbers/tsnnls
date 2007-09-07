@@ -4,5 +4,11 @@
 
 EXTRA_DIST = taucs.pdf tsnnls_tester.xcode ./test_files/full_example_200 ./test_files/sparse_tests external_libraries testfull testsparse tsnnls-libs.in
 SUBDIRS = tsnnls 
-TESTS = testfull testsparse tsnnls/f77blas_test
+
+if HAVE_LAPACK
+  TESTS = testfull testsparse tsnnls/f77blas_test tsnnls/genb_test
+else
+  TESTS = testfull testsparse tsnnls/f77blas_test
+endif
+
 bin_SCRIPTS = tsnnls-libs
