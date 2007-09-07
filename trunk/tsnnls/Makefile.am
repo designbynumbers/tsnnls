@@ -30,7 +30,7 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 	lsqr.c
 
 if HAVE_LAPACK 
-  check_PROGRAMS = tsnnls_test f77blas_test genb_test
+  check_PROGRAMS = f77blas_test genb_test
   genb_test_SOURCES = genb_test.c
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 else 
