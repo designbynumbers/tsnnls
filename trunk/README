@@ -1,13 +1,14 @@
-tsnnls 1.0 - A fast block pivoting algorithm for sparse linear least squares
+tsnnls 2.0 - A fast block pivoting algorithm for sparse linear least squares
 problems with non-negative variables designed to be embedded in applications
 
 http://www.cs.duq.edu/~piatek/tsnnls/
 http://ada.math.uga.edu/research/software/tsnnls/
 
 Jason Cantarella, cantarel@math.uga.edu
-and Michael Piatek, piatek@mathcs.duq.edu
+Michael Piatek, piatek@mathcs.duq.edu
+Eric Rawdon, ericrawdon@gmail.com
 
-11 August 2004
+11 September 2007
 
 Contents
 0. What is tsnnls?
@@ -135,7 +136,14 @@ from the library.
 
 5. References
 
-Further information on the tsnnls algorithm: 
+Version 2.0 of tsnnls uses the block3 algorithm of Mikael Adlers. A
+description of the algorithm can be found in his licentiat thesis
+"Sparse Least Squares Problems with Box Constraints", available at
+
+http://www.mai.liu.se/~milun/
+
+The self-test code in tsnnls 2.0 and higher uses a problem generation
+strategy proposed in
 
 @article {MR95a:90059,
     AUTHOR = {Portugal, Lu{\'{\i}}s F. and J{\'u}dice, Joaqu{\'{\i}}m J. and

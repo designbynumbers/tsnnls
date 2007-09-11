@@ -7,7 +7,7 @@ AM_CFLAGS = -g -Wall
 SUBDIRS = taucs_basic
 
 pkginclude_HEADERS = tsnnls.h lsqr.h
-noinst_HEADERS = tsnnls_blas_wrappers.h taucs_basic/taucs_common.h
+noinst_HEADERS = tsnnls_blas_wrappers.h taucs_basic/taucs_common.h acint32_type.h
 nobase_pkginclude_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
 lib_LTLIBRARIES = libtsnnls.la
 

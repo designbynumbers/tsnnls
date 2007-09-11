@@ -500,8 +500,15 @@ sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod )
 #endif
 
 taucs_double*
-t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
+t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
 	 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
+
+/* This code, now deprecated, uses an older algorithm of Portugal,
+   Judice and Vicente to compute the solution of the sparse
+   nonnegative least-squares problem. The code can be more efficient
+   than the updated block3 algorithm used in this version of tsnnls,
+   so it is still available. */
+
 {
   taucs_ccs_matrix  *Af;
   int               p, ninf, pbar = {3};
@@ -915,7 +922,7 @@ compare_taucs_doubles (const void *a, const void *b)
 // algorithm is that block3 is suppose to avoid cycling behavior.
 
 taucs_double*
-t_block3( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
+t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
 	 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
 {
   taucs_ccs_matrix  *Af;
@@ -930,7 +937,7 @@ t_block3( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   taucs_double *p;
   taucs_double *alpha;
   double qofx, qofxplusalphap;
-  double bb;
+  /*double bb;*/
 
   // these are just to speed up some stuff below ever so slightly
   taucs_double tmp;
