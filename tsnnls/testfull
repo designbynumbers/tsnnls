@@ -1,0 +1,2 @@
+#!/bin/sh
+./tsnnls_test $srcdir/full_example_200 0 0
