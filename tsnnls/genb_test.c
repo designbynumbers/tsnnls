@@ -301,13 +301,13 @@ int main()
   int     i,test;
 
   taucs_ccs_matrix *Accs;
-  taucs_double *tsnnlsX;
+  taucs_double *tsnnlsX,*block3X;
 
   double ResNorm;
   double ErrTol = 0;
   int    PrintErrWarnings = 0;
 
-  double err;
+  double err,block3err;
 
   fprintf(stderr,"genb_tests\n\n");
   fprintf(stderr,
@@ -320,8 +320,8 @@ int main()
 	  "We require an error less than 1e-8 to pass the test.\n\n");
 
   fprintf(stderr,
-	  "#    M    N     Error         Result \n"
-	  "------------------------------------ \n");
+	  "#    M    N     Error         (PJV error)   Result \n"
+	  "-------------------------------------------------- \n");
 
 #ifdef HAVE_TIME
 
@@ -345,17 +345,22 @@ int main()
 
     Aflip = fliporder(Msize,Nsize,A);
     Accs = taucs_construct_sorted_ccs_matrix(Aflip,Nsize,Msize);
-    /*tsnnlsX = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);*/
-    tsnnlsX = t_block3(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
-
+    tsnnlsX = t_snnls_pjv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
+    block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
 
     /* Now we compare the solution with our guess. */
 
-    err = 0;
-    for(i=0;i<Nsize;i++) { err += pow(tsnnlsX[i] - x[i],2.0); }
-    err = sqrt(err);
+    err = 0; block3err = 0;
+    for(i=0;i<Nsize;i++) { 
 
-    fprintf(stderr,"%3d  %-4d %-4d % 7e ",test+1,Msize,Nsize,err); 
+      err += pow(tsnnlsX[i] - x[i],2.0); 
+      block3err += pow(block3X[i] - x[i],2.0);
+
+    }
+    err = sqrt(err);
+    block3err = sqrt(block3err);
+
+    fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e ",test+1,Msize,Nsize,block3err,err); 
 
     if (err < 1e-8) {
 

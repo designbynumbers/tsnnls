@@ -106,7 +106,7 @@ extern "C" {
 			       double inRelErrTolerance, 
 			       int inPrintErrorWarnings );
 
-  taucs_double*	      t_block3( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
+  taucs_double*	      t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
 			       double* outResidualNorm, 
 			       double inRelErrTolerance, 
 			       int inPrintErrorWarnings );
@@ -137,6 +137,8 @@ double*	taucs_convert_ccs_to_doubles( const taucs_ccs_matrix* A );
 double		    taucs_dotcols( const taucs_ccs_matrix* A, int col1, int col2 );
 double*		    full_aprime_times_a(double* A, int rows, int cols);
 taucs_ccs_matrix*   taucs_ccs_aprime_times_a( taucs_ccs_matrix* A );
+void                ccs_to_lapack( taucs_ccs_matrix* L, double** lapackL, 
+				   int* N, int* LDA, double* ANORM );
 taucs_double*	    t_lsqr(taucs_ccs_matrix *A, taucs_double *b);
 taucs_double*	    t_snnlslsqr(taucs_ccs_matrix *A,taucs_double *b, 
 				taucs_ccs_matrix* ApA, 

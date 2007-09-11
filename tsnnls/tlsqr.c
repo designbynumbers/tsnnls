@@ -212,7 +212,7 @@ taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
   return result;
 }
 
-static void
+void
 ccs_to_lapack( taucs_ccs_matrix* L, double** lapackL, int* N, int* LDA, double* ANORM )
 {	
   /* Construct LAPACK representation of A and compute the 1 norm of A */
