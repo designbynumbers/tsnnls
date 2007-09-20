@@ -18,6 +18,8 @@
   #include <float.h>
 #endif 
 
+#include<assert.h>
+
 //#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
 //  #include <vecLib/vBLAS.h>
 //  #include <vecLib/clapack.h>
@@ -819,11 +821,13 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	}
       
       free(yg_raw);
+      
       if( sizeF != 0 )
-	{
-	  free(xf_raw);
-	}
-      free(residual);
+       {
+      	  free(xf_raw);
+       }
+
+       free(residual);
 
       sizeH1 = sizeH2 = 0;
     } // for
@@ -920,6 +924,8 @@ compare_taucs_doubles (const void *a, const void *b)
 // by  Mikael Adlers
 // The supposed advantage of the block3 algorithm over the t_snnls
 // algorithm is that block3 is suppose to avoid cycling behavior.
+
+#define DEBUG 1
 
 taucs_double*
 t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
@@ -1040,7 +1046,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   /* Set y = A'b, which is the same as y=b'A. We perform that 
      computation as it is faster */
   taucs_transpose_vec_times_matrix(b,A_original_ordering, F, n, Apb);
-
   
   int gflag = {1};
   int fflag;
@@ -1066,7 +1071,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	
 	selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
 	
-	xf_raw = NULL;
+	assert(xf_raw == NULL);
+
 	if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
 	  xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
 	else
@@ -1259,6 +1265,12 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	}
       }
 
+      // The first thing we're going to do up top is allocate a new xf_raw.
+      // So we free the old one here.
+
+      free(xf_raw);
+      xf_raw = NULL;
+
     } // end inner fflag loop
 
 
@@ -1267,19 +1279,25 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
     taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
 
-    // update xf_raw to include alpha*p
-
-    for(i=0; i<sizeF; i++){
-      xf_raw[i] = x[F[i]];
-    }
-
-
     // Note: it might be simpler to allocate residual up front
     // then we'd zero it out here
     if(sizeF != 0){
+      
+      // update xf_raw to include alpha*p. Since we are copying
+      // into a new xf_raw, we reallocate it here.
+      
+      xf_raw = malloc(sizeF*sizeof(double));
+      
+      for(i=0; i<sizeF; i++){
+	xf_raw[i] = x[F[i]];
+      }      
+      
       /* Now compute the residual A_F x_F - b. This is an m-vector. */
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(Af,xf_raw,residual);
+
+      free(xf_raw); // we won't use it again below
+
     }
     else{	  
       /* 

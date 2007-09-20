@@ -79,12 +79,6 @@ case "${host_os}" in
     AM_CONDITIONAL([DARWIN],[test 0 == 1])
     # Gets ready to compile with weird Fortran stuff
 
-    #BLAS_FLAGS="-L/usr/lib64/atlas -L/usr/lib/atlas -I/usr/include/atlas"
-    #BLAS_FLAGS="-L/home/cantarel/ATLAS/lib/Linux_UNKNOWNSSE2 -I/home/cantarel/ATLAS/include"
-    #AC_MSG_WARN([TEMPORARILY linking manually with ATLAS BLAS in home account. FIX ME!!!!])
-    #Should swap back in the commented line once BLAS issues are resolved on george. 
-    #LDFLAGS="$LDFLAGS $BLAS_FLAGS"
-
     ACX_BLAS
     if test "$acx_blas_ok" = no; then 
 	  AC_MSG_ERROR([tsnnls requires an F77BLAS. The ATLAS project
@@ -238,9 +232,6 @@ AC_C_CONST
 
 # Enable debugging support for dmalloc, if we configure --with-dmalloc
 AM_WITH_DMALLOC
-
-# Now add remaining libs
-# LIBS="$LAPACK_LIBS $LIBS $BLAS_LIBS $FLIBS"
 
 # Output
 AC_CONFIG_FILES([tsnnls-libs])    # Write linker info to file. 
