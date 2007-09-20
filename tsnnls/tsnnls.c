@@ -1253,6 +1253,11 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       
       if(sizeH1 == 0){
 	fflag = 0;
+
+	// We are going to leave the loop, so squash xf_raw.
+	free(xf_raw);
+	xf_raw = NULL;
+
 	break;
       }
       else{
@@ -1296,7 +1301,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(Af,xf_raw,residual);
 
-      free(xf_raw); // we won't use it again below
+      free(xf_raw);  // we won't use it again below
+      xf_raw = NULL; // for safety's sake.
 
     }
     else{	  
