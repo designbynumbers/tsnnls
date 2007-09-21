@@ -962,7 +962,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
    * 
    * Like the row indices themselves, they are 0-based. 
    */
-  taucs_double     *x, *y, *xf_raw = NULL, *yg_raw, *residual;
+  taucs_double     *x, *y, *xf_raw = NULL, *yg_raw = NULL, *residual = NULL;
   taucs_double *Apb, *ApAx, *xplusalphap;
   
   int AprimeDotA_cols;
@@ -1298,14 +1298,14 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       }      
       
       /* Now compute the residual A_F x_F - b. This is an m-vector. */
+      assert(residual == NULL);      
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(Af,xf_raw,residual);
-
+      
       free(xf_raw);  // we won't use it again below
       xf_raw = NULL; // for safety's sake.
 
-    }
-    else{	  
+    } else{	  
       /* 
        * if sizeF is 0, the meaning of residual changes (since
        * there really is _no_ matrix), so we'll just set the
@@ -1313,6 +1313,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
        * the below computation to make that happen, which calloc
        * does here
        */
+      assert(residual == NULL);
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
     }
 
@@ -1321,6 +1322,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     // Note: We could allocate this up front as well
     /* We now compute (A_G)'. */
     /* And finally take (A_G)'*residual. This is a sizeG-vector. */
+    assert(yg_raw == NULL);
     yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
 
     /* 
@@ -1332,6 +1334,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
      * a submatrix.
      */
     taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
+
+    /* This was the last time we used residual, so let's kill it. */
+    free(residual); residual = NULL;
 
     /* Note, this shouldn't change, this was a check during debugging
     infeasible(F,x,sizeF,H1,&sizeH1);  
@@ -1355,6 +1360,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       y[G[i]] = yg_raw[i];
     }
 
+    /* From here on out, we will only use y. So we discard yg_raw. */
+    free(yg_raw); yg_raw = NULL;
+    
     infeasible(G,y,sizeG,H2,&sizeH2);
 
     if(sizeH2 == 0){
@@ -1443,7 +1451,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   free(p);
   free(alpha);
   free(residual);
-  free(yg_raw);
 
   return x;
 
