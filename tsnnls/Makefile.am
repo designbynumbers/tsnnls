@@ -30,18 +30,20 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
         tsnnls.c \
 	lsqr.c
 
+bin_PROGRAMS = tsnnls_test
+
+tsnnls_test_SOURCES = tsnnls_test.c
+tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
 if HAVE_LAPACK 
-  check_PROGRAMS = tsnnls_test f77blas_test genb_test
+  check_PROGRAMS = f77blas_test genb_test
   genb_test_SOURCES = genb_test.c
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
   TESTS = testfull testsparse f77blas_test genb_test
 else 
-  check_PROGRAMS = tsnnls_test f77blas_test
+  check_PROGRAMS = f77blas_test
   TESTS = testfull testsparse f77blas_test
 endif
-
-tsnnls_test_SOURCES = tsnnls_test.c
-tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 #nodist_PROGRAMS = cblas_test
 #cblas_test_SOURCES = cblas_test.c

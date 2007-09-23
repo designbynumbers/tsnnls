@@ -1875,3 +1875,107 @@ taucs_print_ccs_matrix( const taucs_ccs_matrix* A )
   free(v);
 }
 
+void taucs_ccs_write_sparse( FILE *fp, taucs_ccs_matrix *A)
+
+/* Writes a taucs_ccs matrix to the SPARSE format read by tsnnls_test. */
+
+{
+  int cpItr, rwItr;
+
+  if (fp == NULL) {
+
+    printf("tsnnls: Can't write to NULL file pointer.\n");
+    exit(1);
+
+  }
+
+  fprintf(fp, "SPARSE\n %d %d\n %d\n",A->m,A->n,A->colptr[A->n]);
+  
+  for(cpItr=0,rwItr=0;cpItr<A->n;cpItr++) {
+
+    for(;rwItr<A->colptr[cpItr+1];rwItr++) {
+
+      fprintf(fp,"%d %d %g\n",cpItr,A->rowind[rwItr],A->values.d[rwItr]);
+
+    }
+
+  }
+
+}
+
+void taucs_ccs_write_mat(FILE *fp, taucs_ccs_matrix *A) 
+
+{
+  double *vals;
+  int rows,cols;
+
+  rows = A->m; cols = A->n;
+  vals = taucs_convert_ccs_to_doubles(A);
+ 
+  if (vals == NULL) {
+
+    printf("taucs_ccs_write_mat: Can't convert %d x %d matrix to doubles.\n",
+	   A->m,A->n);
+    exit(1);
+
+  }
+  
+  fprintf(fp,
+	  "# Created by tsnnls\n"
+	  "# name: A\n"
+	  "# type: matrix\n"
+	  "# rows: %d\n"
+	  "# columns: %d\n",rows,cols);
+
+  int rItr,cItr;
+
+  for( rItr=0; rItr<rows; rItr++ ) {
+    
+    for( cItr=0; cItr<cols; cItr++ ) {
+
+      fprintf( fp, "%10.16lf ", vals[rItr*cols + cItr] );
+
+    }
+    
+    fprintf( fp, "\n" );
+  }
+  
+  free(vals);
+  
+}
+  
+void colvector_write_mat(FILE *fp, double *x, int rows, char *name)
+
+/* Writes a column vector to an octave MAT file, with given name */
+/* if specified. Otherwise, the name is set to "x" if the name   */
+/* pointer is NULL. */
+
+{
+  int i;
+  char *varname;
+  char xn[2] = "x";
+
+  if (name == NULL) {
+
+    varname = xn;
+
+  } else {
+
+    varname = name;
+
+  }
+  
+  fprintf(fp,
+	  "# Created by tsnnls\n"
+	  "# name: %s\n"
+	  "# type: matrix\n"
+	  "# rows: %d\n"
+	  "# columns: 1\n",varname,rows);
+
+  for(i=0;i<rows;i++) {
+    
+    fprintf(fp,"%10.16lf\n",x[i]);
+
+  }
+
+}

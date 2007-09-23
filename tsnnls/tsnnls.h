@@ -53,6 +53,10 @@ extern "C" {
   void taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, 
 			    const int inColCount, taucs_ccs_matrix* result);
   taucs_ccs_matrix* taucs_ccs_transpose( const taucs_ccs_matrix* A );
+
+  void taucs_ccs_write_sparse( FILE *fp, taucs_ccs_matrix *A);
+  void taucs_ccs_write_mat(FILE *fp, taucs_ccs_matrix *A);
+  void colvector_write_mat(FILE *fp, double *x, int rows,char *name);
   
   /* taucs versions of these are sparse, otherwise full. */
   void transpose_vec_times_matrix(double* b, double* A, int* F, 
