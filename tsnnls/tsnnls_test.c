@@ -573,11 +573,11 @@ int main( int argc, char* argv[] )
 
   double residual;
 
-  if (!strcmp(argv[4],"tsnnls")) {
+  if (!strcmp(argv[argc-1],"--tsnnls")) {
 
     xvals = t_snnls(A, bvals, &residual, -1, 1);
 
-  } else if (!strcmp(argv[4],"tlsqr")) {
+  } else if (!strcmp(argv[argc-1],"--tlsqr")) {
 
     xvals = t_lsqr(A, bvals);
 

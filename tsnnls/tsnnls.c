@@ -1895,7 +1895,7 @@ void taucs_ccs_write_sparse( FILE *fp, taucs_ccs_matrix *A)
 
     for(;rwItr<A->colptr[cpItr+1];rwItr++) {
 
-      fprintf(fp,"%d %d %g\n",cpItr,A->rowind[rwItr],A->values.d[rwItr]);
+      fprintf(fp,"%d %d %10.16g\n",cpItr,A->rowind[rwItr],A->values.d[rwItr]);
 
     }
 
