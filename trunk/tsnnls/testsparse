@@ -1,2 +1,0 @@
-#!/bin/sh
-./tsnnls_test $srcdir/sparse_tests 0 1	

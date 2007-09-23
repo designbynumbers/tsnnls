@@ -472,6 +472,8 @@ lsqrwrapper( taucs_ccs_matrix* Af, double* b )
   return xf_raw;
 }
 
+int QUIET = 0;
+
 int main( int argc, char* argv[] ) 
 {
   
@@ -480,10 +482,10 @@ int main( int argc, char* argv[] )
   int Adim,Acols,bdim,bcols,xdim,xcols;
   taucs_ccs_matrix *A;
   
-  if (argc < 4 || (strcmp(argv[argc-1],"tsnnls") && strcmp(argv[argc-1],"tlsqr")) 
-      || argc > 5) {
+  if (argc < 4 || (strcmp(argv[argc-1],"--tsnnls") && strcmp(argv[argc-1],"--tlsqr")) 
+      || argc > 6) {
     
-    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> <tsnnls|tlsqr>\n");
+    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> <--tsnnls|--tlsqr>\n ");
     exit(1);
 
   }
@@ -495,14 +497,14 @@ int main( int argc, char* argv[] )
 	   "format or in the Octave text format.\n"
 	   "\n");
     
-    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> <tsnnls|tlsqr>\n\n");
+    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> <--tsnnls|--tlsqr>\n\n");
     
     printf("If a solution x is provided, tsnnls_test compares the results of the\n"
 	   "calculation with the given solution, provides timing information and\n"
 	   "returns 0 if the results match the given solution and 1 otherwise.\n"
 	   "\n"
 	   "If no solution is provided, tsnnls_test writes the solution to x.mat.\n");
-    
+	            
     exit(1);
 
   }
@@ -549,11 +551,11 @@ int main( int argc, char* argv[] )
     printf("tsnnls_test: Loaded %d x %d solution vector x from %s.\n",
 	   xdim,xcols,argv[3]);
 
-    if (!strcmp(argv[4],"tsnnls")) {
+    if (!strcmp(argv[4],"--tsnnls")) {
 
       tsnnls_test(A,xvals,bvals);
 
-    } else if (!strcmp(argv[4],"tlsqr")) {
+    } else if (!strcmp(argv[4],"--tlsqr")) {
 
       tlsqr_test(A,xvals,bvals);
 

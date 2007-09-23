@@ -6,7 +6,14 @@ AM_CFLAGS = -g -Wall
 
 SUBDIRS = taucs_basic
 
-EXTRA_DIST = testfull testsparse full_example_200 sparse_tests
+EXTRA_DIST = testfull full_example_A.mat full_example_b.mat full_example_x.mat \
+	     sp_test1.sh A_01.sparse x_01.mat b_01.mat \
+	     sp_test2.sh A_02.sparse x_02.mat b_02.mat \
+	     sp_test3.sh A_03.sparse x_03.mat b_03.mat \
+	     sp_test4.sh A_04.sparse x_04.mat b_04.mat \
+	     sp_test5.sh A_05.sparse x_05.mat b_05.mat \
+	     sp_test6.sh A_06.sparse x_06.mat b_06.mat 
+
 pkginclude_HEADERS = tsnnls.h lsqr.h
 noinst_HEADERS = tsnnls_blas_wrappers.h taucs_basic/taucs_common.h acint32_type.h
 nobase_pkginclude_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
@@ -39,10 +46,10 @@ if HAVE_LAPACK
   check_PROGRAMS = f77blas_test genb_test
   genb_test_SOURCES = genb_test.c
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-  TESTS = testfull testsparse f77blas_test genb_test
+  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test genb_test
 else 
   check_PROGRAMS = f77blas_test
-  TESTS = testfull testsparse f77blas_test
+  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test
 endif
 
 #nodist_PROGRAMS = cblas_test

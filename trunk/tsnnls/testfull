@@ -1,2 +1,3 @@
 #!/bin/sh
-./tsnnls_test $srcdir/full_example_200 0 0
+./tsnnls_test $srcdir/full_example_A.mat $srcdir/full_example_b.mat $srcdir/full_example_x.mat --tsnnls
+
