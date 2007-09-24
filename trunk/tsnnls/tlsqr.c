@@ -147,7 +147,8 @@ taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
   taucs_ccs_matrix* result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
   register double v;
   int newSize, currentSize;
-  
+
+  result->m = A->n;
   result->n = A->n;
   
   /* we'll be symmetric */

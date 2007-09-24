@@ -46,9 +46,13 @@ extern "C" {
   
 #define kZeroThreshold  1e-12
 
-  void tsnnls_version(char *version,size_t strlen); 
+  void tsnnls_version(char *version,size_t strlen);
   /* Print version if *version = NULL */
-  
+
+  void tsnnls_verbosity(int level);
+  /* Sets the verbosity of the library (0-10). At level 10
+     there is a LOT of output, this is useful only for debugging. */
+
   /* Utility Functions for CCS matrices */
   void taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, 
 			    const int inColCount, taucs_ccs_matrix* result);
