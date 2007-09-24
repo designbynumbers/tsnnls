@@ -139,15 +139,15 @@ void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
 void infeasible( const int* setA, const double* varsA, const int sizeA, 
 		 int* infeas, int* sizeInfeas )
 {
-	int i, pItr=0;
-	for( i=0; i< sizeA; i++ ) 
+  int i, pItr=0;
+  for( i=0; i< sizeA; i++ ) 
+    {
+      if( varsA[setA[i]] < 0 ) 
 	{
-		if( varsA[setA[i]] < 0 ) 
-		{
-			infeas[pItr++] = setA[i];
-		}
+	  infeas[pItr++] = setA[i];
 	}
-	*sizeInfeas = pItr;
+    }
+  *sizeInfeas = pItr;
 }
 
 
@@ -344,71 +344,76 @@ selectAprimeDotA( double* apda, int cols, int* F, int sizeF )
 void
 selectAprimeDotAsparse( const taucs_ccs_matrix* apda, int* F, int sizeF, taucs_ccs_matrix* inOutApda )
 {
-	/* This routine presume that inOutApda has already been allocated (this save allocation and free time) 
-	 * the size should be the same as apda, since this will be a submatrix, it cannot possibly be larger */
-	
-	int fItr, valItr, cItr, rItr;
-	
-	if( sizeF == 0 )
+  /* This routine presume that inOutApda has already been
+   * allocated (this save allocation and free time) the size
+   * should be the same as apda, since this will be a submatrix,
+   * it cannot possibly be larger */
+  
+  int fItr, valItr, cItr, rItr;
+  
+  if( sizeF == 0 )
+    {
+      inOutApda->m = inOutApda->n = 0;
+      return;
+    }
+  
+  inOutApda->n = sizeF;
+  inOutApda->flags = TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER;
+  
+  /* start in column F[0] and select entries that are in row F[0], F[1], F[2], ... etc */
+  valItr = cItr = 0;
+  for( cItr=0; cItr<sizeF; cItr++ )
+    {
+      inOutApda->colptr[cItr] = valItr;
+      rItr=apda->colptr[F[cItr]];
+      /* scan down rows until we can compare to F value */
+      fItr=0;
+      
+      /* Since this matrix is symmetric storing the lower triangle, we need to adjust fItr to start at the main diagonal
+       */
+      //	while( F[fItr] < F[cItr] )
+      //		fItr++;
+      fItr=cItr;
+      
+      while( 1==1 )
 	{
-		inOutApda->m = inOutApda->n = 0;
-		return;
-	}
-	
-	inOutApda->n = sizeF;
-	inOutApda->flags = TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER;
-	
-	/* start in column F[0] and select entries that are in row F[0], F[1], F[2], ... etc */
-	valItr = cItr = 0;
-	for( cItr=0; cItr<sizeF; cItr++ )
-	{
-		inOutApda->colptr[cItr] = valItr;
-		rItr=apda->colptr[F[cItr]];
-		/* scan down rows until we can compare to F value */
-		fItr=0;
-		
-		/* Since this matrix is symmetric storing the lower triangle, we need to adjust fItr to start at the main diagonal
-		 */
-	//	while( F[fItr] < F[cItr] )
-	//		fItr++;
-		fItr=cItr;
-			
-		while( 1==1 )
-		{
-			/* have we exhausted F? */
-			if( fItr == sizeF )
-				break;
-		
-			/* Continues until we can compare to F's selection or we finish this column */
-			while( apda->rowind[rItr] < F[fItr] && rItr<apda->colptr[F[cItr]+1] )
-				rItr++;
-				
-			/* Are we dont with this column? */
-			if( rItr == apda->colptr[F[cItr]+1] )
-				break;
-			
-			/* We have been been skipping along the sparse entries of apda, which may or may not correspond to 
-			 * row requests from F. Once we're out of the above loop, we are either AT F[fItr] in which case 
-			 * we want this entry, or we have overshot it. If we've overshot it, we need to increase fItr.
-			*/
-			if( apda->rowind[rItr] == F[fItr] )
-			{
-				inOutApda->values.d[valItr] = apda->values.d[rItr];
-				inOutApda->rowind[valItr] = fItr; /* fItr here is the row in our submatrix (since it is sizeF by sizeF) */
-				valItr++;
-				rItr++;
-				fItr++; /* we got this one */
-			}
-			else
-			{
-				fItr++;
-			}
-		} // while row scanning
-	} // for F column selections
-	
-	/* fix up the last column start, valItr is one more than the index of the last guy
-	 * entered, which is what we want */
-	inOutApda->colptr[sizeF] = valItr;
+	  /* have we exhausted F? */
+	  if( fItr == sizeF )
+	    break;
+	  
+	  /* Continues until we can compare to F's selection or we finish this column */
+	  while( apda->rowind[rItr] < F[fItr] && rItr<apda->colptr[F[cItr]+1] )
+	    rItr++;
+	  
+	  /* Are we dont with this column? */
+	  if( rItr == apda->colptr[F[cItr]+1] )
+	    break;
+	  
+	  /* We have been been skipping along the sparse entries of
+	   * apda, which may or may not correspond to row requests
+	   * from F. Once we're out of the above loop, we are either
+	   * AT F[fItr] in which case we want this entry, or we have
+	   * overshot it. If we've overshot it, we need to increase
+	   * fItr.
+	   */
+	  if( apda->rowind[rItr] == F[fItr] )
+	    {
+	      inOutApda->values.d[valItr] = apda->values.d[rItr];
+	      inOutApda->rowind[valItr] = fItr; /* fItr here is the row in our submatrix (since it is sizeF by sizeF) */
+	      valItr++;
+	      rItr++;
+	      fItr++; /* we got this one */
+	    }
+	  else
+	    {
+	      fItr++;
+	    }
+	} // while row scanning
+    } // for F column selections
+  
+  /* fix up the last column start, valItr is one more than the index of the last guy
+   * entered, which is what we want */
+  inOutApda->colptr[sizeF] = valItr;
 }
 
 taucs_ccs_matrix*
@@ -1101,7 +1106,14 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
     while(fflag != 0){
 
-      if (gVERBOSITY >= 10) { printf("tsnnls: \t f loop\n"); }
+      if (gVERBOSITY >= 10) { 
+
+	printf("tsnnls: \t f loop\n"); 
+        printf("Checking A_original_ordering.\n");
+        taucs_ccs_write_sparse(stdout,A_original_ordering);
+	printf("--------\n");
+
+      }
 
       /* ***************************************** */
       /* solve for xf_raw in unconstrained problem */
@@ -1118,22 +1130,59 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	
 	selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
 	
+	/* Now we include a little debugging code. */
+
+	if (gVERBOSITY >= 10) {
+
+	  int bcnt;
+
+	  printf("tsnnls: \t Checking inputs to t_lsqr.\n");
+	  printf("tsnnls: b is an %d-vector.\n\n",Af->m);
+	  colvector_write_mat(stdout,b,Af->m,"b");
+
+	  printf("tsnnls: Now printing Af.\n\n");
+	  taucs_ccs_write_sparse(stdout,Af);
+
+	}
+	  
 	assert(xf_raw == NULL);
 
-	if (gVERBOSITY >= 10) { printf("tsnnls:\t Calling t_snnlslsqr.\n"); }
+	if( inRelErrTolerance > 1 || 
+	    (lsqrStep != 0 && inPrintErrorWarnings == 0) ) {
 
-	if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
+	  if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling t_snnlslsqr.\n"); }
 	  xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
-	else
-	  {
-	    xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, &rcond );
-	    if( (1/rcond)*(1/rcond)*__DBL_EPSILON__ < inRelErrTolerance )
-	      lsqrStep = 1;
+
+	} else {
+
+	  if (gVERBOSITY >= 10) { 
+	    printf("tsnnls: \t Calling t_snnlslsqr w/rcond.\n");
 	  }
+	  
+	  xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, &rcond );
+	  if( (1/rcond)*(1/rcond)*__DBL_EPSILON__ < inRelErrTolerance )
+	      lsqrStep = 1;
+	}
+	
 	if( xf_raw == NULL )
 	  return NULL; // matrix probably not positive definite
 
-	if (gVERBOSITY >= 10) { printf("tsnnls: \t ptr xf_raw = %p.\n",xf_raw); }
+	if (gVERBOSITY >= 10) { 
+
+	  int xrcnt;
+
+	  printf("tsnnls: \t ptr xf_raw = %p. Dumping xf_raw. \n",xf_raw); 
+	  
+	  for(xrcnt=0;xrcnt < Af->n; xrcnt++) {
+
+	    if (xrcnt % 5 == 0 ) printf("\n");
+	    printf("%g ",xf_raw[xrcnt]);
+	  
+	  }
+
+	  printf("\n\n");
+
+	}
 
       }
       else{	  
@@ -1304,16 +1353,34 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       /* now we see if any of the frees want to be bounded */
       /* ************************************************* */
 
-      if (gVERBOSITY >= 10) { printf("tsnnls: \t Checking infeasibles.\n"); }
+      if (gVERBOSITY >= 10) { 
+
+	int vcnt;
+
+	printf("tsnnls: \t Checking infeasibles.\n"); 
+	printf("tsnnls: Dumping F of size %d.\n",sizeF);
+
+	for(vcnt = 0;vcnt < sizeF;vcnt++) {
+
+	  printf("%d ",F[vcnt]);
+
+	}
+	
+	printf("\n");
+
+      }
 
       infeasible(F,x,sizeF,H1,&sizeH1);
       
       if(sizeH1 == 0){
+
 	fflag = 0;
 
 	// We are going to leave the loop, so squash xf_raw.
 	free(xf_raw);
 	xf_raw = NULL;
+
+	if (gVERBOSITY >= 10) { printf("tsnnls: H is empty.\n"); }
 
 	break;
       }
@@ -1971,7 +2038,10 @@ void taucs_ccs_write_sparse( FILE *fp, taucs_ccs_matrix *A)
 
     for(;rwItr<A->colptr[cpItr+1];rwItr++) {
 
-      fprintf(fp,"%d %d %10.16g\n",cpItr,A->rowind[rwItr],A->values.d[rwItr]);
+      /* Must adjust for 1-based indexing. */
+
+      fprintf(fp,"%d %d %10.16g\n",A->rowind[rwItr]+1,cpItr+1,
+	      A->values.d[rwItr]);
 
     }
 

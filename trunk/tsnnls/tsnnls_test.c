@@ -178,6 +178,7 @@ read_sparse( FILE *fp, double **vals, int *dim, int *cols )
   double val;
   int fcode;
   int nnz;
+  int checknnz;
 
   if (fscanf(fp, "SPARSE %d %d\n", dim, cols) != 2) { return -1; }
   if (fscanf(fp, "%d\n", &nnz) != 1) { return -1; }
@@ -186,7 +187,7 @@ read_sparse( FILE *fp, double **vals, int *dim, int *cols )
 
   if (*vals != NULL) { /* We can allocate this in one go. Do it the easy way. */
 
-    for(;(fcode = fscanf(fp,"%d %d %lg",&i,&j,&val)) == 3;) {
+    for(checknnz=0;(fcode = fscanf(fp,"%d %d %lg",&i,&j,&val)) == 3;checknnz++) {
 
       i--; j--; /* Adjust for 1-based indexing */
       (*vals)[i*(*cols) + j] = val;
@@ -195,7 +196,13 @@ read_sparse( FILE *fp, double **vals, int *dim, int *cols )
 
     /* We got here because the fscanf didn't work. */
 
-    if (fcode == EOF) { return 0; } else { return -1; }
+    if (fcode == EOF) { 
+
+      printf("tsnnls_test: Read matrix with %d (claimed %d) nonzeros.\n",
+	     checknnz,nnz);
+      return 0; 
+
+    } else { return -1; }
 
   } else {
 
@@ -575,7 +582,6 @@ int main( int argc, char* argv[] )
 
   if (!strcmp(argv[argc-1],"--tsnnls")) {
 
-    tsnnls_verbosity(10);
     xvals = t_snnls(A, bvals, &residual, -1, 1);
 
   } else if (!strcmp(argv[argc-1],"--tlsqr")) {
