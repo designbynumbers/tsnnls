@@ -68,6 +68,9 @@
 
 */
 
+#ifdef WITH_DMALLOC
+  #include <dmalloc.h>
+#endif
 
 #include"tsnnls.h"
 
