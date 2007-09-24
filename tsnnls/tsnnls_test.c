@@ -575,6 +575,7 @@ int main( int argc, char* argv[] )
 
   if (!strcmp(argv[argc-1],"--tsnnls")) {
 
+    tsnnls_verbosity(10);
     xvals = t_snnls(A, bvals, &residual, -1, 1);
 
   } else if (!strcmp(argv[argc-1],"--tlsqr")) {

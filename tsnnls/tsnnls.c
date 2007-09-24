@@ -1,4 +1,4 @@
-
+ 
 /*
  * This program is free software distributed under the GPL. A copy of
  * the license should have been included with this archive in a file
@@ -75,6 +75,8 @@
   #include <dmalloc.h>
 #endif
 
+int gVERBOSITY;
+
 /*
 
     File contains an implementation of the block-pivoting non-negative least squares
@@ -111,6 +113,18 @@ void tsnnls_version( char *version, size_t strlen) {
   } else {
     (void)snprintf(version,strlen,PACKAGE_VERSION);
   }
+}
+
+void tsnnls_verbosity(int level) {
+
+  gVERBOSITY = level;
+
+  if (gVERBOSITY >= 10) {
+
+    printf("tsnnls verbosity level changed to %d.\n",level);
+
+  }
+
 }
 
 void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
@@ -969,20 +983,48 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   
   taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
   taucs_ccs_matrix*   lsqrApA;
-  
-  /* create a copy of AprimeDotA memory wise to store the tlsqr submatrices */
-  {
-    lsqrApA = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
-    lsqrApA->n = AprimeDotA->n;
-    lsqrApA->flags = TAUCS_DOUBLE;
-    lsqrApA->flags = lsqrApA->flags | TAUCS_SYMMETRIC;
-    lsqrApA->flags = lsqrApA->flags | TAUCS_LOWER; // rep the lower half
-    lsqrApA->colptr = (int*)malloc(sizeof(int)*(lsqrApA->n+1));
-    /* This is the number of nonzeros in A'*A, which we cannot overflow with a submatrix */
-    maxSize = AprimeDotA->colptr[AprimeDotA->n]; 
-    lsqrApA->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
-    lsqrApA->rowind = (int*)malloc(sizeof(int)*maxSize);
+
+  if (gVERBOSITY >= 10) {  /* In veryverbose mode, we spit out debugging crap. */
+
+    FILE *outmat, *outb;
+    if ((outmat = fopen("tsnnlsA.sparse","w")) != NULL && 
+	(outb = fopen("tsnnlsb.mat","w")) != NULL) {
+
+      taucs_ccs_write_sparse(outmat,A_original_ordering);   
+      colvector_write_mat(outb,b,A_original_ordering->m,"b");
+      fclose(outmat);
+      fclose(outb);
+
+      printf("\ntsnnls: Wrote A and b to tsnnlsA.sparse and tsnnlsb.mat.\n");
+    
+    } 
+
+    printf("tsnnls: Called with \n"
+	   "          %d x %d matrix A.\n"
+	   "          %p      buffer b.\n"
+	   "          %p      outResidualNorm.\n"
+	   "          %g      inRelErrTolerance\n"
+	   "          %d      inPrintErrorWarnings.\n\n",
+	   A_original_ordering->m,A_original_ordering->n,
+	   b,outResidualNorm,inRelErrTolerance,inPrintErrorWarnings);
+   
+    printf("tsnnls: Created %d x %d matrix AprimeDotA.\n",AprimeDotA->m,AprimeDotA->n);
+
   }
+
+  /* create a copy of AprimeDotA memory wise to store the tlsqr submatrices */
+
+  lsqrApA = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+  lsqrApA->n = AprimeDotA->n;
+  lsqrApA->flags = TAUCS_DOUBLE;
+  lsqrApA->flags = lsqrApA->flags | TAUCS_SYMMETRIC;
+  lsqrApA->flags = lsqrApA->flags | TAUCS_LOWER; // rep the lower half
+  lsqrApA->colptr = (int*)malloc(sizeof(int)*(lsqrApA->n+1));
+  /* This is the number of nonzeros in A'*A, 
+     which we cannot overflow with a submatrix */
+  maxSize = AprimeDotA->colptr[AprimeDotA->n]; 
+  lsqrApA->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
+  lsqrApA->rowind = (int*)malloc(sizeof(int)*maxSize);
   
   if( inRelErrTolerance <= 0.0 )
     lsqrStep = 1;
@@ -1016,6 +1058,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
    * A_original_ordering->colptr[A_original_ordering->n] is the number
    * of nonzero entries in A
    */
+
   Af = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
   Af->colptr = (int*)malloc(sizeof(int)*(A_cols+1));
   Af->rowind = (int*)malloc(sizeof(int)*(A_original_ordering->colptr[A_original_ordering->n]));
@@ -1053,8 +1096,12 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   while(gflag != 0){
 
     fflag = 1;
+    
+    if (gVERBOSITY >= 10) { printf("tsnnls: g loop\n"); }
 
     while(fflag != 0){
+
+      if (gVERBOSITY >= 10) { printf("tsnnls: \t f loop\n"); }
 
       /* ***************************************** */
       /* solve for xf_raw in unconstrained problem */
@@ -1073,6 +1120,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	
 	assert(xf_raw == NULL);
 
+	if (gVERBOSITY >= 10) { printf("tsnnls:\t Calling t_snnlslsqr.\n"); }
+
 	if( inRelErrTolerance > 1 || (lsqrStep != 0 && inPrintErrorWarnings == 0) )
 	  xf_raw = t_snnlslsqr(Af, b, lsqrApA, F, NULL);		
 	else
@@ -1083,7 +1132,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	  }
 	if( xf_raw == NULL )
 	  return NULL; // matrix probably not positive definite
-	
+
+	if (gVERBOSITY >= 10) { printf("tsnnls: \t ptr xf_raw = %p.\n",xf_raw); }
+
       }
       else{	  
 	/* if sizeF is 0, then we need to go to the outer loop */
@@ -1106,7 +1157,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       }
 #endif
 
-      
+      if (gVERBOSITY >= 10) { printf("tsnnls: \t Spreading x values over p.\n"); }
+
       /* we also compute the alpha[i] values while we are in here */
       /* alpha will be a sizeF vector */
       for(i=0; i<sizeF; i++){
@@ -1142,6 +1194,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	 For the right side, we've precomputed A'b, so we just need to dot
 	 with x.
       */
+
+      if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling ourtaucs_ccs_times_vec\n");}
 
       // Note: x has not been updated, so it is the version from
       // the last time through the loop
@@ -1188,6 +1242,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       if(qofxplusalphap > qofx){
 
+	if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling qsort.\n"); }
 	/* darn, that didn't work, so we need to sort the alpha's */
 	qsort(alpha,sizeF,sizeof(taucs_double),compare_taucs_doubles);
 
@@ -1249,6 +1304,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       /* now we see if any of the frees want to be bounded */
       /* ************************************************* */
 
+      if (gVERBOSITY >= 10) { printf("tsnnls: \t Checking infeasibles.\n"); }
+
       infeasible(F,x,sizeF,H1,&sizeH1);
       
       if(sizeH1 == 0){
@@ -1261,6 +1318,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	break;
       }
       else{
+
+	if (gVERBOSITY >= 10) { printf("tsnnls: H is nonempty.\n"); }
+
 	int_difference(F,sizeF,H1,sizeH1,&sizeF);
 	int_union(G,sizeG,H1,sizeH1,&sizeG);
 
@@ -1281,6 +1341,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
     /* Now we need to compute y_G and see if shifting anything out
        of F has created infeasibles in G */
+
+    if (gVERBOSITY >= 10) { printf("tsnnls: F loop terminated. Computing y_g.\n");}
 
     taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
 
@@ -1333,6 +1395,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
      * we do not have to incur the computational expense of creating
      * a submatrix.
      */
+    
+    if (gVERBOSITY >= 10) { printf("tsnnls: Computing residual.\n"); }
+
     taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
 
     /* This was the last time we used residual, so let's kill it. */
@@ -1375,9 +1440,13 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     }
   } // while gflag
 
+  if (gVERBOSITY >= 10) { printf("tsnnls: G loop terminated.\n"); }
 
   if( lsqrStep != 0 )
     {
+
+      if (gVERBOSITY >= 10) { printf("tsnnls: Doing lsqr step.\n"); }
+
       lsqr_input   *lsqr_in;
       lsqr_output  *lsqr_out;
       lsqr_work    *lsqr_work;
@@ -1417,10 +1486,16 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	x[F[bItr]] = lsqr_out->sol_vec->elements[bItr];
 		
       free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
+
+      if (gVERBOSITY >= 10) { printf("tsnnls: Survived lsqr.\n"); }
+
     }
   
   if( outResidualNorm != NULL )
     {
+
+      if (gVERBOSITY >= 10) { printf("tsnnls: Computing final residual.\n"); }
+
       double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
 
@@ -1450,6 +1525,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   free(xplusalphap);
   free(p);
   free(alpha);
+
+  if (gVERBOSITY >= 10) { printf("tsnnls: Done.\n"); }
 
   return x;
 
