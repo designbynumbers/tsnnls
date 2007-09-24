@@ -1450,7 +1450,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   free(xplusalphap);
   free(p);
   free(alpha);
-  free(residual);
 
   return x;
 
