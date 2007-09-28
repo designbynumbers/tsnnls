@@ -1134,8 +1134,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	if (gVERBOSITY >= 10) {
 
-	  int bcnt;
-
 	  printf("tsnnls: \t Checking inputs to t_lsqr.\n");
 	  printf("tsnnls: b is an %d-vector.\n\n",Af->m);
 	  colvector_write_mat(stdout,b,Af->m,"b");

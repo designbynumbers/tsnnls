@@ -40,13 +40,17 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 bin_PROGRAMS = tsnnls_test
 
 tsnnls_test_SOURCES = tsnnls_test.c
-tsnnls_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+tsnnls_test_LDFLAGS = -ltsnnls -largtable2 $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+if ARGTABLE
+  TESTS_ENVIRONMENT = argtable=1
+endif
 
 if HAVE_LAPACK 
   check_PROGRAMS = f77blas_test genb_test
   genb_test_SOURCES = genb_test.c
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test genb_test
+  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test
 else 
   check_PROGRAMS = f77blas_test
   TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test
