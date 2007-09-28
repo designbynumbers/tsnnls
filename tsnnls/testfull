@@ -1,3 +1,6 @@
 #!/bin/sh
+if (test $argtable == 1); then 
+./tsnnls_test -A $srcdir/full_example_A.mat -b $srcdir/full_example_b.mat -x $srcdir/full_example_x.mat --tsnnls
+else
 ./tsnnls_test $srcdir/full_example_A.mat $srcdir/full_example_b.mat $srcdir/full_example_x.mat --tsnnls
-
+fi

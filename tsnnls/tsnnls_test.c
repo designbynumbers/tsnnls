@@ -115,7 +115,12 @@
   #include <dmalloc.h>
 #endif
 
+#ifdef HAVE_ARGTABLE2_H
+  #include <argtable2.h>
+#endif
+
 int VERBOSITY = 0;
+enum STYPE { tsnnls, pjv, tlsqr } solver = { tsnnls };
 
 int read_sparse( FILE *fp, double **vals, int *dim, int *cols );
 int read_mat( FILE *fp, double **vals, int *dim, int *cols);
@@ -139,7 +144,7 @@ end_clock()
 	return diff;
 }
 
-double *loadvals(char *filename,int *dim,int *cols)
+double *loadvals(const char *filename,int *dim,int *cols)
 
 /* Attempts to load A from filename. */
 
@@ -190,6 +195,7 @@ read_sparse( FILE *fp, double **vals, int *dim, int *cols )
     for(checknnz=0;(fcode = fscanf(fp,"%d %d %lg",&i,&j,&val)) == 3;checknnz++) {
 
       i--; j--; /* Adjust for 1-based indexing */
+      if (i < 0 || i > *dim-1 || j < 0 || j > *cols-1) { return -1; }
       (*vals)[i*(*cols) + j] = val;
 
     }
@@ -306,8 +312,16 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
   /* Passing a 0.0 here means we will ALWAYS perform the error-reducing final 
    * step with LSQR. 
    */
-  x = t_snnls(A, b, &residual, 0.0, 0 );
-  // x = t_block3(A, b, &residual, 0.0, 0 );
+
+  if (solver == pjv) {
+
+    x = t_snnls_pjv(A, b, &residual, 0.0, 0 );
+
+  } else {
+
+    x = t_snnls(A, b, &residual, 0.0, 0);
+
+  }
 	
   ttime = end_clock();
 	
@@ -430,6 +444,7 @@ tlsqr_test(taucs_ccs_matrix *A, taucs_double *realx, taucs_double *b)
  * WITHOUT going through our solver. 
  */
 extern void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
+
 static double*
 lsqrwrapper( taucs_ccs_matrix* Af, double* b )
 {
@@ -488,11 +503,97 @@ int main( int argc, char* argv[] )
   double *Avals = NULL, *bvals = NULL, *xvals = NULL;
   int Adim,Acols,bdim,bcols,xdim,xcols;
   taucs_ccs_matrix *A;
+  int tverbosity = 0;
+
+  const char *aname = NULL;
+  const char *bname = NULL;
+  const char *xname = NULL;
+
+#ifdef WITH_ARGTABLE2
+
+  struct arg_file *arg_Afile = arg_file1("A",NULL,"<A file>","matrix for problem in .mat or .sparse format");
+  struct arg_file *arg_bfile = arg_file1("b",NULL,"<b file>","rhs vector b in .mat format");
+  struct arg_file *arg_xfile = arg_file0("x",NULL,"<x file>","solution vector x in .mat format");
+  struct arg_lit  *arg_tsnnls = arg_lit0(NULL,"tsnnls","solve with tsnnls");
+  struct arg_lit  *arg_pjv = arg_lit0(NULL,"pjv","solve with reference solver");
+  struct arg_lit  *arg_tlsqr = arg_lit0(NULL,"tlsqr","solve with tlsqr");
+
+  struct arg_int  *arg_verb = arg_int0("v","Verbosity","<0-10>","verbosity for tsnnls solver");
+
+  struct arg_lit  *arg_help = arg_lit0("?","help","display help message");
+
+  struct arg_end *end = arg_end(20);
+
+  void *argtable[] = {arg_Afile,arg_bfile,arg_xfile,arg_tsnnls,
+		      arg_pjv,arg_tlsqr,arg_verb,arg_help,end};
   
+  int nerrors;
+
+  /* Now we parse the arguments */
+
+  if (arg_nullcheck(argtable) != 0) {
+    /* NULL entries detected, allocations must have failed. */
+    fprintf(stderr,"%s: insufficient memory\n",argv[0]);
+    arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
+    return 1;
+  }
+
+  nerrors = arg_parse(argc,argv,argtable);
+
+  /* special case: '--help' takes precedence over error reporting */
+  if (arg_help->count > 0) {
+
+    printf("tsnnls_test solves a least-squares or constrained least-squares\n"
+	   "problem in the A x = b. The files are expected to be in a sparse\n"
+	   "format or in the Octave text format.\n"
+	   "\n");
+
+    fprintf(stderr,"Usage: %s ",argv[0]);
+    arg_print_syntax(stderr,argtable,"\n");
+    arg_print_glossary(stderr,argtable,"  %-25s %s\n");
+    arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
+
+    printf("If a solution x is provided, tsnnls_test compares the results of the\n"
+	   "calculation with the given solution, provides timing information and\n"
+	   "returns 0 if the results match the given solution and 1 otherwise.\n"
+	   "\n"
+	   "If no solution is provided, tsnnls_test writes the solution to x.mat.\n");
+
+    return 0;
+  }
+
+  /* If the parser returned any errors then display them and exit */
+  if (nerrors > 0) {
+    /* Display the error details contained in the arg_end struct.*/
+    fprintf(stderr,"\n");
+    arg_print_errors(stderr,end,argv[0]);
+    fprintf(stderr,"\nUsage: %s ",argv[0]);
+    arg_print_syntax(stderr,argtable,"\n");
+    arg_print_glossary(stderr,argtable,"  %-25s %s\n");
+    arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
+    return 1;
+  }
+
+  /* Now we read the arguments and move into local vars. */
+
+  aname = arg_Afile->filename[0];
+  bname = arg_bfile->filename[0];
+  
+  if (arg_xfile->count > 0) { xname = arg_xfile->filename[0]; }
+  if (arg_tsnnls->count > 0) { solver = tsnnls; }
+  if (arg_pjv->count > 0)    { solver = pjv; }
+  if (arg_tlsqr->count > 0)  { solver  = tlsqr; }
+  if (arg_verb->count > 0) { tverbosity = arg_verb->ival[0]; }
+  
+  arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
+  
+#else
+
   if (argc < 4 || (strcmp(argv[argc-1],"--tsnnls") && strcmp(argv[argc-1],"--tlsqr")) 
       || argc > 6) {
     
-    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> <--tsnnls|--tlsqr>\n ");
+    printf("Usage: tsnnls_test <A file> <b file> "
+	   "<x file (optional)> <--tsnnls|--tlsqr>\n");
     exit(1);
 
   }
@@ -504,7 +605,8 @@ int main( int argc, char* argv[] )
 	   "format or in the Octave text format.\n"
 	   "\n");
     
-    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> <--tsnnls|--tlsqr>\n\n");
+    printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> "
+	   "<--tsnnls|--tlsqr|--pjv>\n\n");
     
     printf("If a solution x is provided, tsnnls_test compares the results of the\n"
 	   "calculation with the given solution, provides timing information and\n"
@@ -518,75 +620,95 @@ int main( int argc, char* argv[] )
   
   /* Now we attempt to parse the arguments and load files. */
 
-  Avals = loadvals(argv[1], &Adim, &Acols);
+  aname = argv[1];
+  bname = argv[2];
+
+  if (argc == 5) { xname = argv[3]; }
+
+  if (!strcmp(argv[argc-1],"--tsnnls")) { solver = tsnnls; }
+  else if (!strcmp(argv[argc-1],"--pjv")) { solver = pjv; }
+  else if (!strcmp(argv[argc-1],"--tlsqr")) { solver = tlsqr; }
+
+#endif
+
+  printf("tsnnls_test %s (%s %s).\n",PACKAGE_VERSION, __DATE__ , __TIME__ );
+  tsnnls_version(NULL,0);
+  tsnnls_verbosity(tverbosity);
+
+  Avals = loadvals(aname, &Adim, &Acols);
   A = taucs_construct_sorted_ccs_matrix(Avals, Acols, Adim);
 
   printf("tsnnls_test: Loaded %d x %d matrix A from %s.\n",
-	 Adim,Acols,argv[1]);
+	 Adim,Acols,aname);
 
   /* Now load b. */
 
-  bvals = loadvals(argv[2], &bdim, &bcols);
+  bvals = loadvals(bname, &bdim, &bcols);
   
   if (bdim != Adim || bcols != 1) {
 
     printf("tsnnls_test: We expect the second (b) file %s to be %d x 1.\n"
 	   "             The given file is %d x %d.\n",
-	   argv[2],Adim,bdim,bcols);
+	   bname,Adim,bdim,bcols);
     exit(1);
 
   }
 
   printf("tsnnls_test: Loaded %d x 1 rhs vector b from %s.\n",
-	 bdim,argv[2]);
+	 bdim,bname);
 
   /* Now, if present, load x */
 
-  if (argc == 5) {
+  if (xname != NULL) {
 
-    xvals = loadvals(argv[3], &xdim, &xcols);
+    xvals = loadvals(xname, &xdim, &xcols);
 
     if (xdim != Acols || xcols != 1) {
 
       printf("tsnnls_test: We expect the third (x) file %s to be %d x 1.\n"
 	     "             The given file is %d x %d.\n",
-	     argv[3],Acols,xdim,xcols);
+	     xname,Acols,xdim,xcols);
       exit(1);
 
     }
 
     printf("tsnnls_test: Loaded %d x %d solution vector x from %s.\n",
-	   xdim,xcols,argv[3]);
+	   xdim,xcols,xname);
 
-    if (!strcmp(argv[4],"--tsnnls")) {
-
+    if (solver == tsnnls || solver == pjv) {
+      
       tsnnls_test(A,xvals,bvals);
-
-    } else if (!strcmp(argv[4],"--tlsqr")) {
-
+      
+    } else if (solver == tlsqr) {
+      
       tlsqr_test(A,xvals,bvals);
 
-    } else {
+    } 
 
-      printf("tsnnls_test: Last argument %s should be tsnnls or tlsqr.\n",
-	     argv[4]);
-      exit(1);
-
-    }
-
-  }  
+  } 
 
   /* If we've survived this long, we're in problem mode instead of test mode. */
 
   double residual;
 
-  if (!strcmp(argv[argc-1],"--tsnnls")) {
+  if (solver == pjv) {
+
+    xvals = t_snnls_pjv(A, bvals, &residual, -1, 1);
+
+  } else if (solver == tlsqr) {
+   
+    xvals = t_lsqr(A, bvals);
+
+  } else {
 
     xvals = t_snnls(A, bvals, &residual, -1, 1);
 
-  } else if (!strcmp(argv[argc-1],"--tlsqr")) {
+  }
 
-    xvals = t_lsqr(A, bvals);
+  if (xvals == NULL) {
+
+    printf("tsnnls_test: solver failed.\n");
+    exit(1);
 
   }
 
