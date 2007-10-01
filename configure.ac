@@ -206,11 +206,19 @@ AC_DEFINE_UNQUOTED([DSCAL_F77],[$fname],[Name of dscal after mangling])
 AC_MSG_CHECKING([name of dscal after mangling])
 echo "$fname"
 
+# Other checks for libraries.
+AC_CHECK_LIB(argtable2,arg_parse,
+AC_DEFINE([WITH_ARGTABLE2],[1],[Defined if we have the argtable2 library])
+AM_CONDITIONAL([ARGTABLE],[test 1 == 1]),
+AC_DEFINE([WITH_ARGTABLE2],[],[Defined if we have the argtable2 library])
+AM_CONDITIONAL([ARGTABLE],[test 0 == 1]))
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([clapack.h vecLib/clapack.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
 AC_CHECK_HEADERS([atlas/clapack.h])
 AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h ctype.h])
+AC_CHECK_HEADERS([argtable2.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
