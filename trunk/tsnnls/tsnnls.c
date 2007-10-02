@@ -342,7 +342,8 @@ selectAprimeDotA( double* apda, int cols, int* F, int sizeF )
 }
 
 void
-selectAprimeDotAsparse( const taucs_ccs_matrix* apda, int* F, int sizeF, taucs_ccs_matrix* inOutApda )
+selectAprimeDotAsparse( const taucs_ccs_matrix* apda, int* F, int sizeF, 
+			taucs_ccs_matrix* inOutApda )
 {
   /* This routine presume that inOutApda has already been
    * allocated (this save allocation and free time) the size
@@ -358,6 +359,8 @@ selectAprimeDotAsparse( const taucs_ccs_matrix* apda, int* F, int sizeF, taucs_c
     }
   
   inOutApda->n = sizeF;
+  inOutApda->m = sizeF;
+
   inOutApda->flags = TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER;
   
   /* start in column F[0] and select entries that are in row F[0], F[1], F[2], ... etc */
@@ -982,7 +985,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
    * Like the row indices themselves, they are 0-based. 
    */
   taucs_double     *x, *y, *xf_raw = NULL, *yg_raw = NULL, *residual = NULL;
-  taucs_double *Apb, *ApAx, *xplusalphap;
+  taucs_double *Apb, *ApAx, *xplusalphap, *ApAxplusalphap;
   
   int AprimeDotA_cols;
   
@@ -1052,6 +1055,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   y    = calloc(m,sizeof(taucs_double));
   Apb  = calloc(n,sizeof(taucs_double));
   ApAx  = calloc(n,sizeof(taucs_double));
+  ApAxplusalphap = calloc(n,sizeof(taucs_double));
   xplusalphap  = calloc(n,sizeof(taucs_double));
   p = calloc(n,sizeof(taucs_double));
   alpha = calloc(n,sizeof(taucs_double));
@@ -1066,8 +1070,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   Af = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
   Af->colptr = (int*)malloc(sizeof(int)*(A_cols+1));
-  Af->rowind = (int*)malloc(sizeof(int)*(A_original_ordering->colptr[A_original_ordering->n]));
-  Af->values.d = (double*)malloc(sizeof(double)*A_original_ordering->colptr[A_original_ordering->n]);
+  Af->rowind = (int*)malloc(sizeof(int)*
+			    (A_original_ordering->colptr[A_original_ordering->n]));
+  Af->values.d = (double*)malloc(sizeof(double)*
+				 A_original_ordering->colptr[A_original_ordering->n]);
   
   /* Next we initialize variables, Adlers suggests starting with everything
      in the free set.*/
@@ -1093,6 +1099,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
      all of the columns */
   /* Set y = A'b, which is the same as y=b'A. We perform that 
      computation as it is faster */
+
   taucs_transpose_vec_times_matrix(b,A_original_ordering, F, n, Apb);
   
   int gflag = {1};
@@ -1109,8 +1116,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       if (gVERBOSITY >= 10) { 
 
 	printf("tsnnls: \t f loop\n"); 
-        printf("Checking A_original_ordering.\n");
-        taucs_ccs_write_sparse(stdout,A_original_ordering);
+        printf("A_original_ordering is an %d x %d matrix.\n",
+	       A_original_ordering->m,A_original_ordering->n);
+        //taucs_ccs_write_sparse(stdout,A_original_ordering);
 	printf("--------\n");
 
       }
@@ -1136,10 +1144,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	  printf("tsnnls: \t Checking inputs to t_lsqr.\n");
 	  printf("tsnnls: b is an %d-vector.\n\n",Af->m);
-	  colvector_write_mat(stdout,b,Af->m,"b");
+	  //colvector_write_mat(stdout,b,Af->m,"b");
 
-	  printf("tsnnls: Now printing Af.\n\n");
-	  taucs_ccs_write_sparse(stdout,Af);
+	  printf("tsnnls: Af in an %d x %d matrix.\n\n",Af->m,Af->n);
+	  //taucs_ccs_write_sparse(stdout,Af);
 
 	}
 	  
@@ -1171,15 +1179,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	  printf("tsnnls: \t ptr xf_raw = %p. Dumping xf_raw. \n",xf_raw); 
 	  
-	  for(xrcnt=0;xrcnt < Af->n; xrcnt++) {
-
-	    if (xrcnt % 5 == 0 ) printf("\n");
-	    printf("%g ",xf_raw[xrcnt]);
-	  
-	  }
-
-	  printf("\n\n");
-
 	}
 
       }
@@ -1245,11 +1244,11 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling ourtaucs_ccs_times_vec\n");}
 
       // Note: x has not been updated, so it is the version from
-      // the last time through the loop
+      // the last time through the loop, unless we swapped stuff from F to G, 
+      // in which case we zeroed some stuff in A.
 
       ourtaucs_ccs_times_vec(AprimeDotA,x,ApAx);
       
-
       /* Note: there might be some fanciness that makes this quicker
 	 computing q(x) and the x+alpha*p value for the first 
 	 run through the loop, where alpha=1.0
@@ -1259,16 +1258,17 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       for(i=0; i<n; i++){
 	qofx += x[i] * (0.5*ApAx[i]-Apb[i]);
-	xplusalphap[i] = x[i] + p[i];
       }
 
       // printf("qofx %f\n",qofx);
 
-      /* reusing ApAx here for convenience, but it is really
-	 A'A*(x+p) */
+      for(i=0; i<n; i++) {
+	xplusalphap[i] = x[i] + p[i];
+      }
+
 #ifdef HAVE_MEMSET
 
-      memset(ApAx,0,sizeof(taucs_double)*n);
+      memset(ApAxplusalphap,0,sizeof(taucs_double)*n);
 
 #else
       for(i=0; i<n; i++){
@@ -1276,13 +1276,15 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       }
 #endif
 
-      ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAx);
+      ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAxplusalphap);
 
       qofxplusalphap = 0.0;
       
       for(i=0; i<n; i++){
-	qofxplusalphap += xplusalphap[i] * (0.5*ApAx[i]-Apb[i]);
+	qofxplusalphap += xplusalphap[i] * (0.5*ApAxplusalphap[i]-Apb[i]);
       }
+
+      // printf("qofxplusalphap: %g.\n",qofxplusalphap);
 
       /* if we have improvement in q, we need not do the following */
       alphaItr = 0;
@@ -1292,6 +1294,11 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling qsort.\n"); }
 	/* darn, that didn't work, so we need to sort the alpha's */
 	qsort(alpha,sizeF,sizeof(taucs_double),compare_taucs_doubles);
+
+	int tmpitr;
+
+	for(tmpitr = 0;tmpitr < sizeF && tmpitr < 10;tmpitr++) {printf("%.2g",alpha[i]);}
+	printf("\n");
 
 	/* burn the ones where alpha >= 1 */
 	alphaItr = 0;
@@ -1309,7 +1316,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 #ifdef HAVE_MEMSET
 
-	  memset(ApAx,0,sizeof(taucs_double)*n);
+	  memset(ApAxplusalphap,0,sizeof(taucs_double)*n);
 
 #else
 	  for(i=0; i<n; i++){
@@ -1317,12 +1324,12 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	  }
 #endif
 
-	  ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAx);
+	  ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAxplusalphap);
 
 	  qofxplusalphap = 0.0;
       
 	  for(i=0; i<n; i++){
-	    qofxplusalphap += xplusalphap[i] * (0.5*ApAx[i]-Apb[i]);
+	    qofxplusalphap += xplusalphap[i] * (0.5*ApAxplusalphap[i]-Apb[i]);
 	  }
 	}
 
@@ -1358,13 +1365,13 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	printf("tsnnls: \t Checking infeasibles.\n"); 
 	printf("tsnnls: Dumping F of size %d.\n",sizeF);
 
-	for(vcnt = 0;vcnt < sizeF;vcnt++) {
+	/*for(vcnt = 0;vcnt < sizeF;vcnt++) {
 
 	  printf("%d ",F[vcnt]);
 
 	}
 	
-	printf("\n");
+	printf("\n"); */
 
       }
 
@@ -1403,6 +1410,32 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
     } // end inner fflag loop
 
+    /* At this point, we should be at a stationary point for x_F, having bound
+       a bunch of formerly free variables. We recompute and print qofx. */
+
+    ourtaucs_ccs_times_vec(AprimeDotA,x,ApAx);
+    qofx = 0.0;
+    
+    for(i=0; i<n; i++){
+      qofx += x[i] * (0.5*ApAx[i]-Apb[i]);
+    }
+    
+    printf("qofx at stationary point: %g.\n",qofx);
+
+    /* We left the inner loop because sizeH was zero. This means that F has 
+       not changed during this iteration. We confirm that the equation
+
+       A'_F A_F x_F - A'_F b + A'_F A_B x_B = 0.
+
+       Since the bound guys are bound to zero, x_B is zero, and we need only
+       check that 
+
+       A'_F A_F x_F - A'_F b = 0. */
+
+    double normgF = 0.0;
+
+
+    /* INSERT CODE TO COMPUTE THIS HERE!!!! */
 
     /* Now we need to compute y_G and see if shifting anything out
        of F has created infeasibles in G */
@@ -1587,6 +1620,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   free(y);
   free(Apb);
   free(ApAx);
+  free(ApAxplusalphap);
   free(xplusalphap);
   free(p);
   free(alpha);
@@ -1760,19 +1794,21 @@ transpose_vec_times_matrix(double* b, double* A, int* F, int A_cols, \
 
 // here cols doubles for sizeF, since F is a selection of columns from A
 void
-taucs_transpose_vec_times_matrix(double* b, taucs_ccs_matrix* A, int* F, int cols, double* result)
+taucs_transpose_vec_times_matrix(double* b, taucs_ccs_matrix* A, int* F, int cols, 
+				 double* result)
 {
-	int cItr, rItr;
-	for( cItr=0; cItr<cols; cItr++ )
-	{
-		result[cItr] = 0;
-		for( rItr=0; rItr<A->colptr[F[cItr]+1]-A->colptr[F[cItr]]; rItr++ )
-		{
-			int tRow = A->rowind[A->colptr[F[cItr]] + rItr];
-				
-			result[cItr] += b[tRow] * A->values.d[A->colptr[F[cItr]] + rItr];
-		}
-	}
+  int cItr, rItr;
+  for( cItr=0; cItr<cols; cItr++ ) {
+
+    result[cItr] = 0;
+
+    for( rItr=0; rItr<A->colptr[F[cItr]+1]-A->colptr[F[cItr]]; rItr++ ) {
+
+      int tRow = A->rowind[A->colptr[F[cItr]] + rItr];	  
+      result[cItr] += b[tRow] * A->values.d[A->colptr[F[cItr]] + rItr];
+    
+    }
+  }
 }
 
 void
