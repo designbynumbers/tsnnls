@@ -13,7 +13,7 @@ EXTRA_DIST = testfull full_example_A.mat full_example_b.mat full_example_x.mat \
 	     sp_test4.sh A_04.sparse x_04.mat b_04.mat \
 	     sp_test5.sh A_05.sparse x_05.mat b_05.mat \
 	     sp_test6.sh A_06.sparse x_06.mat b_06.mat \
-	     rrtestA.sparse rrtestb.mat rrtestx.mat 
+	     rrtest.sh rrtestA.sparse rrtestb.mat rrtestx.mat 
 
 pkginclude_HEADERS = tsnnls.h lsqr.h
 noinst_HEADERS = tsnnls_blas_wrappers.h taucs_basic/taucs_common.h acint32_type.h
