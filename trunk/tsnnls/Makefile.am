@@ -12,7 +12,8 @@ EXTRA_DIST = testfull full_example_A.mat full_example_b.mat full_example_x.mat \
 	     sp_test3.sh A_03.sparse x_03.mat b_03.mat \
 	     sp_test4.sh A_04.sparse x_04.mat b_04.mat \
 	     sp_test5.sh A_05.sparse x_05.mat b_05.mat \
-	     sp_test6.sh A_06.sparse x_06.mat b_06.mat 
+	     sp_test6.sh A_06.sparse x_06.mat b_06.mat \
+	     rrtestA.sparse rrtestb.mat rrtestx.mat 
 
 pkginclude_HEADERS = tsnnls.h lsqr.h
 noinst_HEADERS = tsnnls_blas_wrappers.h taucs_basic/taucs_common.h acint32_type.h
@@ -50,10 +51,10 @@ if HAVE_LAPACK
   check_PROGRAMS = f77blas_test genb_test
   genb_test_SOURCES = genb_test.c
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test genb_test
+  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh rrtest.sh f77blas_test genb_test 
 else 
   check_PROGRAMS = f77blas_test
-  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test
+  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test rrtest.sh
 endif
 
 #nodist_PROGRAMS = cblas_test
