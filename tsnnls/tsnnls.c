@@ -1205,8 +1205,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	if (gVERBOSITY >= 10) { 
 
-	  int xrcnt;
-
 	  printf("tsnnls: \t ptr xf_raw = %p. Dumping xf_raw. \n",xf_raw); 
 	  
 	}
@@ -1358,7 +1356,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       if (gVERBOSITY >= 10) { 
 
-	int vcnt;
+	/* int vcnt; */
 
 	printf("tsnnls: \t Checking infeasibles.\n"); 
 	printf("tsnnls: Dumping F of size %d.\n",sizeF);
@@ -1427,7 +1425,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
        The vector x_F must be assembled from F and x, though. */
 
-    double normgF = 0.0;
+    /* double normgF = 0.0; */
     double *AfpAfxf, *Afpb, *xf, *gf;
     int    gfItr;
 
