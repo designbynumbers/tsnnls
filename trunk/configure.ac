@@ -43,6 +43,9 @@ AC_SUBST(LIB_VERSION, 2:01:2)
 AC_CONFIG_SRCDIR([configure])
 AM_CONFIG_HEADER([config.h])
 
+# We need to override the default cflags here. We don't want to compile with -02 by default
+CFLAGS=`echo $CFLAGS | sed s/-O2//g`
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_LIBTOOL
