@@ -142,7 +142,7 @@ void infeasible( const int* setA, const double* varsA, const int sizeA,
   int i, pItr=0;
   for( i=0; i< sizeA; i++ ) 
     {
-      if( varsA[setA[i]] < 0 ) 
+      if( varsA[setA[i]] <= 0 ) 
 	{
 	  infeas[pItr++] = setA[i];
 	}
@@ -205,74 +205,74 @@ int_difference( int* setA, int aSize, const int* setB, const int bSize, int* out
 void 
 int_union( int* setA, int aSize, const int* setB, const int bSize, int* outSize )
 {
-	int aItr, bItr, uItr;
-	aItr = bItr = uItr = 0;
-	int i;
-	int*	unionSet = NULL;
-
-	*outSize = 0;
-
-	if( aSize == 0 && bSize == 0 )
-		return;
-
-	unionSet = (int*)malloc(sizeof(int)*(aSize+bSize));
-	
-	if( aSize == 0 )
+  int aItr, bItr, uItr;
+  aItr = bItr = uItr = 0;
+  int i;
+  int*	unionSet = NULL;
+  
+  *outSize = 0;
+  
+  if( aSize == 0 && bSize == 0 )
+    return;
+  
+  unionSet = (int*)malloc(sizeof(int)*(aSize+bSize));
+  
+  if( aSize == 0 )
+    {
+      memcpy( unionSet, setB, sizeof(int)*bSize);
+      *outSize = bSize;
+    }
+  else if( bSize == 0 )
+    {
+      memcpy( unionSet, setA, sizeof(int)*aSize);
+      *outSize = aSize;
+    }
+  else
+    {
+      while( 1==1 )
 	{
-		memcpy( unionSet, setB, sizeof(int)*bSize);
-		*outSize = bSize;
-	}
-	else if( bSize == 0 )
-	{
-		memcpy( unionSet, setA, sizeof(int)*aSize);
-		*outSize = aSize;
-	}
-	else
-	{
-		while( 1==1 )
+	  if( setA[aItr] == setB[bItr] )
+	    {
+	      unionSet[uItr++] = setA[aItr];
+	      aItr++;
+	      bItr++;
+	    }
+	  else
+	    {
+	      if(setA[aItr] < setB[bItr] )
+		unionSet[uItr++] = setA[aItr++];
+	      else
 		{
-			if( setA[aItr] == setB[bItr] )
-			{
-				unionSet[uItr++] = setA[aItr];
-				aItr++;
-				bItr++;
-			}
-			else
-			{
-				if(setA[aItr] < setB[bItr] )
-					unionSet[uItr++] = setA[aItr++];
-				else
-				{
-					unionSet[uItr++] = setB[bItr++];
-				}
-			}
-
-			if( aItr == aSize )
-			{
-				/* copy remaining b elements */
-				for( ; bItr<bSize; bItr++ )
-					unionSet[uItr++] = setB[bItr];
-				break;
-			}
-			if( bItr == bSize )
-			{
-				/* copy remaining a elements */
-				for( ; aItr<aSize; aItr++ )
-					unionSet[uItr++] = setA[aItr];
-				break;
-			}
-		} /* while */
-
-		*outSize = uItr;
-	} // else 
-	
-	/* Now we recopy the results to A. */
-	for(i=0;i<*outSize;i++) 
-	{
-		setA[i] = unionSet[i];
-	}
-
-	free(unionSet);
+		  unionSet[uItr++] = setB[bItr++];
+		}
+	    }
+	  
+	  if( aItr == aSize )
+	    {
+	      /* copy remaining b elements */
+	      for( ; bItr<bSize; bItr++ )
+		unionSet[uItr++] = setB[bItr];
+	      break;
+	    }
+	  if( bItr == bSize )
+	    {
+	      /* copy remaining a elements */
+	      for( ; aItr<aSize; aItr++ )
+		unionSet[uItr++] = setA[aItr];
+	      break;
+	    }
+	} /* while */
+      
+      *outSize = uItr;
+    } // else 
+  
+  /* Now we recopy the results to A. */
+  for(i=0;i<*outSize;i++) 
+    {
+      setA[i] = unionSet[i];
+    }
+  
+  free(unionSet);
 }
 
 #ifndef __DBL_EPSILON__
@@ -282,63 +282,63 @@ int_union( int* setA, int aSize, const int* setB, const int bSize, int* outSize 
 static void
 fix_zeros( double* values, int size, double rcond, int inPrintErrorWarnings )
 {
-	int i;
-	double eps = __DBL_EPSILON__; // as defined in float.h
-	for( i=0; i<size; i++ )
+  int i;
+  double eps = __DBL_EPSILON__; // as defined in float.h
+  for( i=0; i<size; i++ )
+    {
+      if( inPrintErrorWarnings != 0 )
 	{
-		if( inPrintErrorWarnings != 0 )
-		{
-			double cond = (double)1/rcond;
-						
-			if( fabs(values[i]) < (cond*cond*eps) )
-			{
-				fprintf( stderr, "Variable is within (condition number)^2*eps of 0, accuracy results may be unexpected!\n" );
-				inPrintErrorWarnings = 0; // It should suffice to notify the user once. Otherwise this will happen MANY times
-			}
-		}
-		
-		if( fabs(values[i]) < kZeroThreshold )
-		{
-			values[i] = 0.0;
-		}
+	  double cond = (double)1/rcond;
+	  
+	  if( fabs(values[i]) < (cond*cond*eps) )
+	    {
+	      fprintf( stderr, "Variable is within (condition number)^2*eps of 0, accuracy results may be unexpected!\n" );
+	      inPrintErrorWarnings = 0; // It should suffice to notify the user once. Otherwise this will happen MANY times
+	    }
 	}
+      
+      if( fabs(values[i]) < kZeroThreshold )
+	{
+	  values[i] = 0.0;
+	}
+    }
 }
 
 taucs_ccs_matrix*
 selectAprimeDotA( double* apda, int cols, int* F, int sizeF )
 {
-	taucs_ccs_matrix* result = NULL;
-	int maxSize, i, j, valItr;
-	
-	result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
-
-	result->n = sizeF;
-	result->flags = TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER;
-	
-	maxSize = (result->n*(result->n+1))/2;
-
-	result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
-	result->rowind = (int*)malloc(sizeof(int)*maxSize);
-	result->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
-	
-	valItr = 0;
-	for( i=0; i<sizeF; i++ )
+  taucs_ccs_matrix* result = NULL;
+  int maxSize, i, j, valItr;
+  
+  result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+  
+  result->n = sizeF;
+  result->flags = TAUCS_DOUBLE | TAUCS_SYMMETRIC | TAUCS_LOWER;
+  
+  maxSize = (result->n*(result->n+1))/2;
+  
+  result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
+  result->rowind = (int*)malloc(sizeof(int)*maxSize);
+  result->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
+  
+  valItr = 0;
+  for( i=0; i<sizeF; i++ )
+    {
+      result->colptr[i] = valItr;
+      for( j=i; j<sizeF; j++ )
 	{
-		result->colptr[i] = valItr;
-		for( j=i; j<sizeF; j++ )
-		{
-			double val = apda[cols*F[j] + F[i]];
-			if( val != 0 )
-			{
-				result->values.d[valItr] = val;
-				result->rowind[valItr] = j;
-				valItr++;
-			}
-		}
+	  double val = apda[cols*F[j] + F[i]];
+	  if( val != 0 )
+	    {
+	      result->values.d[valItr] = val;
+	      result->rowind[valItr] = j;
+	      valItr++;
+	    }
 	}
-	result->colptr[i] = valItr;
-
-	return result;
+    }
+  result->colptr[i] = valItr;
+  
+  return result;
 }
 
 void
@@ -938,8 +938,36 @@ compare_taucs_doubles (const void *a, const void *b)
   return (*da < *db) - (*da > *db);
 }
 
+double q(taucs_double *x,taucs_ccs_matrix *ApA, taucs_double *Apb, 
+	 taucs_double *b, int m, int n)
 
+/* Compute the "residual" function 
 
+   q(x) = 1/2*x'A'Ax-x'A'b + (1/2)b'b = x'(0.5*A'Ax - A'b) + 0.5*b'b
+	= (1/2)(Ax - b)^2.
+
+   We know A'A stored as AprimeDotA.
+   We'll assume that ourtaucs_ccs_times_vec is quicker for computing
+   A'Ax and then we'll dot with x manually.
+   For the right side, we've precomputed A'b, so we just need to dot
+   with x.
+*/
+
+{
+  taucs_double *ApAx;
+  double q = 0.0;
+  int i;
+
+  ApAx = malloc(sizeof(double)*n);
+
+  ourtaucs_ccs_times_vec(ApA,x,ApAx);
+  for(i=0; i<n; i++) { q += x[i] * (0.5*ApAx[i] - Apb[i]); }
+  for(i=0; i<m; i++) { q += 0.5*b[i]*b[i]; }
+  free(ApAx);
+  
+  return q;
+}
+  
 // This is an implementation of the block3 algorithm due to Adlers
 // See http://citeseer.ist.psu.edu/385071.html
 // Sparse Least Squares Problems with Box Constraints
@@ -955,16 +983,16 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 {
   taucs_ccs_matrix  *Af;
   int               m,n,i, maxSize;
-  int              A_cols;
-  int              *F, *G, *H1, *H2;
-  int              sizeF, sizeG, sizeH1, sizeH2;
-  int				lsqrStep=0;
-  double			rcond=1;
-
+  int               A_cols;
+  int               *F, *G, *H1, *H2;
+  int               sizeF, sizeG, sizeH1, sizeH2, sizeAlpha;
+  int		    lsqrStep=0;
+  double	    rcond=1;
+  double            last_stationary_q = {DBL_MAX};
 
   taucs_double *p;
   taucs_double *alpha;
-  double qofx, qofxplusalphap;
+  double qofx, newq;
   /*double bb;*/
 
   // these are just to speed up some stuff below ever so slightly
@@ -973,7 +1001,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   // I suppose one could double use incTmp and alphadog, but it 
   // shouldn't make much of a difference
-  double incTmp = {-1.0};
+  double minusOne = {-1.0};
   int incX = {1}, incY = {1};
   double alphadog = {-1.0};
   int alphaItr = {0};
@@ -985,7 +1013,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
    * Like the row indices themselves, they are 0-based. 
    */
   taucs_double     *x, *y, *xf_raw = NULL, *yg_raw = NULL, *residual = NULL;
-  taucs_double *Apb, *ApAx, *xplusalphap, *ApAxplusalphap;
+  taucs_double *Apb, *ApAx, *xplusalphap, *ApAxplusalphap, *Pxplusalphap;
   
   int AprimeDotA_cols;
   
@@ -1033,7 +1061,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   maxSize = AprimeDotA->colptr[AprimeDotA->n]; 
   lsqrApA->values.d = (double*)malloc(sizeof(taucs_double)*maxSize);
   lsqrApA->rowind = (int*)malloc(sizeof(int)*maxSize);
-  
+
   if( inRelErrTolerance <= 0.0 )
     lsqrStep = 1;
   
@@ -1053,10 +1081,14 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   
   x    = calloc(n,sizeof(taucs_double));
   y    = calloc(m,sizeof(taucs_double));
+
   Apb  = calloc(n,sizeof(taucs_double));
   ApAx  = calloc(n,sizeof(taucs_double));
   ApAxplusalphap = calloc(n,sizeof(taucs_double));
+
   xplusalphap  = calloc(n,sizeof(taucs_double));
+  Pxplusalphap = calloc(n,sizeof(taucs_double));
+
   p = calloc(n,sizeof(taucs_double));
   alpha = calloc(n,sizeof(taucs_double));
 
@@ -1080,20 +1112,18 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 #ifdef HAVE_MEMSET
       
   memset(x,0,sizeof(taucs_double)*n);
-  for(i=0; i<n; i++){
-    F[i] = i;
-  }
+  for(i=0; i<n; i++){ F[i] = i; x[i] = 1.0; }
       
 #else  /* Work around it. */
       
   for(i=0;i<n;i++){ 
-    x[i] = 0.0;
+    x[i] = 1.0;
     F[i] = i;
   }
   
 #endif
 
-  sizeG = 0; sizeF = n;  
+  sizeG = 0; sizeF = n; sizeAlpha = 0;
   
   /* here we'll precompute A'b since we have F filled up with
      all of the columns */
@@ -1136,7 +1166,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	 * extra parameters from snnls, however.
 	 */
 	
-	selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
+ 	selectAprimeDotAsparse(AprimeDotA, F, sizeF, lsqrApA); 	
 	
 	/* Now we include a little debugging code. */
 
@@ -1206,21 +1236,31 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       if (gVERBOSITY >= 10) { printf("tsnnls: \t Spreading x values over p.\n"); }
 
       /* we also compute the alpha[i] values while we are in here */
-      /* alpha will be a sizeF vector */
-      for(i=0; i<sizeF; i++){
+      /* we will deduce the size of alpha as we go-- it depends on which xf_raw */
+      /* guys have an infeasible value. */
+
+      for(i=0,sizeAlpha=0; i<sizeF; i++){
+
 	itmp = F[i];
 	p[itmp] = xf_raw[i] - x[itmp];
 
-	// Alternately, could use some tolerance
-	if(p[itmp] != 0){
-	  alpha[i] = xf_raw[i]/p[itmp];
-	}
-	else{
-	  // If the old and the new are the same, then we'll set
-	  // alpha[i] to 88.0 and this will just get skipped
-	  alpha[i] = 88.0;
-	}
+	if (xf_raw[i] < 0) { /* An infeasible value: compute alpha. */
+	  
+	  assert(fabs(p[itmp]) > 1e-12);
+	  alpha[sizeAlpha++] = -x[itmp]/p[itmp]; 
+
+	  // This should be the stepsize which makes x(n) + alpha p = 0 in 
+	  // the itmp coordinate.
+
+	  // I'm going by the sbls2 code here. So sue me.
+	  // Ok, I don't get why this isn't x[i], but Adlers seems clear
+	  //   alpha[sizeAlpha++] = xf_raw[i]/p[itmp].
+	 	 
+	}	    
+
       }
+
+      alpha[sizeAlpha++] = 0; /* A step of size 0 is possible. */
 
 
       /* ******************************************************* */
@@ -1232,118 +1272,74 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       /* we'll reuse the value of q(x), so we might as well hold on to it */
 
-      /* So here's the deal, we want to compute q(x) which is
-	 q(x) = 1/2*x'A'Ax-x'A'b = x'(0.5*A'Ax - A'b)
-	 We know A'A stored as AprimeDotA
-	 We'll assume that ourtaucs_ccs_times_vec is quicker for computing
-	 A'Ax and then we'll dot with x manually.
-	 For the right side, we've precomputed A'b, so we just need to dot
-	 with x.
-      */
+      qofx = q(x,AprimeDotA,Apb,b,m,n);
 
-      if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling ourtaucs_ccs_times_vec\n");}
+      if (gVERBOSITY > 5) {printf("qofx to beat: %f\n",qofx);}
 
-      // Note: x has not been updated, so it is the version from
-      // the last time through the loop, unless we swapped stuff from F to G, 
-      // in which case we zeroed some stuff in A.
-
-      ourtaucs_ccs_times_vec(AprimeDotA,x,ApAx);
-      
-      /* Note: there might be some fanciness that makes this quicker
-	 computing q(x) and the x+alpha*p value for the first 
-	 run through the loop, where alpha=1.0
-      */
-
-      qofx = 0.0;
-
-      for(i=0; i<n; i++){
-	qofx += x[i] * (0.5*ApAx[i]-Apb[i]);
-      }
-
-      // printf("qofx %f\n",qofx);
+      // We now assemble xplusalphap and P[x + 1p]. 
 
       for(i=0; i<n; i++) {
 	xplusalphap[i] = x[i] + p[i];
+	Pxplusalphap[i] = max(xplusalphap[i],0);
       }
 
-#ifdef HAVE_MEMSET
-
-      memset(ApAxplusalphap,0,sizeof(taucs_double)*n);
-
-#else
-      for(i=0; i<n; i++){
-	ApAx[i] = 0.0;
-      }
-#endif
-
-      ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAxplusalphap);
-
-      qofxplusalphap = 0.0;
+      double ntest=0.0;
+      for(i=0; i<n; i++) {ntest += pow(Pxplusalphap[i]-xplusalphap[i],2.0); }
       
-      for(i=0; i<n; i++){
-	qofxplusalphap += xplusalphap[i] * (0.5*ApAxplusalphap[i]-Apb[i]);
-      }
+      ntest = 0.0;
+      for(i=0; i<n; i++) {ntest += pow(xplusalphap[i],2.0); }
 
-      // printf("qofxplusalphap: %g.\n",qofxplusalphap);
+      newq = q(Pxplusalphap,AprimeDotA,Apb,b,m,n);
+      if (gVERBOSITY > 5) { printf("q(P[x + 1p]): %g.\n",newq); }
 
       /* if we have improvement in q, we need not do the following */
       alphaItr = 0;
 
-      if(qofxplusalphap > qofx){
+      if(newq > qofx){
 
 	if (gVERBOSITY >= 10) { printf("tsnnls: \t Calling qsort.\n"); }
 	/* darn, that didn't work, so we need to sort the alpha's */
-	qsort(alpha,sizeF,sizeof(taucs_double),compare_taucs_doubles);
-
-	int tmpitr;
-
-	for(tmpitr = 0;tmpitr < sizeF && tmpitr < 10;tmpitr++) {printf("%.2g",alpha[i]);}
-	printf("\n");
+	qsort(alpha,sizeAlpha,sizeof(taucs_double),compare_taucs_doubles);
 
 	/* burn the ones where alpha >= 1 */
 	alphaItr = 0;
-	while(alpha[alphaItr] >= 1.0){
-	  alphaItr++;
-	}
+
+	while(alpha[alphaItr] >= 1.0 && alphaItr < sizeAlpha){ alphaItr++; }
+	assert(alphaItr < sizeAlpha);
+
+	/* burn ending zeros, so only the last one is zero */
+	while(alpha[sizeAlpha-2] == 0) { sizeAlpha--; }
 
 	/* now we see if the step of size alpha[i] improves q */
-	for(; alphaItr<sizeF; alphaItr++){
-	  tmp = alpha[alphaItr];
+
+	for(; alphaItr<sizeAlpha+8 && newq >= qofx; alphaItr++){
+
+	  if (alphaItr < sizeAlpha-1) {
+
+	    tmp = alpha[alphaItr];
+
+	  } else { /* The smallest alpha doesn't work, so try shrinking further. */
+
+	    tmp = alpha[sizeAlpha-2] * pow(0.5,alphaItr-(sizeAlpha-2));
+
+	  }
+
+	  assert(tmp >= 0);
 
 	  for(i=0; i<n; i++){
+
 	    xplusalphap[i] = x[i] + tmp*p[i];
+	    Pxplusalphap[i] = max(xplusalphap[i],0);
+	    
 	  }
 
-#ifdef HAVE_MEMSET
+	  newq = q(Pxplusalphap,AprimeDotA,Apb,b,m,n);
+	  if (gVERBOSITY > 5) { printf("q(P[x + (%g)p]: %g.\n",tmp,newq); }
 
-	  memset(ApAxplusalphap,0,sizeof(taucs_double)*n);
-
-#else
-	  for(i=0; i<n; i++){
-	    ApAx[i] = 0.0;
-	  }
-#endif
-
-	  ourtaucs_ccs_times_vec(AprimeDotA,xplusalphap,ApAxplusalphap);
-
-	  qofxplusalphap = 0.0;
-      
-	  for(i=0; i<n; i++){
-	    qofxplusalphap += xplusalphap[i] * (0.5*ApAxplusalphap[i]-Apb[i]);
-	  }
 	}
 
-	if(alphaItr >= sizeF){
-	  // I don't know if this is an error, none of the alpha_i worked
-	  printf("Warning: No improvement with alphas\n");
-
-	  // This is a total hack, but it hasn't happened ever in 
-	  // trivial levels of testing.  We'll assume it happens
-	  // so infrequently, that this doesn't affect performance.
-	  // Basically, this is going to force a double copy.
-	  memcpy(xplusalphap,x,sizeof(taucs_double)*n);
-	}
-
+	assert(alphaItr < sizeAlpha+8);
+	  
       }// end (qofxplusalphap > qofx)
 
       /* ************************************************* */
@@ -1351,9 +1347,11 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       /* for the next (potential) round                    */
       /* ************************************************* */
 
-      memcpy(x,xplusalphap,sizeof(taucs_double)*n);
-      
+      /* Note that we make x the (feasible) P[x + alphap], not the */
+      /* potentially infeasible x + alphap. */
 
+      memcpy(x,Pxplusalphap,sizeof(taucs_double)*n);
+      
       /* ************************************************* */
       /* now we see if any of the frees want to be bounded */
       /* ************************************************* */
@@ -1375,7 +1373,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       }
 
-      infeasible(F,x,sizeF,H1,&sizeH1);
+      infeasible(F,Pxplusalphap,sizeF,H1,&sizeH1);
       
       if(sizeH1 == 0){
 
@@ -1396,10 +1394,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	int_difference(F,sizeF,H1,sizeH1,&sizeF);
 	int_union(G,sizeG,H1,sizeH1,&sizeG);
 
-	// Need to zero out the stuff that turned up negative
-	for(i=0; i<sizeH1; i++){
-	  x[H1[i]] = 0.0;
-	}
       }
 
       // The first thing we're going to do up top is allocate a new xf_raw.
@@ -1413,14 +1407,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     /* At this point, we should be at a stationary point for x_F, having bound
        a bunch of formerly free variables. We recompute and print qofx. */
 
-    ourtaucs_ccs_times_vec(AprimeDotA,x,ApAx);
-    qofx = 0.0;
-    
-    for(i=0; i<n; i++){
-      qofx += x[i] * (0.5*ApAx[i]-Apb[i]);
-    }
-    
-    printf("qofx at stationary point: %g.\n",qofx);
+    qofx = q(x,AprimeDotA,Apb,b,m,n);
+    if (gVERBOSITY > 5) {printf("qofx at stationary point: %g.\n",qofx);}
+    assert(qofx < last_stationary_q);
+    last_stationary_q = qofx;
 
     /* We left the inner loop because sizeH was zero. This means that F has 
        not changed during this iteration. We confirm that the equation
@@ -1430,19 +1420,56 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
        Since the bound guys are bound to zero, x_B is zero, and we need only
        check that 
 
-       A'_F A_F x_F - A'_F b = 0. */
+       A'_F A_F x_F - A'_F b = 0. 
+
+       Because we have left the loop at a point where we didn't modify F
+       in the last round, lsqrApA and Af are A'_FA_F and A_F respectively. 
+
+       The vector x_F must be assembled from F and x, though. */
 
     double normgF = 0.0;
+    double *AfpAfxf, *Afpb, *xf, *gf;
+    int    gfItr;
 
+    AfpAfxf = calloc(A_original_ordering->m,sizeof(double));
+    Afpb    = calloc(A_original_ordering->m,sizeof(double));
+    xf      = calloc(sizeF,sizeof(double));
+    gf      = calloc(sizeF,sizeof(double));
 
-    /* INSERT CODE TO COMPUTE THIS HERE!!!! */
+    for(gfItr=0;gfItr<sizeF;gfItr++) { xf[gfItr] = x[F[gfItr]]; }
 
+    ourtaucs_ccs_times_vec(lsqrApA,xf,AfpAfxf);
+    taucs_transpose_vec_times_matrix(b,A_original_ordering,F,sizeF,Afpb);
+
+    for(gfItr=0;gfItr<sizeF;gfItr++) { gf[gfItr] = AfpAfxf[gfItr] - Afpb[gfItr]; }
+
+    /* At this point, if we're really at a stationary point, this should be 
+       pretty much dead zero. We check this to make sure. */
+
+    for(gfItr=0;gfItr<sizeF;gfItr++) { 
+
+      if (fabs(gf[gfItr]) > 1e-8) {
+
+	printf("tsnnls: Warning! Component %d of the reduced gradient is %g at the\n"
+	       "        end of the f loop. This suggests that we are not at a stationary\n"
+	       "        point and that something has gone wrong with the run.\n",
+	       gfItr,gf[gfItr]);
+
+      }
+
+    }
+
+    free(gf); free(xf); free(AfpAfxf); free(Afpb);
+    
     /* Now we need to compute y_G and see if shifting anything out
        of F has created infeasibles in G */
 
     if (gVERBOSITY >= 10) { printf("tsnnls: F loop terminated. Computing y_g.\n");}
 
-    taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
+    // Reading the algorithm closely, it seems that the ENTIRE residual,
+    // and not the constrained residual, is what's wanted here. We try it...
+
+    // taucs_ccs_submatrix(A_original_ordering, F, sizeF, Af);
 
     // Note: it might be simpler to allocate residual up front
     // then we'd zero it out here
@@ -1451,18 +1478,16 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       // update xf_raw to include alpha*p. Since we are copying
       // into a new xf_raw, we reallocate it here.
       
-      xf_raw = malloc(sizeF*sizeof(double));
-      
-      for(i=0; i<sizeF; i++){
-	xf_raw[i] = x[F[i]];
-      }      
+      //xf_raw = calloc(sizeF,sizeof(double));    
+      //for(i=0; i<sizeF; i++){ xf_raw[i] = x[F[i]]; }      
       
       /* Now compute the residual A_F x_F - b. This is an m-vector. */
       assert(residual == NULL);      
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
-      ourtaucs_ccs_times_vec(Af,xf_raw,residual);
-      
-      free(xf_raw);  // we won't use it again below
+      //ourtaucs_ccs_times_vec(Af,xf_raw,residual);
+      ourtaucs_ccs_times_vec(A_original_ordering,x,residual);
+
+      //free(xf_raw);  // we won't use it again below
       xf_raw = NULL; // for safety's sake.
 
     } else{	  
@@ -1477,7 +1502,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
     }
 
-    DAXPY_F77(&m,&incTmp,b,&incX,residual,&incY);
+    DAXPY_F77(&m,&minusOne,b,&incX,residual,&incY);
 
     // Note: We could allocate this up front as well
     /* We now compute (A_G)'. */
@@ -1514,14 +1539,11 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     // Note: if we rewrote infeasible, we could avoid computing y at all.
     // But for the sake of ease, we'll leave it like this
 
-    /* here we are setting up y */
-    for(i=0; i<sizeF; i++){
-      y[F[i]] = 0.0;
-    }
-    
-    for(i=0; i<sizeG; i++){
-      y[G[i]] = yg_raw[i];
-    }
+    /* here we are setting up y. We only need to zero only the guys not in G */
+    /* but it's safer to zero everything. */
+
+    for(i=0; i<n; i++){ y[i] = 0.0; }
+    for(i=0; i<sizeG; i++){ y[G[i]] = yg_raw[i]; }  
 
     /* From here on out, we will only use y. So we discard yg_raw. */
     free(yg_raw); yg_raw = NULL;
@@ -1621,7 +1643,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   free(Apb);
   free(ApAx);
   free(ApAxplusalphap);
+
   free(xplusalphap);
+  free(Pxplusalphap);
+
   free(p);
   free(alpha);
 
