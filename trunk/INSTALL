@@ -10,8 +10,15 @@ TSNNLS Installation Guide
 System requirements: gcc and a working fortran compiler
 
 The installation of TSNNLS itself on your system is relatively
-uncomplicated. However, since TSNNLS is linear algebra software, it
-depends on finding a useable local installation of BLAS/LAPACK in
+uncomplicated. A few notes are in order. First, since TSNNLS is 
+numerical software, it is a bad idea to compile with "unsafe" gcc
+optimizations, and one of the default tests will fail if the 
+software is compiled with -O2. The configure script automatically
+prevents this option from being used, but users should be aware
+that this choice has been made for them.
+
+Further, since TSNNLS is linear algebra software, it
+depends on finding a usable local installation of BLAS/LAPACK in
 order to link and run. You will have to link any of your programs
 which use TSNNLS with appropriate libraries in order to run them once
 TSNNLS is installed. You can find out the libraries that TSNNLS' 
@@ -38,6 +45,10 @@ new header but in the meantime, especially in the taucs portion of
 the code, some calls may be hardcoded to the g77 conventions. Let us
 know if you fail to compile the library and your BLAS/LAPACK was
 compiled in another Fortran environment.
+
+The library installs a helpful test program, tsnnls_test, which can
+be used to access some of the functionality of the library from the 
+command-line. All of the standard tests are runs of tsnnls_test.
 
 Here are some additional notes for various systems:
 
