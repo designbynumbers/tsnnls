@@ -50,7 +50,7 @@ if HAVE_LAPACK
   check_PROGRAMS = f77blas_test genb_test
   genb_test_SOURCES = genb_test.c
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
-  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test
+  TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test genb_test
 else 
   check_PROGRAMS = f77blas_test
   TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test
