@@ -53,6 +53,13 @@ extern "C" {
   /* Sets the verbosity of the library (0-10). At level 10
      there is a LOT of output, this is useful only for debugging. */
 
+  int tsnnls_error(char **errstring);
+  /* Returns the error code, if set, from the last call of tsnnls.
+     If * to char * is passed, sets it to a buffer containing an error string. */  
+
+  void clear_tsnnls_error();
+  /* Clears any error code that has been previously set. */
+
   /* Utility Functions for CCS matrices */
   void taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, 
 			    const int inColCount, taucs_ccs_matrix* result);
@@ -114,10 +121,20 @@ extern "C" {
 			       double inRelErrTolerance, 
 			       int inPrintErrorWarnings );
 
-  taucs_double*	      t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
+  taucs_double*	      t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, 
+				   taucs_double *b, 
 			       double* outResidualNorm, 
 			       double inRelErrTolerance, 
 			       int inPrintErrorWarnings );
+
+  taucs_double*       t_snnls_fallback( taucs_ccs_matrix *A_original_ordering, 
+					taucs_double *b, 
+					double* outResidualNorm, 
+					double inRelErrTolerance, 
+					int inPrintErrorWarnings );
+
+  /* The fallback solver tries the various tsnnls solvers in order, falling
+     back to slower (and more stable) methods if the faster ones fail. */
 
 /* Utility Functions for CCS matrices */
 void taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, 
