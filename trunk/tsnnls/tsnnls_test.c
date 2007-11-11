@@ -120,7 +120,7 @@
 #endif
 
 int VERBOSITY = 0;
-enum STYPE { tsnnls, pjv, tlsqr } solver = { tsnnls };
+enum STYPE { tsnnls, pjv, tlsqr, fallback } solver = { tsnnls };
 
 int read_sparse( FILE *fp, double **vals, int *dim, int *cols );
 int read_mat( FILE *fp, double **vals, int *dim, int *cols);
@@ -162,11 +162,12 @@ double *loadvals(const char *filename,int *dim,int *cols)
 
   }
 
-  if (read_mat(Af, &vals, dim, cols)) { /* If reading as dense fails. */
+  if (read_mat(Af, &vals, dim, cols) == -1) { /* If reading as dense fails. */
 
     if (read_sparse(Af, &vals, dim, cols)) { /* If read as sparse fails. */
 
       fprintf(stderr,"tsnnls_test: Couldn't parse file %s.\n", filename);
+      exit(1);
 
     }
 
@@ -517,6 +518,7 @@ int main( int argc, char* argv[] )
   struct arg_lit  *arg_tsnnls = arg_lit0(NULL,"tsnnls","solve with tsnnls");
   struct arg_lit  *arg_pjv = arg_lit0(NULL,"pjv","solve with reference solver");
   struct arg_lit  *arg_tlsqr = arg_lit0(NULL,"tlsqr","solve with tlsqr");
+  struct arg_lit  *arg_fallback = arg_lit0(NULL,"fallback","solve with fallback");
 
   struct arg_int  *arg_verb = arg_int0("v","Verbosity","<0-10>","verbosity for tsnnls solver");
 
@@ -525,7 +527,7 @@ int main( int argc, char* argv[] )
   struct arg_end *end = arg_end(20);
 
   void *argtable[] = {arg_Afile,arg_bfile,arg_xfile,arg_tsnnls,
-		      arg_pjv,arg_tlsqr,arg_verb,arg_help,end};
+		      arg_pjv,arg_fallback,arg_tlsqr,arg_verb,arg_help,end};
   
   int nerrors;
 
@@ -583,6 +585,7 @@ int main( int argc, char* argv[] )
   if (arg_tsnnls->count > 0) { solver = tsnnls; }
   if (arg_pjv->count > 0)    { solver = pjv; }
   if (arg_tlsqr->count > 0)  { solver  = tlsqr; }
+  if (arg_fallback->count > 0) {solver = fallback; }
   if (arg_verb->count > 0) { tverbosity = arg_verb->ival[0]; }
   
   arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
@@ -628,6 +631,13 @@ int main( int argc, char* argv[] )
   if (!strcmp(argv[argc-1],"--tsnnls")) { solver = tsnnls; }
   else if (!strcmp(argv[argc-1],"--pjv")) { solver = pjv; }
   else if (!strcmp(argv[argc-1],"--tlsqr")) { solver = tlsqr; }
+  else if (!strcmp(argv[argc-1],"--fallback")) { solver = fallback; }
+  else {
+    
+    printf("tsnnls_test: Unknown solver %s.\n",argv[argc-1]);
+    exit(1);
+    
+  }
 
 #endif
 
@@ -691,7 +701,11 @@ int main( int argc, char* argv[] )
 
   double residual;
 
-  if (solver == pjv) {
+  if (solver == fallback) {
+
+    xvals = t_snnls_fallback(A, bvals, &residual, -1, 1);
+    
+  } else if (solver == pjv) {
 
     xvals = t_snnls_pjv(A, bvals, &residual, -1, 1);
 

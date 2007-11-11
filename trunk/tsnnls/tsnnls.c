@@ -76,6 +76,8 @@
 #endif
 
 int gVERBOSITY;
+int gErrorCode = 0;
+char gErrorString[1024] = "";
 
 /*
 
@@ -125,6 +127,26 @@ void tsnnls_verbosity(int level) {
 
   }
 
+}
+
+int tsnnls_error(char **errstring)
+
+{
+  
+  if (errstring != NULL) {
+
+    *errstring = gErrorString;
+
+  }
+
+  return gErrorCode;
+
+}
+
+void clear_tsnnls_error()
+{
+  gErrorCode = 0;
+  sprintf(gErrorString,"tsnnls: No error.\n");
 }
 
 void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
@@ -539,6 +561,8 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int               m,n,i, maxSize;
   
   int				A_rows, A_cols;
+  int               pivcount;
+  int               MAXPIVOT = 10*A_original_ordering->n;
   
   int              *F, *G, *H1, *H2, SCR[1];
   int              sizeF, sizeG, sizeH1, sizeH2, sizeSCR = {1};
@@ -557,7 +581,9 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   
   taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
   taucs_ccs_matrix*   lsqrApA;
-  
+
+  clear_tsnnls_error();
+
   /* create a copy of AprimeDotA memory wise to store the tlsqr submatrices */
   {
     lsqrApA = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
@@ -628,9 +654,9 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   infeasible(F,x,sizeF,H1,&sizeH1);  
   infeasible(G,y,sizeG,H2,&sizeH2);
   
-  for( ; sizeH1 > 0 || sizeH2 > 0 ;
+  for( ; (sizeH1 > 0 || sizeH2 > 0) && pivcount < MAXPIVOT ;
        infeasible(F,x,sizeF,H1,&sizeH1),  
-	 infeasible(G,y,sizeG,H2,&sizeH2)  ) 
+	 infeasible(G,y,sizeG,H2,&sizeH2), pivcount++  ) 
     {
       
       
@@ -854,7 +880,7 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       sizeH1 = sizeH2 = 0;
     } // for
   
-  if( lsqrStep != 0 )
+  if( lsqrStep != 0 && pivcount < MAXPIVOT)
     {
       lsqr_input   *lsqr_in;
       lsqr_output  *lsqr_out;
@@ -897,7 +923,7 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
     }
   
-  if( outResidualNorm != NULL )
+  if( outResidualNorm != NULL && pivcount < MAXPIVOT)
     {
       double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
@@ -924,7 +950,18 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   
   free(y);
   
-  return x;
+  if (pivcount < MAXPIVOT) {
+
+    return x;
+
+  } else {
+
+    gErrorCode = 932;
+    sprintf(gErrorString,"tsnnls_pjv: Too many pivots (%d).\n",pivcount);
+    
+    return NULL;
+
+  }
 }
 
 
@@ -989,6 +1026,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int		    lsqrStep=0;
   double	    rcond=1;
   double            last_stationary_q = {DBL_MAX};
+  int               MAXPIVOT = A_original_ordering->n * 10;
+  int               pivcount = 0;
 
   taucs_double *p;
   taucs_double *alpha;
@@ -1019,6 +1058,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   
   taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
   taucs_ccs_matrix*   lsqrApA;
+
+  clear_tsnnls_error();
 
   if (gVERBOSITY >= 10) {  /* In veryverbose mode, we spit out debugging crap. */
 
@@ -1135,13 +1176,16 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int gflag = {1};
   int fflag;
   
-  while(gflag != 0){
+  while(gflag != 0 && pivcount < MAXPIVOT){
 
+    pivcount++;
     fflag = 1;
     
     if (gVERBOSITY >= 10) { printf("tsnnls: g loop\n"); }
 
-    while(fflag != 0){
+    while(fflag != 0 && pivcount < MAXPIVOT){
+
+      pivcount++;
 
       if (gVERBOSITY >= 10) { 
 
@@ -1336,7 +1380,16 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	}
 
-	assert(alphaItr < sizeAlpha+8);
+	if (alphaItr > sizeAlpha+8) { 
+
+	  gErrorCode = 230;
+	  sprintf(gErrorString,
+		  "tsnnls: Reducing stepsize to %g did not \n"
+		  "        produce a local reduction in qofx.\n",
+		  tmp);
+	  return NULL;
+
+	}
 	  
       }// end (qofxplusalphap > qofx)
 
@@ -1448,10 +1501,14 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       if (fabs(gf[gfItr]) > 1e-8) {
 
-	printf("tsnnls: Warning! Component %d of the reduced gradient is %g at the\n"
-	       "        end of the f loop. This suggests that we are not at a stationary\n"
-	       "        point and that something has gone wrong with the run.\n",
-	       gfItr,gf[gfItr]);
+	gErrorCode = 74;
+	sprintf(gErrorString,
+		"tsnnls: Warning! Component %d of the reduced gradient is %g at the\n"
+		"        end of the f loop. This suggests that we are not at a stationary\n"
+		"        point and that something has gone wrong with the run.\n",
+		gfItr,gf[gfItr]);
+
+	return NULL;
 
       }
 
@@ -1560,7 +1617,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   if (gVERBOSITY >= 10) { printf("tsnnls: G loop terminated.\n"); }
 
-  if( lsqrStep != 0 )
+  if( lsqrStep != 0 && pivcount < MAXPIVOT)
     {
 
       if (gVERBOSITY >= 10) { printf("tsnnls: Doing lsqr step.\n"); }
@@ -1609,7 +1666,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
     }
   
-  if( outResidualNorm != NULL )
+  if( outResidualNorm != NULL && pivcount < MAXPIVOT)
     {
 
       if (gVERBOSITY >= 10) { printf("tsnnls: Computing final residual.\n"); }
@@ -1650,10 +1707,54 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   if (gVERBOSITY >= 10) { printf("tsnnls: Done.\n"); }
 
-  return x;
+  if (pivcount < MAXPIVOT) {
+
+    return x;
+
+  } else {
+
+    gErrorCode = 999;
+    sprintf(gErrorString,"tsnnls: Too many pivots (%d).",MAXPIVOT);
+
+    return NULL;
+  }
 
 }
 
+taucs_double*       t_snnls_fallback( taucs_ccs_matrix *A_original_ordering, 
+				      taucs_double *b, 
+				      double* outResidualNorm, 
+				      double inRelErrTolerance, 
+				      int inPrintErrorWarnings )
+
+{
+  taucs_double *x;
+
+  x = t_snnls( A_original_ordering, b, outResidualNorm, inRelErrTolerance, 
+	       inPrintErrorWarnings );
+
+  if (gErrorCode || x == NULL) { /* It didn't work. */
+
+    x = t_snnls_pjv( A_original_ordering, b, outResidualNorm, 
+		     inRelErrTolerance, 
+		     inPrintErrorWarnings );
+
+    if (gErrorCode || x == NULL) { /* Even this didn't work. */
+
+      gErrorCode = 456;
+      sprintf(gErrorString,"tsnnls: Fallback tried all solvers without success.\n");
+      return NULL;
+
+    }
+
+    gErrorCode = 213;
+    sprintf(gErrorString,"tsnnls: Fell back to pjv solver.\n");
+
+  }
+
+  return x;
+
+}
 
 //#pragma mark -
 
