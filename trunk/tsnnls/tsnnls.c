@@ -561,7 +561,7 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int               m,n,i, maxSize;
   
   int				A_rows, A_cols;
-  int               pivcount;
+  int               pivcount = 0;
   int               MAXPIVOT = 10*A_original_ordering->n;
   
   int              *F, *G, *H1, *H2, SCR[1];
