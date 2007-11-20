@@ -1460,7 +1460,29 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
     qofx = q(x,AprimeDotA,Apb,b,m,n);
     if (gVERBOSITY > 5) {printf("qofx at stationary point: %g.\n",qofx);}
-    assert(qofx < last_stationary_q);
+   
+    if (!(qofx < last_stationary_q)) { 
+
+      if (inPrintErrorWarnings) {
+	
+	printf("tsnnls: qofx at stationary point %16g.\n"
+	       "        qofx at last stationary  %16g.\n"
+	       "\n"
+	       "tsnnls: Aborting run.\n",
+	       qofx,last_stationary_q);
+
+      }
+
+      gErrorCode = 295;
+      sprintf(gErrorString,
+	      "tsnnls: Error! qofx has not decreased between stationary points.\n"
+	      "        (%16g -> %16g). Aborting run.\n",
+	      last_stationary_q,qofx);
+      
+      return NULL;
+
+    }
+
     last_stationary_q = qofx;
 
     /* We left the inner loop because sizeH was zero. This means that F has 
