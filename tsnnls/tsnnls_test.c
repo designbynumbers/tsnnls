@@ -120,13 +120,15 @@
 #endif
 
 int VERBOSITY = 0;
-enum STYPE { tsnnls, pjv, tlsqr, fallback } solver = { tsnnls };
+enum STYPE { tsnnls, pjv, tlsqr, fallback, SOLlsqr } solver = { tsnnls };
 
 int read_sparse( FILE *fp, double **vals, int *dim, int *cols );
 int read_mat( FILE *fp, double **vals, int *dim, int *cols);
 
 struct rusage start, end;
 int tpStorage;
+
+static double* lsqrwrapper( taucs_ccs_matrix* Af, double* b );
 
 static void
 start_clock()
@@ -318,9 +320,18 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
 
     x = t_snnls_pjv(A, b, &residual, 0.0, 0 );
 
-  } else {
+  } else if (solver == fallback) {
+
+    x = t_snnls_fallback(A, b, &residual, 0.0, 0 ) ;
+
+  } else if (solver == tsnnls) {
 
     x = t_snnls(A, b, &residual, 0.0, 0);
+
+  } else {
+
+    printf("tsnnls_test: Illegal solver in tsnnls_test.\n");
+    exit(1);
 
   }
 	
@@ -382,7 +393,22 @@ tlsqr_test(taucs_ccs_matrix *A, taucs_double *realx, taucs_double *b)
   double ttime;
 	
   start_clock();
-  x = t_lsqr(A, b );
+
+  if (solver == tlsqr) { 
+
+    x = t_lsqr(A, b );
+
+  } else if (solver == SOLlsqr) {
+
+    x = lsqrwrapper(A, b);
+
+  } else {
+
+    printf("tsnnls_test: Illegal solver in tlsqr_test.\n");
+    exit(1);
+
+  }
+
   ttime = end_clock();
 	
   printf( "tsnnls_test: %d x %d matrix tlsqr runtime %f ", A->m, A->n, ttime );
@@ -518,6 +544,7 @@ int main( int argc, char* argv[] )
   struct arg_lit  *arg_tsnnls = arg_lit0(NULL,"tsnnls","solve with tsnnls");
   struct arg_lit  *arg_pjv = arg_lit0(NULL,"pjv","solve with reference solver");
   struct arg_lit  *arg_tlsqr = arg_lit0(NULL,"tlsqr","solve with tlsqr");
+  struct arg_lit  *arg_lsqr = arg_lit0(NULL,"lsqr","solve with SOL lsqr");
   struct arg_lit  *arg_fallback = arg_lit0(NULL,"fallback","solve with fallback");
 
   struct arg_int  *arg_verb = arg_int0("v","Verbosity","<0-10>","verbosity for tsnnls solver");
@@ -527,7 +554,7 @@ int main( int argc, char* argv[] )
   struct arg_end *end = arg_end(20);
 
   void *argtable[] = {arg_Afile,arg_bfile,arg_xfile,arg_tsnnls,
-		      arg_pjv,arg_fallback,arg_tlsqr,arg_verb,arg_help,end};
+		      arg_pjv,arg_fallback,arg_tlsqr,arg_lsqr,arg_verb,arg_help,end};
   
   int nerrors;
 
@@ -582,6 +609,7 @@ int main( int argc, char* argv[] )
   bname = arg_bfile->filename[0];
   
   if (arg_xfile->count > 0) { xname = arg_xfile->filename[0]; }
+  if (arg_lsqr->count > 0)  { solver = SOLlsqr; }
   if (arg_tsnnls->count > 0) { solver = tsnnls; }
   if (arg_pjv->count > 0)    { solver = pjv; }
   if (arg_tlsqr->count > 0)  { solver  = tlsqr; }
@@ -632,6 +660,7 @@ int main( int argc, char* argv[] )
   else if (!strcmp(argv[argc-1],"--pjv")) { solver = pjv; }
   else if (!strcmp(argv[argc-1],"--tlsqr")) { solver = tlsqr; }
   else if (!strcmp(argv[argc-1],"--fallback")) { solver = fallback; }
+  else if (!strcmp(argv[argc-1],"--lsqr")) { solver = SOLlsqr; }
   else {
     
     printf("tsnnls_test: Unknown solver %s.\n",argv[argc-1]);
@@ -685,11 +714,11 @@ int main( int argc, char* argv[] )
     printf("tsnnls_test: Loaded %d x %d solution vector x from %s.\n",
 	   xdim,xcols,xname);
 
-    if (solver == tsnnls || solver == pjv) {
+    if (solver == tsnnls || solver == pjv || solver == fallback) {
       
       tsnnls_test(A,xvals,bvals);
       
-    } else if (solver == tlsqr) {
+    } else if (solver == tlsqr || solver == SOLlsqr) {
       
       tlsqr_test(A,xvals,bvals);
 
@@ -712,6 +741,10 @@ int main( int argc, char* argv[] )
   } else if (solver == tlsqr) {
    
     xvals = t_lsqr(A, bvals);
+
+  } else if (solver == SOLlsqr) {
+
+    xvals = lsqrwrapper(A, bvals);
 
   } else {
 
