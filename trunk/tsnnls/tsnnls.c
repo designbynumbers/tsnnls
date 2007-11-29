@@ -1366,7 +1366,14 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	  }
 
-	  assert(tmp >= 0);
+	  if (tmp < 0) {
+
+	    gErrorCode = 1199;
+	    sprintf(gErrorString,
+		    "tsnnls: lowest alpha appears to be < 0.\n");
+	    return NULL;
+
+	  }
 
 	  for(i=0; i<n; i++){
 
