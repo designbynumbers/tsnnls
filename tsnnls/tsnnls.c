@@ -1035,7 +1035,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   /*double bb;*/
 
   // these are just to speed up some stuff below ever so slightly
-  taucs_double tmp;
+  taucs_double tmp = 0;
   int itmp;
 
   // I suppose one could double use incTmp and alphadog, but it 
@@ -2051,14 +2051,42 @@ taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, const int i
 	result->colptr[cItr] = colOffset;
 }
 
+struct matEntry {
 
+  int i;
+  int j;
+  double val;
+
+};
+
+int matEntrycmp(const void *A, const void *B) 
+
+/* Sorts matrix entries in the ccs order... by column, then by row within columns */
+
+{
+  struct matEntry *Ame,*Bme;
+
+  Ame = (struct matEntry *)A;
+  Bme = (struct matEntry *)B;
+
+  if (Ame->j - Bme->j != 0) {
+
+    return Ame->j - Bme->j;
+
+  } else {
+
+    return Ame->i - Bme->i;
+
+  }
+
+}
 
 taucs_ccs_matrix*
 taucs_ccs_transpose( const taucs_ccs_matrix* A )
 {
   taucs_ccs_matrix* result = NULL;
-  double* values = NULL;
-  int cItr, rItr, colOffset;
+ 
+  /* First, allocate memory for the new matrix. */
 	
   result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
 	
@@ -2066,34 +2094,63 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
   result->n = A->m;
 	
   result->flags = A->flags;
+
+  int nnz;
+  nnz = A->colptr[A->n];
 	
-  // we sacrifice some memory here so we don't have to do the number of 
-  // nonzero entries computation
   result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
-  result->rowind = (int*)malloc(sizeof(int)*result->m*result->n);
-  result->values.d = (double*)malloc(sizeof(double)*result->m*result->n);
-	
-  values = taucs_convert_ccs_to_doubles(A);
-	
-  colOffset = 0;
-  for( rItr=0; rItr<A->m; rItr++ )
-    {
-      result->colptr[rItr] = colOffset;
-      for( cItr=0; cItr<A->n; cItr++ )
-	{
-	  double v = values[(rItr*A->n)+cItr];
-	  if( v != 0 )
-	    {
-	      result->rowind[colOffset] = cItr;
-	      result->values.d[colOffset] = v;
-	      colOffset++;
-	    }
-	}
+  result->rowind = (int*)malloc(sizeof(int)*nnz);
+  result->values.d = (double*)malloc(sizeof(double)*nnz);
+
+  /* Next, prepare the list of values. */
+
+  struct matEntry *vList;
+  vList = (struct matEntry *)(malloc(sizeof(struct matEntry)*nnz));
+  
+  int colent,col,ent=0;
+
+  for(col=0;col<A->n;col++) {
+
+    for(colent=A->colptr[col];colent<A->colptr[col+1];colent++) {
+
+      vList[ent].i = col;                //Swapped! Because we're preparing the transpose
+      vList[ent].j = A->rowind[colent];
+      vList[ent].val = A->values.d[ent];
+
+      ent++;
+      
     }
-  result->colptr[rItr] = colOffset;
-	
-  free(values);
-	
+
+  }
+
+  qsort(vList,nnz,sizeof(struct matEntry),matEntrycmp);
+
+  /* We have now generated a list of entries in the new order which we
+     can use to build the new matrix without generating a dense matrix
+     in between. The idea is that we'll start at column 0 and read
+     forward in the list, filling in entries in values.d and in rowind
+     until the column changes. */
+
+  ent = 0;
+
+  for(col=0;col<result->n;col++) {
+
+    result->colptr[col] = ent;  /* This column starts here. */
+
+    for(;vList[ent].j == col;ent++) {
+
+      result->rowind[ent] = vList[ent].i;
+      result->values.d[ent] = vList[ent].val;
+
+    }
+
+  }
+
+  result->colptr[col] = ent; /* This fills in the final entry. */
+
+  /* We're now done. */
+
+  free(vList);	
   return result;
 }
 
