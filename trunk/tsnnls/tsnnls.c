@@ -1004,6 +1004,7 @@ double q(taucs_double *x,taucs_ccs_matrix *ApA, taucs_double *Apb,
   
   return q;
 }
+
   
 // This is an implementation of the block3 algorithm due to Adlers
 // See http://citeseer.ist.psu.edu/385071.html
@@ -2369,3 +2370,5 @@ void colvector_write_mat(FILE *fp, double *x, int rows, char *name)
   }
 
 }
+
+#include "tsnnls_spiv.c"
