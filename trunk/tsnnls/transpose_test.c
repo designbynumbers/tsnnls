@@ -7,7 +7,7 @@
 
 */
 
-#define NUM_TESTS 20
+#define NUM_TESTS 200
 #define Msize 40
 #define Nsize 555
 
