@@ -80,10 +80,16 @@ int main()
   int test,i;
   double *A,*ATT;
   taucs_ccs_matrix *Accs,*ATccs,*ATTccs;
+  FILE *outfile;
+  int seed;
+
+  seed = time(0);
+  srand(seed);  
 
   printf("transpose_test\n"
-	 "Running %d tests with %d x %d random matrices...",
-	 NUM_TESTS,Msize,Nsize);
+	 "Random seed is %d.\n"
+	 "Running %d tests with %d x %d random matrices...\n\n",
+	 seed,NUM_TESTS,Msize,Nsize);
 
   for(test=0;test<NUM_TESTS;test++) {
 
@@ -130,7 +136,23 @@ int main()
       if (fabs(ATT[i] - A[i]) > 1e-12) {
 	
 	printf("FAIL.\n");
-	exit(1);
+
+	printf("Storing bad matrix A in tprob_A.sparse.\n");
+	outfile = fopen("tprob_A.sparse","w");
+	taucs_ccs_write_sparse(outfile,Accs);
+	fclose(outfile);
+
+	printf("Storing bad matrix AT in tprob_AT.sparse.\n");
+	outfile = fopen("tprob_AT.sparse","w");
+	taucs_ccs_write_sparse(outfile,ATccs);
+	fclose(outfile);
+
+	printf("Storin bad matrix ATT in tprob_ATT.sparse.\n");
+	outfile = fopen("tprob_ATT.sparse","w");
+	taucs_ccs_write_sparse(outfile,ATTccs);
+	fclose(outfile);
+
+        exit(1);
 
       }
 

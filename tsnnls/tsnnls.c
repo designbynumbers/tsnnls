@@ -2106,7 +2106,7 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
   /* Next, prepare the list of values. */
 
   struct matEntry *vList;
-  vList = (struct matEntry *)(malloc(sizeof(struct matEntry)*nnz));
+  vList = (struct matEntry *)(calloc(sizeof(struct matEntry),nnz));
   
   int colent,col,ent=0;
 
@@ -2134,11 +2134,11 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   ent = 0;
 
-  for(col=0;col<result->n;col++) {
+  for(col=0;col<result->n && ent < nnz;col++) {
 
     result->colptr[col] = ent;  /* This column starts here. */
 
-    for(;vList[ent].j == col;ent++) {
+    for(;vList[ent].j == col && ent < nnz;ent++) {
 
       result->rowind[ent] = vList[ent].i;
       result->values.d[ent] = vList[ent].val;
@@ -2147,7 +2147,7 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   }
 
-  result->colptr[col] = ent; /* This fills in the final entry. */
+  result->colptr[col] = nnz; /* This fills in the final entry. */
 
   /* We're now done. */
 
