@@ -15,8 +15,8 @@
 */
 
 #define NUM_TESTS 512
-#define Msize 152
-#define Nsize 67
+#define Msize 7
+#define Nsize 3
 
 #include<config.h>
 
@@ -304,13 +304,13 @@ int main()
   int     i,test;
 
   taucs_ccs_matrix *Accs;
-  taucs_double *tsnnlsX,*block3X;
+  taucs_double *tsnnlsX,*block3X,*spivX;
 
   double ResNorm;
   double ErrTol = 0;
   int    PrintErrWarnings = 0;
 
-  double err,block3err;
+  double err,block3err,spiverr;
 
   fprintf(stderr,"genb_tests\n\n");
   fprintf(stderr,
@@ -323,12 +323,12 @@ int main()
 	  "We require an error less than 1e-8 to pass the test.\n\n");
 
   fprintf(stderr,
-	  "#    M    N     Error         (PJV error)   Result \n"
-	  "-------------------------------------------------- \n");
+	  "#    M    N     Error         (PJV error)   (Spiv error)   Result \n"
+	  "----------------------------------------------------------------- \n");
 
 #ifdef HAVE_TIME
 
-  srand(time(0));
+  srand(536);
 
 #else
 
@@ -350,22 +350,25 @@ int main()
     Accs = taucs_construct_sorted_ccs_matrix(Aflip,Nsize,Msize);
     tsnnlsX = t_snnls_pjv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
     block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
+    spivX   = t_snnls_spiv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings,Nsize);
 
     /* Now we compare the solution with our guess. */
 
-    err = 0; block3err = 0;
+    err = 0; block3err = 0; spiverr=0;
     for(i=0;i<Nsize;i++) { 
 
       err += pow(tsnnlsX[i] - x[i],2.0); 
       block3err += pow(block3X[i] - x[i],2.0);
+      spiverr += pow(spivX[i] - x[i],2.0);
 
     }
     err = sqrt(err);
     block3err = sqrt(block3err);
+    spiverr = sqrt(spiverr);
 
-    fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e ",test+1,Msize,Nsize,block3err,err); 
+    fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e % 7e ",test+1,Msize,Nsize,block3err,err,spiverr); 
 
-    if (err < 1e-8) {
+    if (err < 1e-8 && block3err < 1e-8 && spiverr < 1e-8) {
 
       npass++;
       fprintf(stderr," pass\n");

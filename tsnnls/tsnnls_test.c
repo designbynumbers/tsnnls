@@ -120,7 +120,8 @@
 #endif
 
 int VERBOSITY = 0;
-enum STYPE { tsnnls, pjv, tlsqr, fallback, SOLlsqr } solver = { tsnnls };
+enum STYPE { tsnnls, pjv, tlsqr, fallback, SOLlsqr, spiv } solver = { tsnnls };
+int nconstrained = -1;
 
 int read_sparse( FILE *fp, double **vals, int *dim, int *cols );
 int read_mat( FILE *fp, double **vals, int *dim, int *cols);
@@ -328,6 +329,10 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
 
     x = t_snnls(A, b, &residual, 0.0, 0);
 
+  } else if (solver == spiv) {
+
+    x = t_snnls_spiv(A,b,&residual,0.0,0,nconstrained);
+
   } else {
 
     printf("tsnnls_test: Illegal solver in tsnnls_test.\n");
@@ -344,7 +349,8 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
       taucs_ccs_free(A);
       free(b);
       free(realx);
-      return;
+      
+      exit(1);
     }
   
   // compute relative error using ||(x*-x)||/||x||
@@ -546,6 +552,8 @@ int main( int argc, char* argv[] )
   struct arg_lit  *arg_tlsqr = arg_lit0(NULL,"tlsqr","solve with tlsqr");
   struct arg_lit  *arg_lsqr = arg_lit0(NULL,"lsqr","solve with SOL lsqr");
   struct arg_lit  *arg_fallback = arg_lit0(NULL,"fallback","solve with fallback");
+  struct arg_lit  *arg_spiv = arg_lit0(NULL,"spiv","solve with single pivoting solver");
+  struct arg_int  *arg_constrained = arg_int0(NULL,"nc","<0-m>","number of constrained vars (spiv only)");
 
   struct arg_int  *arg_verb = arg_int0("v","Verbosity","<0-10>","verbosity for tsnnls solver");
 
@@ -554,7 +562,8 @@ int main( int argc, char* argv[] )
   struct arg_end *end = arg_end(20);
 
   void *argtable[] = {arg_Afile,arg_bfile,arg_xfile,arg_tsnnls,
-		      arg_pjv,arg_fallback,arg_tlsqr,arg_lsqr,arg_verb,arg_help,end};
+		      arg_pjv,arg_fallback,arg_tlsqr,arg_lsqr,arg_spiv,
+		      arg_constrained,arg_verb,arg_help,end};
   
   int nerrors;
 
@@ -614,17 +623,22 @@ int main( int argc, char* argv[] )
   if (arg_pjv->count > 0)    { solver = pjv; }
   if (arg_tlsqr->count > 0)  { solver  = tlsqr; }
   if (arg_fallback->count > 0) {solver = fallback; }
+  if (arg_spiv->count > 0) { solver = spiv; }
   if (arg_verb->count > 0) { tverbosity = arg_verb->ival[0]; }
+
+  if (arg_constrained->count > 0) {nconstrained = arg_constrained->ival[0];}
   
   arg_freetable(argtable,sizeof(argtable)/sizeof(argtable[0]));
   
 #else
 
-  if (argc < 4 || (strcmp(argv[argc-1],"--tsnnls") && strcmp(argv[argc-1],"--tlsqr")) 
+  if (argc < 4 || (strcmp(argv[argc-1],"--tsnnls") && strcmp(argv[argc-1],"--tlsqr") && \
+		   strcmp(argv[argc-1],"--spiv") && strcmp(argv[argc-1],"--pjv") && \
+		   strcmp(argv[argc-1],"--fallback")) 
       || argc > 6) {
-    
+		     
     printf("Usage: tsnnls_test <A file> <b file> "
-	   "<x file (optional)> <--tsnnls|--tlsqr>\n");
+	   "<x file (optional)> <--fallback|--tsnnls|--tlsqr|--pjv|--spiv>\n");
     exit(1);
 
   }
@@ -637,7 +651,7 @@ int main( int argc, char* argv[] )
 	   "\n");
     
     printf("Usage: tsnnls_test <A file> <b file> <x file (optional)> "
-	   "<--tsnnls|--tlsqr|--pjv>\n\n");
+	   "<--tsnnls|--tlsqr|--pjv|--spiv>\n\n");
     
     printf("If a solution x is provided, tsnnls_test compares the results of the\n"
 	   "calculation with the given solution, provides timing information and\n"
@@ -661,6 +675,7 @@ int main( int argc, char* argv[] )
   else if (!strcmp(argv[argc-1],"--tlsqr")) { solver = tlsqr; }
   else if (!strcmp(argv[argc-1],"--fallback")) { solver = fallback; }
   else if (!strcmp(argv[argc-1],"--lsqr")) { solver = SOLlsqr; }
+  else if (!strcmp(argv[argc-1],"--spiv")) { solver = spiv; }
   else {
     
     printf("tsnnls_test: Unknown solver %s.\n",argv[argc-1]);
@@ -679,6 +694,8 @@ int main( int argc, char* argv[] )
 
   printf("tsnnls_test: Loaded %d x %d matrix A from %s.\n",
 	 Adim,Acols,aname);
+
+  if (nconstrained == -1) { nconstrained = Acols; }
 
   /* Now load b. */
 
@@ -714,7 +731,7 @@ int main( int argc, char* argv[] )
     printf("tsnnls_test: Loaded %d x %d solution vector x from %s.\n",
 	   xdim,xcols,xname);
 
-    if (solver == tsnnls || solver == pjv || solver == fallback) {
+    if (solver == tsnnls || solver == pjv || solver == fallback || solver == spiv) {
       
       tsnnls_test(A,xvals,bvals);
       
@@ -737,6 +754,10 @@ int main( int argc, char* argv[] )
   } else if (solver == pjv) {
 
     xvals = t_snnls_pjv(A, bvals, &residual, -1, 1);
+
+  } else if (solver == spiv) {
+
+    xvals = t_snnls_spiv(A, bvals, &residual, -1, 1,nconstrained);
 
   } else if (solver == tlsqr) {
    

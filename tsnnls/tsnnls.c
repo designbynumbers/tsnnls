@@ -2371,4 +2371,422 @@ void colvector_write_mat(FILE *fp, double *x, int rows, char *name)
 
 }
 
-#include "tsnnls_spiv.c"
+/********************************************************************
+
+   Single Pivoting Solver
+
+******************************************************************/
+
+
+taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
+					   taucs_ccs_matrix *ATA,
+					   taucs_double *x,taucs_double *b,
+					   int nBound,int *Bound)
+
+/* Computes Lagrange multipliers for the bound variables in A, using
+   the variable ATA, which should be A transpose X A. In A is an m x n
+   matrix, we expect x to be an n x 1 vector. */
+
+{
+  taucs_double *ATAx, *ATb,*y;
+  int N=A->n,incX=1,incY=1,i;
+  double alpha=-1;
+
+  ATAx = malloc(sizeof(taucs_double)*A->n);
+  ATb  = malloc(sizeof(taucs_double)*A->n);
+  assert(ATAx != NULL && ATb != NULL);
+
+  /* Compute y = -(A^T(b - Ax))^T = -(b - Ax)^T A = -b^T A + x^T (A^T A). */ 
+
+  taucs_transpose_vec_times_matrix_nosub(b,A,ATb);      
+  taucs_transpose_vec_times_matrix_nosub(x,ATA,ATAx);
+  DAXPY_F77(&N,&alpha,ATb,&incX,ATAx,&incY);
+
+  /* Now select the values corresponding to bound variables. */
+
+  y = malloc(sizeof(taucs_double)*nBound);
+  assert(y != NULL);
+  for(i=0;i<nBound;i++) { y[i] = ATAx[Bound[i]]; }
+
+  /* Now free scratch memory and return. */
+
+  free(ATAx); free(ATb);
+
+  return y;
+}
+
+ 
+void P_spiv(int n,taucs_double *x,int nconstrained)
+
+/* Projects the constrained variables in x to legal values. */
+
+{
+  int i;
+
+  for(i=0;i<nconstrained;i++) { x[i] = max(x[i],0); }
+
+}
+
+taucs_ccs_matrix *taucs_ccs_matrix_new(int m, int n,int flags,int nnz)
+
+/* Allocates a ccs matrix. */
+
+{
+  taucs_ccs_matrix *A;
+
+  A = (taucs_ccs_matrix *)malloc(sizeof(taucs_ccs_matrix));
+  assert(A != NULL);
+
+  A->n = n;
+  A->m = m;
+  A->flags = TAUCS_DOUBLE | flags;
+
+  A->colptr = (int *)malloc(sizeof(int)*(nnz+1));
+  A->rowind = (int *)malloc(sizeof(int)*nnz);
+  A->values.d = (double*)malloc(sizeof(int)*nnz);
+  
+  assert((A->colptr != NULL) && (A->rowind != NULL) && (A->values.d != NULL));
+
+  return A;
+}
+  
+
+taucs_double *solve_unconstrained(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
+				  taucs_double *b,int nFree, int *Free)
+
+/* Solves the unconstrained problem in the current free variables and spreads
+   the result across a vector of length n to give the entire solution. */
+
+{
+  taucs_ccs_matrix *Afree, *ATAfree;
+  taucs_double     *xFree = NULL, *x;
+  int               i;
+  double rcond;
+
+  Afree = taucs_ccs_matrix_new(A->m,A->n,TAUCS_DOUBLE,A->colptr[A->n+1]);
+  ATAfree = taucs_ccs_matrix_new(A->n,A->n,TAUCS_SYMMETRIC | TAUCS_LOWER,A->n*A->n);
+
+  if ( nFree > 0 ) {
+
+    taucs_ccs_submatrix(A,Free,nFree,Afree);
+    selectAprimeDotAsparse(ATA,Free,nFree,ATAfree);
+    
+    xFree = t_snnlslsqr(Afree,b,ATAfree,Free,&rcond);
+    
+  }
+
+  x = calloc(sizeof(taucs_double),A->n);
+  for(i=0;i<nFree;i++) { x[Free[i]] = xFree[i]; }
+
+  taucs_ccs_free(ATAfree);
+  taucs_ccs_free(Afree);
+
+  return x;
+}
+
+taucs_double *computep(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA, 
+		       taucs_double *xn, taucs_double *b,
+		       int nFree,int *Free)
+
+/* We are trying to correct the current solution xn by stepping in a
+   certain direction computed with respect to a new set of free
+   variables given by nFree, Free. 
+
+   To do so, we solve 
+
+   min ||A(xn + p) - b || 
+ = min || Ap - (b - Axn) || 
+ = min || Ap - ( - (Axn - b)) ||. */
+
+{
+  taucs_double *Axn = calloc(sizeof(taucs_double),A->n);
+  taucs_double *result;
+  int N=A->n,incX=1,incY=1;
+  double alpha=-1.0;
+
+  taucs_transpose_vec_times_matrix_nosub(xn,A,Axn);
+  DAXPY_F77(&N,&alpha,b,&incX,Axn,&incY); // Axn = Axn - b
+  DSCAL_F77(&N,&alpha,Axn,&incX);         // Axn = -Axn
+
+  result = solve_unconstrained(A,ATA,Axn,nFree,Free); 
+  free(Axn);
+
+  return result;
+}
+
+
+void bindzeros(int n,taucs_double *x,int *nFree,int *Free,int *nBound,int *Bound, int nconstrained)
+
+/* Bind any free variables whose value is now zero. Assert that the free variables are legal. */
+
+{
+  int i;
+  int nNewBound = 0;
+  int *newBound = calloc(sizeof(int),n);
+
+  /* Search the free set for new variables to bind. */
+
+  for(i=0;i<*nFree;i++) {
+
+    assert(x[Free[i]] >= -1e-16);
+
+    if (x[Free[i]] < 1e-16 && Free[i] < nconstrained) {  
+      
+      // We can never bind something with an index >= nconstrained, regardless of value.
+
+      newBound[nNewBound++] = Free[i]; 
+
+    } 
+
+  }
+
+  /* Subtract these variables from the Free set and add them to the bound set. */
+
+  int_difference(Free,*nFree,newBound,nNewBound,nFree);
+  int_union(Bound,*nBound,newBound,nNewBound,nBound);
+
+  free(newBound);
+}
+   
+int is_optimal_point( int n, taucs_double *y, int nBound, int *Bound)
+
+/* We check the bound variables for the correct sign on their Lagrange multipliers. */
+
+{
+  int i;
+
+  for (i=0;i<nBound;i++) {
+
+    if (y[Bound[i]] < 0) { return (1 == 0); } // that is, return FALSE
+
+  }
+
+  return (1 == 1); // that is, TRUE
+
+}
+
+double findalpha(taucs_double *p,taucs_double *xn,
+		 int nFree,int *Free,
+		 int nconstrained,int *newzero)
+{
+  int i;
+  double alpha = 1; // The value of alpha should always be <= 1.
+  
+  *newzero = -1;
+
+  for(i=0;i<nFree;i++) {
+
+    if (Free[i] < nconstrained) { // unconstrained variables don't count here
+
+      if (alpha * p[Free[i]] + xn[Free[i]] < 0) { // If the current alpha would overshoot
+
+	alpha = -xn[Free[i]]/p[Free[i]];
+	*newzero = Free[i];
+
+      }
+
+    }
+
+  }
+  
+  assert(alpha > 0 && alpha <= 1.0);
+  return alpha;
+
+}
+
+void release_miny(taucs_double *y,int *nFree,int *Free,int *nBound,int *Bound)
+
+{
+  int i,minyind;
+  double miny;
+  
+  // Find the lagrange multiplier farthest below zero.
+  
+  for(minyind=0,miny=0.0,i=0;i<*nBound;i++) { 
+    
+    if (y[Bound[i]] < miny) {
+      
+      minyind = Bound[i];
+      miny = y[Bound[i]];
+      
+    }
+    
+  }
+  
+  // Now release that variable.
+  
+  int_union(Free,*nFree,&minyind,1,nFree);
+  int_difference(Bound,*nBound,&minyind,1,nBound);
+  
+}
+
+taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A, 
+				  taucs_double *x, taucs_double *b,
+				  int nFree,int *Free)
+
+// Compute a solution in the free variables to min ||Ax - b||.
+
+{
+
+  lsqr_input   *lsqr_in;
+  lsqr_output  *lsqr_out;
+  lsqr_work    *lsqr_work;
+  lsqr_func    *lsqr_func;
+  int bItr;
+
+  taucs_ccs_matrix *Afree;
+  taucs_double     *newx;
+
+  newx = calloc(sizeof(taucs_double),A->n);
+    
+  if ( nFree > 0 ) {
+
+    Afree = taucs_ccs_matrix_new(A->m,A->n,TAUCS_DOUBLE,A->colptr[A->n+1]);
+    taucs_ccs_submatrix(A,Free,nFree,Afree);
+
+    alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, Afree->m, Afree->n );
+  
+    /* we let lsqr() itself handle the 0 values in this structure */
+    lsqr_in->num_rows = Afree->m;
+    lsqr_in->num_cols = Afree->n;
+    lsqr_in->damp_val = 0;
+    lsqr_in->rel_mat_err = 0;
+    lsqr_in->rel_rhs_err = 0;
+    lsqr_in->cond_lim = 1e16;
+    lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
+    lsqr_in->lsqr_fp_out = NULL;	
+
+    for( bItr=0; bItr<Afree->m; bItr++ ) {
+
+      lsqr_in->rhs_vec->elements[bItr] = b[bItr];
+    
+    }
+    
+    /* Here we set the initial solution vector guess, which is 
+     * the result passed in x.
+     */
+    
+    for( bItr=0; bItr<Afree->n; bItr++ ) {
+      
+      lsqr_in->sol_vec->elements[bItr] = x[Free[bItr]]; 
+    
+    }
+    
+    /* This is a function pointer to the matrix-vector multiplier */
+    lsqr_func->mat_vec_prod = sparse_lsqr_mult;
+    
+    lsqr( lsqr_in, lsqr_out, lsqr_work, lsqr_func, Afree );
+
+    /* Now copy out the answer. */
+
+    for( bItr=0; bItr<Afree->n; bItr++ ) // not really bItr here, but hey
+      newx[Free[bItr]] = lsqr_out->sol_vec->elements[bItr];
+    
+    free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
+    taucs_ccs_free(Afree);
+    
+  }
+
+  return newx;
+
+}
+
+double compute_residual(taucs_ccs_matrix *A,taucs_double *x,taucs_double *b)   
+
+{
+  int m=A->m,incX=1,incY=1;
+  double alpha=-1.0,resnorm;
+
+  double* finalresidual = (taucs_double *)calloc(A->m,sizeof(taucs_double));
+
+  ourtaucs_ccs_times_vec(A,x,finalresidual);
+  DAXPY_F77(&m,&alpha,b,&incX,finalresidual,&incY);
+  resnorm = DNRM2_F77(&m,finalresidual,&incX);
+
+  free(finalresidual);
+
+  return resnorm;
+}
+
+taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
+			    double *outResidualNorm, double inRelErrTolerance, 
+			    int inPrintErrorWarnings, int nconstrained) 
+
+{
+
+// This is an implementation of a single-pivoting algorithm for partially constrained
+// problems. In these problems, the first "nconstrained" variables are subject to 
+// non-negativity constraints, while the remaining variables are not constrained at all.
+
+  taucs_ccs_matrix *ATA = taucs_ccs_aprime_times_a(A);
+  taucs_double     *xn = malloc(sizeof(taucs_double)*A->n);
+ 
+  int              nFree,nBound;
+  int              *Bound = calloc(sizeof(int),A->n),*Free = calloc(sizeof(int),A->n);
+  
+  int              MAXPIVOT = A->n * 10;
+  int              pivcount = 0, newzero;
+  int              N=A->n,incX=1,incY=1;
+
+  int i;
+
+  taucs_double     *p,*y,*sollsqrx;
+  double           alpha = 0;
+  int              isconstrainedpt = (1 == 0); // False
+
+  nBound = 0; nFree = A->n;               // Set all variables free for starters.
+  for(i=0;i<A->n;i++) { Free[i] = i; }
+  
+  xn = solve_unconstrained(A,ATA,b,nFree,Free);
+  P_spiv(A->n,xn,nconstrained);
+  
+  bindzeros(A->n,xn,&nFree,Free,&nBound,Bound,nconstrained);
+  y = compute_lagrange_multipliers(A,ATA,xn,b,nBound,Bound);
+  
+  while (!is_optimal_point(A->n,y,nBound,Bound)) {
+
+    while (!isconstrainedpt) {
+
+      p = computep(A,ATA,xn,b,nFree,Free); /* Solve min ||A(xn + p) - b|| in free vars. */
+      
+      alpha = findalpha(p,xn,nFree,Free,nconstrained,&newzero);
+
+      DAXPY_F77(&N,&alpha,p,&incX,xn,&incY); // xn = xn + alpha*p
+      
+      bindzeros(A->n,xn,&nFree,Free,&nBound,Bound,nconstrained); // Add new variable(s) to bound set
+
+      // Housekeeping.
+
+      isconstrainedpt = (DNRM2_F77(&N,p,&incX) < 1e-12);  
+      free(p);
+
+      pivcount++;
+      assert(pivcount < MAXPIVOT);
+
+    }
+
+    free(y);
+    y = compute_lagrange_multipliers(A,ATA,xn,b,nBound,Bound);
+    release_miny(y,&nFree,Free,&nBound,Bound);
+    
+  }
+  
+  free(y);
+ 
+  // We have now found an optimal solution an a partition into free and bound vars.
+  // We recompute this final solution using Stanford LSQR for more accuracy.
+
+  sollsqrx = improve_by_SOL_lsqr(A,xn,b,nFree,Free);
+
+  if( outResidualNorm != NULL) { *outResidualNorm = compute_residual(A,sollsqrx,b); }  
+    
+  // Housekeeping
+
+  taucs_ccs_free(A); taucs_ccs_free(ATA);
+  free(xn); free(Free); free(Bound);
+
+  return sollsqrx;
+
+}
+
+
