@@ -2090,6 +2090,7 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
   /* First, allocate memory for the new matrix. */
 	
   result = (taucs_ccs_matrix*)malloc(sizeof(taucs_ccs_matrix));
+  assert(result != NULL);
 	
   result->m = A->n;
   result->n = A->m;
@@ -2100,13 +2101,16 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
   nnz = A->colptr[A->n];
 	
   result->colptr = (int*)malloc(sizeof(int)*(result->n+1));
+  assert(result->colptr != NULL);
   result->rowind = (int*)malloc(sizeof(int)*nnz);
+  assert(result->rowind != NULL);
   result->values.d = (double*)malloc(sizeof(double)*nnz);
-
+  assert(result->values.d != NULL);
   /* Next, prepare the list of values. */
 
   struct matEntry *vList;
   vList = (struct matEntry *)(calloc(sizeof(struct matEntry),nnz));
+  assert(vList != NULL);
   
   int colent,col,ent=0;
 
@@ -2128,27 +2132,31 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   /* We have now generated a list of entries in the new order which we
      can use to build the new matrix without generating a dense matrix
-     in between. The idea is that we'll start at column 0 and read
-     forward in the list, filling in entries in values.d and in rowind
-     until the column changes. */
+     in between. */
 
-  ent = 0;
+  result->colptr[0] = 0;
 
-  for(col=0;col<result->n && ent < nnz;col++) {
+  for (col=0,ent=0;ent<nnz;ent++) {
 
-    result->colptr[col] = ent;  /* This column starts here. */
+    result->rowind[ent] = vList[ent].i;
+    result->values.d[ent] = vList[ent].val;
 
-    for(;vList[ent].j == col && ent < nnz;ent++) {
-
-      result->rowind[ent] = vList[ent].i;
-      result->values.d[ent] = vList[ent].val;
+    if (vList[ent].j != col) {  /* We are starting a new col. */
+      
+      while(col < vList[ent].j ) {  /* Advance the column pointer until we match again */
+      
+	col++;
+	result->colptr[col] = ent;
+      
+      }
 
     }
 
   }
 
-  result->colptr[col] = nnz; /* This fills in the final entry. */
+  while(col <= result->n) { col++; result->colptr[col] = nnz; }
 
+  /* Any remaining blank entries in colptr are set to nnz */
   /* We're now done. */
 
   free(vList);	

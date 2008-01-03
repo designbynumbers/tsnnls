@@ -83,7 +83,7 @@ int main()
   FILE *outfile;
   int seed;
 
-  seed = time(0);
+  seed = 1199383616;
   srand(seed);  
 
   printf("transpose_test\n"
@@ -147,7 +147,7 @@ int main()
 	taucs_ccs_write_sparse(outfile,ATccs);
 	fclose(outfile);
 
-	printf("Storin bad matrix ATT in tprob_ATT.sparse.\n");
+	printf("Storing bad matrix ATT in tprob_ATT.sparse.\n");
 	outfile = fopen("tprob_ATT.sparse","w");
 	taucs_ccs_write_sparse(outfile,ATTccs);
 	fclose(outfile);
