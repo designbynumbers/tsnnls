@@ -53,7 +53,7 @@ if HAVE_LAPACK
   genb_test_LDFLAGS = -ltsnnls $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
   TESTS = transpose_test testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh rrtest.sh f77blas_test genb_test 
 else 
-  check_PROGRAMS = f77blas_test
+  check_PROGRAMS = f77blas_test transpose_test
   TESTS = testfull sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh f77blas_test rrtest.sh
 endif
 

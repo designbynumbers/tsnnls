@@ -2118,8 +2118,6 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
   
   int colent,col,ent=0;
 
-  printf("started transpose\n");
-
   for(col=0;col<A->n;col++) {
 
     for(colent=A->colptr[col];colent<A->colptr[col+1];colent++) {
@@ -2134,15 +2132,11 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   }
 
-  printf("generated vlist\n");
-
   qsort(vList,nnz,sizeof(struct matEntry),matEntrycmp);
 
   /* We have now generated a list of entries in the new order which we
      can use to build the new matrix without generating a dense matrix
      in between. */
-
-  printf("sorted vlist\n");
 
   result->colptr[0] = 0;
 
@@ -2164,19 +2158,12 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   }
 
-  printf("finished for\n");
-
-  while(col <= result->n) { col++; result->colptr[col] = nnz; }
+  while(col < result->n) { col++; result->colptr[col] = nnz; }
 
   /* Any remaining blank entries in colptr are set to nnz */
   /* We're now done. */
 
-  printf("made it past while\n");
-
   free(vList);	
-
-  printf("about to terminate\n");
-
   return result;
 }
 

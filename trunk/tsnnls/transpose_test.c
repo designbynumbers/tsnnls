@@ -7,7 +7,7 @@
 
 */
 
-#define NUM_TESTS 200
+#define NUM_TESTS 2000
 #define Msize 40
 #define Nsize 555
 
@@ -108,8 +108,6 @@ int main()
 
     ATccs = taucs_ccs_transpose(Accs);
 
-    printf("first transpose completed\n");
-    
     if (Msize < 10 && Nsize < 10) {
 
       printf("-----------------------------------------\n"
@@ -119,8 +117,6 @@ int main()
     }
       
     ATTccs = taucs_ccs_transpose(ATccs);
-
-    printf("second transpose completed\n");
 
     if (Msize < 10 && Nsize < 10) {
 
