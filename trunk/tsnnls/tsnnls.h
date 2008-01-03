@@ -116,6 +116,10 @@ extern "C" {
    *		A = fixed;
    */
 
+  taucs_double        *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
+			             double *outResidualNorm, double inRelErrTolerance, 
+			             int inPrintErrorWarnings, int nconstrained);
+
   taucs_double*	      t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
 			       double* outResidualNorm, 
 			       double inRelErrTolerance, 
@@ -123,9 +127,9 @@ extern "C" {
 
   taucs_double*	      t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, 
 				   taucs_double *b, 
-			       double* outResidualNorm, 
-			       double inRelErrTolerance, 
-			       int inPrintErrorWarnings );
+				   double* outResidualNorm, 
+				   double inRelErrTolerance, 
+				   int inPrintErrorWarnings );
 
   taucs_double*       t_snnls_fallback( taucs_ccs_matrix *A_original_ordering, 
 					taucs_double *b, 
