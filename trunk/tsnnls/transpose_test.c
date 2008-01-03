@@ -107,6 +107,8 @@ int main()
     }
 
     ATccs = taucs_ccs_transpose(Accs);
+
+    printf("first transpose completed\n");
     
     if (Msize < 10 && Nsize < 10) {
 
@@ -117,6 +119,8 @@ int main()
     }
       
     ATTccs = taucs_ccs_transpose(ATccs);
+
+    printf("second transpose completed\n");
 
     if (Msize < 10 && Nsize < 10) {
 
