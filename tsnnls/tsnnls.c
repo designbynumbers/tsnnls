@@ -880,7 +880,7 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       sizeH1 = sizeH2 = 0;
     } // for
   
-  if( lsqrStep != 0 && pivcount < MAXPIVOT)
+  if( lsqrStep != 0 && pivcount < MAXPIVOT && sizeF > 0)
     {
       lsqr_input   *lsqr_in;
       lsqr_output  *lsqr_out;
@@ -1832,7 +1832,8 @@ taucs_rcond( taucs_ccs_matrix* A )
     vSize = A->m*A->n;
   
   lapackA = (double*)calloc(vSize,sizeof(double));
-  
+  assert(lapackA != NULL);
+
   /*lapackA = (double*)malloc(sizeof(double)*vSize);
     bzero(lapackA, sizeof(double)*vSize); */
   
@@ -1861,10 +1862,13 @@ taucs_rcond( taucs_ccs_matrix* A )
   LDA = A->m;
   RCOND = 0;
   WORK = (double*)malloc(sizeof(double)*4*N);
+  assert(WORK != NULL);
   IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
+  assert(IWORK != NULL);
   INFO = 0;
   
   IPIV = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*min(rowCount, A->n));
+  assert(IPIV != NULL);
   
   dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
   dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
@@ -2001,31 +2005,31 @@ ourtaucs_ccs_times_vec( taucs_ccs_matrix* m,
 			 taucs_datatype* X,
 			 taucs_datatype* B )
 {
-	int i,ip,j,n, rows;
-	taucs_datatype Aij;
-
-	n = m->n;
-	rows = m->m;
-	if( (m->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
-	{
-		// this is a total hack, but taucs's thingy works when 
-		// things are symmetric. keep in mind, however, that otherwise, 
-		// it does not
-		taucs_ccs_times_vec( m, X, B );
-		return;
-	}
-		
-	for(i=0; i < rows; i++) 
-		B[i] = 0;
-
-	for (j=0; j<n; j++) {
-      for (ip = (m->colptr)[j]; ip < (m->colptr[j+1]); ip++) {
-		i   = (m->rowind)[ip];
-		Aij = (m->values.d)[ip];
-		
-		B[i] = taucs_add(B[i],taucs_mul(X[j],Aij));
-      }
+  int i,ip,j,n, rows;
+  taucs_datatype Aij;
+  
+  n = m->n;
+  rows = m->m;
+  if( (m->flags & TAUCS_SYMMETRIC)==TAUCS_SYMMETRIC )
+    {
+      // this is a total hack, but taucs's thingy works when 
+      // things are symmetric. keep in mind, however, that otherwise, 
+      // it does not
+      taucs_ccs_times_vec( m, X, B );
+      return;
     }
+  
+  for(i=0; i < rows; i++) 
+    B[i] = 0;
+  
+  for (j=0; j<n; j++) {
+    for (ip = (m->colptr)[j]; ip < (m->colptr[j+1]); ip++) {
+      i   = (m->rowind)[ip];
+      Aij = (m->values.d)[ip];
+      
+      B[i] = taucs_add(B[i],taucs_mul(X[j],Aij));
+    }
+  }
 }
 
 void
@@ -2114,6 +2118,8 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
   
   int colent,col,ent=0;
 
+  printf("started transpose\n");
+
   for(col=0;col<A->n;col++) {
 
     for(colent=A->colptr[col];colent<A->colptr[col+1];colent++) {
@@ -2128,11 +2134,15 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   }
 
+  printf("generated vlist\n");
+
   qsort(vList,nnz,sizeof(struct matEntry),matEntrycmp);
 
   /* We have now generated a list of entries in the new order which we
      can use to build the new matrix without generating a dense matrix
      in between. */
+
+  printf("sorted vlist\n");
 
   result->colptr[0] = 0;
 
@@ -2154,12 +2164,19 @@ taucs_ccs_transpose( const taucs_ccs_matrix* A )
 
   }
 
+  printf("finished for\n");
+
   while(col <= result->n) { col++; result->colptr[col] = nnz; }
 
   /* Any remaining blank entries in colptr are set to nnz */
   /* We're now done. */
 
+  printf("made it past while\n");
+
   free(vList);	
+
+  printf("about to terminate\n");
+
   return result;
 }
 
@@ -2442,6 +2459,8 @@ taucs_ccs_matrix *taucs_ccs_matrix_new(int m, int n,int flags,int nnz)
 {
   taucs_ccs_matrix *A;
 
+  assert(nnz != 0);
+
   A = (taucs_ccs_matrix *)malloc(sizeof(taucs_ccs_matrix));
   assert(A != NULL);
 
@@ -2449,9 +2468,9 @@ taucs_ccs_matrix *taucs_ccs_matrix_new(int m, int n,int flags,int nnz)
   A->m = m;
   A->flags = TAUCS_DOUBLE | flags;
 
-  A->colptr = (int *)malloc(sizeof(int)*(nnz+1));
+  A->colptr = (int *)malloc(sizeof(int)*((A->n)+1));
   A->rowind = (int *)malloc(sizeof(int)*nnz);
-  A->values.d = (double*)malloc(sizeof(int)*nnz);
+  A->values.d = (double*)malloc(sizeof(double)*nnz);
   
   assert((A->colptr != NULL) && (A->rowind != NULL) && (A->values.d != NULL));
 
@@ -2471,7 +2490,7 @@ taucs_double *solve_unconstrained(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
   int               i;
   double rcond;
 
-  Afree = taucs_ccs_matrix_new(A->m,A->n,TAUCS_DOUBLE,A->colptr[A->n+1]);
+  Afree = taucs_ccs_matrix_new(A->m,A->n,TAUCS_DOUBLE,A->colptr[A->n]);
   ATAfree = taucs_ccs_matrix_new(A->n,A->n,TAUCS_SYMMETRIC | TAUCS_LOWER,A->n*A->n);
 
   if ( nFree > 0 ) {
@@ -2507,14 +2526,14 @@ taucs_double *computep(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
  = min || Ap - ( - (Axn - b)) ||. */
 
 {
-  taucs_double *Axn = calloc(sizeof(taucs_double),A->n);
+  taucs_double *Axn = calloc(sizeof(taucs_double),A->m);
   taucs_double *result;
-  int N=A->n,incX=1,incY=1;
+  int M=A->m,incX=1,incY=1;
   double alpha=-1.0;
 
-  taucs_transpose_vec_times_matrix_nosub(xn,A,Axn);
-  DAXPY_F77(&N,&alpha,b,&incX,Axn,&incY); // Axn = Axn - b
-  DSCAL_F77(&N,&alpha,Axn,&incX);         // Axn = -Axn
+  ourtaucs_ccs_times_vec(A,xn,Axn);       // Axn = A*xn
+  DAXPY_F77(&M,&alpha,b,&incX,Axn,&incY); // Axn = Axn - b
+  DSCAL_F77(&M,&alpha,Axn,&incX);         // Axn = -Axn
 
   result = solve_unconstrained(A,ATA,Axn,nFree,Free); 
   free(Axn);
@@ -2608,9 +2627,9 @@ void release_miny(taucs_double *y,int *nFree,int *Free,int *nBound,int *Bound)
   int i,minyind;
   double miny;
   
-  // Find the lagrange multiplier farthest below zero.
+  // Find the lagrange multiplier farthest below zero, if any
   
-  for(minyind=0,miny=0.0,i=0;i<*nBound;i++) { 
+  for(minyind=-1,miny=0.0,i=0;i<*nBound;i++) { 
     
     if (y[Bound[i]] < miny) {
       
@@ -2621,11 +2640,14 @@ void release_miny(taucs_double *y,int *nFree,int *Free,int *nBound,int *Bound)
     
   }
   
-  // Now release that variable.
+  // Now release that variable, if found
+
+  if (minyind >= 0) {
   
-  int_union(Free,*nFree,&minyind,1,nFree);
-  int_difference(Bound,*nBound,&minyind,1,nBound);
+    int_union(Free,*nFree,&minyind,1,nFree);
+    int_difference(Bound,*nBound,&minyind,1,nBound);
   
+  }
 }
 
 taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A, 
@@ -2649,7 +2671,7 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
     
   if ( nFree > 0 ) {
 
-    Afree = taucs_ccs_matrix_new(A->m,A->n,TAUCS_DOUBLE,A->colptr[A->n+1]);
+    Afree = taucs_ccs_matrix_new(A->m,A->n,TAUCS_DOUBLE,A->colptr[A->n]);
     taucs_ccs_submatrix(A,Free,nFree,Afree);
 
     alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, Afree->m, Afree->n );
@@ -2662,7 +2684,7 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
     lsqr_in->rel_rhs_err = 0;
     lsqr_in->cond_lim = 1e16;
     lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
-    lsqr_in->lsqr_fp_out = NULL;	
+    lsqr_in->lsqr_fp_out = stdout;	
 
     for( bItr=0; bItr<Afree->m; bItr++ ) {
 
@@ -2687,9 +2709,12 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
 
     /* Now copy out the answer. */
 
-    for( bItr=0; bItr<Afree->n; bItr++ ) // not really bItr here, but hey
+    for( bItr=0; bItr<Afree->n; bItr++ ) {// not really bItr here, but hey
+
       newx[Free[bItr]] = lsqr_out->sol_vec->elements[bItr];
     
+    }
+
     free_lsqr_mem( lsqr_in, lsqr_out, lsqr_work, lsqr_func );
     taucs_ccs_free(Afree);
     
@@ -2751,9 +2776,9 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
   bindzeros(A->n,xn,&nFree,Free,&nBound,Bound,nconstrained);
   y = compute_lagrange_multipliers(A,ATA,xn,b,nBound,Bound);
   
-  while (!is_optimal_point(A->n,y,nBound,Bound)) {
+  do { 
 
-    while (!isconstrainedpt) {
+    do {
 
       p = computep(A,ATA,xn,b,nFree,Free); /* Solve min ||A(xn + p) - b|| in free vars. */
       
@@ -2771,13 +2796,13 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
       pivcount++;
       assert(pivcount < MAXPIVOT);
 
-    }
+    } while (!isconstrainedpt);
 
     free(y);
     y = compute_lagrange_multipliers(A,ATA,xn,b,nBound,Bound);
     release_miny(y,&nFree,Free,&nBound,Bound);
     
-  }
+  } while (!is_optimal_point(A->n,y,nBound,Bound));
   
   free(y);
  
