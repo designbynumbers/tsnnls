@@ -796,7 +796,11 @@ int main( int argc, char* argv[] )
   }
 
   colvector_write_mat(outfile,xvals,Acols,"x");
-  
+
+  free(bvals);
+  free(xvals);
+  fclose(outfile);
+  taucs_ccs_free(A);
   exit(0);
 
 }
