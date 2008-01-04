@@ -465,7 +465,7 @@ t_snnlslsqr(taucs_ccs_matrix *A,
   /* We now have a solution, but must clean up the memory we allocated
    * and unscramble x 
    */
-  x_unscrambled = malloc(sizeof(double)*ApA->n);
+  x_unscrambled = calloc(sizeof(double),ApA->n);
   taucs_vec_permute(ApA->n, TAUCS_DOUBLE, x, x_unscrambled, invperm);
   
   taucs_ccs_free(ApAperm);
