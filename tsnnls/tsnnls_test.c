@@ -176,6 +176,8 @@ double *loadvals(const char *filename,int *dim,int *cols)
 
   }
 
+  fclose(Af);
+
   return vals;
 
 }
@@ -386,6 +388,7 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
   free(x);
   free(b);
   free(realx);
+  taucs_ccs_free(A);
 
   exit(0);
 
@@ -691,6 +694,7 @@ int main( int argc, char* argv[] )
 
   Avals = loadvals(aname, &Adim, &Acols);
   A = taucs_construct_sorted_ccs_matrix(Avals, Acols, Adim);
+  free(Avals);
 
   printf("tsnnls_test: Loaded %d x %d matrix A from %s.\n",
 	 Adim,Acols,aname);
