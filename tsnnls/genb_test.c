@@ -14,7 +14,7 @@
   Note that this file isn't even made if we don't have a full LAPACK.
 */
 
-#define NUM_TESTS 512
+#define NUM_TESTS 100
 #define Msize 7
 #define Nsize 3
 
@@ -296,7 +296,7 @@ double *fliporder(int m, int n, double *A)
 
 }
   
-int main() 
+int main(int argc,char *argv[]) 
 
 {
   double *x,*y,*A,*b,*Aflip;
@@ -379,6 +379,7 @@ int main()
 
     }
 
+    free(tsnnlsX); free(block3X); free(spivX);
     free(A); free(x); free(y); free(b);
     taucs_ccs_free(Accs);
 
