@@ -2485,7 +2485,30 @@ taucs_double *solve_unconstrained(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
     taucs_ccs_submatrix(A,Free,nFree,Afree);
     selectAprimeDotAsparse(ATA,Free,nFree,ATAfree);
     
-    xFree = t_snnlslsqr(Afree,b,ATAfree,Free,&rcond);
+    xFree = t_snnlslsqr(Afree,b,ATAfree,Free,&rcond);  
+
+    // If t_snnlslsqr failed, we ought to know why.
+
+    if (xFree == NULL) {
+
+      FILE *outfile;
+      
+      outfile = fopen("A.mat","w");
+      taucs_ccs_write_mat(outfile,A);
+      fclose(outfile);
+      
+      outfile = fopen("b.mat","w");
+      colvector_write_mat(outfile,b,A->m,"b");
+      fclose(outfile);
+
+      outfile = fopen("ATA.mat","w");
+      taucs_ccs_write_mat(outfile,ATA);
+      fclose(outfile);
+
+      printf("t_snnls_lsqr failed. Dumping to A.mat, b.mat, ATA.mat.\n");
+      exit(1);
+
+    }
     
   }
 
@@ -2571,7 +2594,7 @@ int is_optimal_point( int n, taucs_double *y, int nBound, int *Bound)
 
   for (i=0;i<nBound;i++) {
 
-    if (y[Bound[i]] < 0) { return (1 == 0); } // that is, return FALSE
+    if (y[i] < 0) { return (1 == 0); } // that is, return FALSE
 
   }
 
@@ -2618,10 +2641,10 @@ void release_miny(taucs_double *y,int *nFree,int *Free,int *nBound,int *Bound)
   
   for(minyind=-1,miny=0.0,i=0;i<*nBound;i++) { 
     
-    if (y[Bound[i]] < miny) {
+    if (y[i] < miny) {
       
       minyind = Bound[i];
-      miny = y[Bound[i]];
+      miny = y[i];            /* y array is indexed by _bound_ variables only */
       
     }
     
@@ -2671,7 +2694,7 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
     lsqr_in->rel_rhs_err = 0;
     lsqr_in->cond_lim = 1e16;
     lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
-    lsqr_in->lsqr_fp_out = stdout;	
+    lsqr_in->lsqr_fp_out = NULL;	
 
     for( bItr=0; bItr<Afree->m; bItr++ ) {
 
@@ -2685,7 +2708,7 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
     
     for( bItr=0; bItr<Afree->n; bItr++ ) {
       
-      lsqr_in->sol_vec->elements[bItr] = x[Free[bItr]]; 
+      lsqr_in->sol_vec->elements[bItr] = 1; 
     
     }
     
@@ -2802,7 +2825,7 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
     
   // Housekeeping
 
-  taucs_ccs_free(A); taucs_ccs_free(ATA);
+  taucs_ccs_free(ATA);
   free(xn); free(Free); free(Bound);
 
   return sollsqrx;
