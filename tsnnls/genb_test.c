@@ -312,20 +312,64 @@ int main(int argc,char *argv[])
 
   double err,block3err,spiverr;
 
+  int    writemode=0;
+
+  /* Genb_test expects either no argument, in which case it generates and runs
+     the tests on its' own, or the --makedir argument, in which case it just 
+     generates the test problems in the subdirectory genb_probs of the current dir. */
+
+  if (argc > 1) {
+
+    if (!sscanf(argv[1],"--makedir")) {
+
+      writemode = 1;
+
+    } else {
+
+      fprintf(stderr,"usage: genb_test --makedir or genb_test\n");
+      exit(1);
+
+    }
+
+  }
+
   fprintf(stderr,"genb_tests\n\n");
-  fprintf(stderr,
-	  "Creating %d random test %d x %d test problems using \n"
-	  "the genb algorithm of PJV. Each problem will be given \n"
-	  "to the tsnnls method, and the error printed below.\n",
-	  NUM_TESTS,Msize,Nsize);
 
-  fprintf(stderr,
-	  "We require an error less than 1e-8 to pass the test.\n\n");
+  if (writemode) {
 
-  fprintf(stderr,
-	  "#    M    N     Error         (PJV error)   (Spiv error)   Result \n"
-	  "----------------------------------------------------------------- \n");
+    fprintf(stderr,
+	    "Creating %d random test %d x %d snnls problems using the \n"
+	    "the genb algorithm of PJV. Each problem will be written to \n"
+	    "./genb_probs. All tests can be run with ./genb_probs/runtests.sh.\n\n",
+	    NUM_TESTS,Msize,Nsize);
 
+    fprintf(stderr,"Clearing directory...");
+    if (system("rm -fr genb_probs")) { fprintf(stderr," error.\n"); exit(1); } 
+    else { fprintf(stderr," ok.\n"); }
+
+    fprintf(stderr,"Making directory...");
+    if (system("mkdir genb_probs")) { fprintf(stderr," error.\n"); exit(1); }
+    else { fprintf(stderr," ok.\n"); }
+
+    fprintf(stderr,"Wrote...\n");
+
+  } else {
+
+    fprintf(stderr,
+	    "Creating %d random test %d x %d problems using \n"
+	    "the genb algorithm of PJV. Each problem will be given \n"
+	    "to the tsnnls method, and the error printed below.\n",
+	    NUM_TESTS,Msize,Nsize);
+    
+    fprintf(stderr,
+	    "We require an error less than 1e-8 to pass the test.\n\n");
+
+    fprintf(stderr,
+	    "#    M    N     Error         (PJV error)   (Spiv error)   Result \n"
+	    "----------------------------------------------------------------- \n");
+
+  }
+    
 #ifdef HAVE_TIME
 
   srand(536);
@@ -343,58 +387,128 @@ int main(int argc,char *argv[])
     A = random_matrix(Msize,Nsize);
     random_x_y(Msize,Nsize,&x,&y);
     b = genb(Msize,Nsize,A,x,y);
-
-    /* Now feed the problem to tsnnls. */
-
     Aflip = fliporder(Msize,Nsize,A);
     Accs = taucs_construct_sorted_ccs_matrix(Aflip,Nsize,Msize);
-    tsnnlsX = t_snnls_pjv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
-    block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
-    spivX   = t_snnls_spiv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings,Nsize);
 
-    /* Now we compare the solution with our guess. */
+    if (writemode) {
 
-    err = 0; block3err = 0; spiverr=0;
-    for(i=0;i<Nsize;i++) { 
+      char fname[1024];
+      FILE *outfile;
 
-      err += pow(tsnnlsX[i] - x[i],2.0); 
-      block3err += pow(block3X[i] - x[i],2.0);
-      spiverr += pow(spivX[i] - x[i],2.0);
+      sprintf(fname,"./genb_probs/A_%04d.sparse",test);
+      outfile = fopen(fname,"w");
+      if (outfile == NULL) {
+	fprintf(stderr,"genb_test: Couldn't open %s for writing.\n",fname);
+	exit(1);
+      }
 
-    }
-    err = sqrt(err);
-    block3err = sqrt(block3err);
-    spiverr = sqrt(spiverr);
+      taucs_ccs_write_sparse(outfile,Accs);
+      fclose(outfile);
+      fprintf(stderr,"%s ",fname);
 
-    fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e % 7e ",test+1,Msize,Nsize,block3err,err,spiverr); 
+      sprintf(fname,"./genb_probs/b_%04d.mat",test);
+      outfile = fopen(fname,"w");
+      if (outfile == NULL) {
+	fprintf(stderr,"genb_test: Couldn't open %s for writing.\n",fname);
+	exit(1);
+      }
 
-    if (err < 1e-8 && block3err < 1e-8 && spiverr < 1e-8) {
+      colvector_write_mat(outfile,b,Accs->m,"b");
+      fclose(outfile);
+      fprintf(stderr,"%s ",fname);
 
-      npass++;
-      fprintf(stderr," pass\n");
+      sprintf(fname,"./genb_probs/x_%04d.mat",test);
+      outfile = fopen(fname,"w");
+      if (outfile == NULL) {
+	fprintf(stderr,"genb_test: Couldn't open %s for writing.\n",fname);
+	exit(1);
+      }
 
+      colvector_write_mat(outfile,x,Accs->n,"x");
+      fclose(outfile);
+      fprintf(stderr,"%s \n",fname);
+      
     } else {
-
-      fprintf(stderr," FAIL\n");
-
+    
+      /* Now feed the problem to tsnnls. */
+      
+      tsnnlsX = t_snnls_pjv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
+      block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
+      spivX   = t_snnls_spiv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings,Nsize);
+      
+      /* Now we compare the solution with our guess. */
+      
+      err = 0; block3err = 0; spiverr=0;
+      for(i=0;i<Nsize;i++) { 
+	
+	err += pow(tsnnlsX[i] - x[i],2.0); 
+	block3err += pow(block3X[i] - x[i],2.0);
+	spiverr += pow(spivX[i] - x[i],2.0);
+	
+      }
+      err = sqrt(err);
+      block3err = sqrt(block3err);
+      spiverr = sqrt(spiverr);
+      
+      fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e % 7e ",test+1,Msize,Nsize,block3err,err,spiverr); 
+      
+      if (err < 1e-8 && block3err < 1e-8 && spiverr < 1e-8) {
+	
+	npass++;
+	fprintf(stderr," pass\n");
+	
+      } else {
+	
+	fprintf(stderr," FAIL\n");
+	
+      }
+      
+      free(tsnnlsX); free(block3X); free(spivX);
+      
     }
 
-    free(tsnnlsX); free(block3X); free(spivX);
     free(A); free(x); free(y); free(b);
     taucs_ccs_free(Accs);
-
+    
   }
 
-  fprintf(stderr,"\n");
-  fprintf(stderr,"%d (of %d) tests passed.\n",npass,NUM_TESTS);
+  if (writemode) {
 
-  if (npass == NUM_TESTS) {
+    char fname[1024];
+    FILE *outfile;
+
+    fprintf(stderr,"\nFiles complete!\n\n");
+    fprintf(stderr,"Writing ./genb_probs/run_tests...\n");
+    
+    sprintf(fname,"./genb_probs/run_tests");
+    outfile = fopen(fname,"w");
+    if (outfile == NULL) { fprintf(stderr,"Can't open file.\n"); exit(1); }
+    
+    fprintf(outfile,"tsnnls_test ");
+    int i;
+    for(i=0;i<NUM_TESTS;i++) {
+      fprintf(outfile,"-A A_%04d.sparse -b b_%04d.mat -x x_%04d.mat ",
+	      i,i,i);
+    }
+    fprintf(outfile," --tsnnls --pjv --spiv\n");
+    fclose(outfile);
 
     exit(0);
-
+    
   } else {
 
-    exit(1);
+    fprintf(stderr,"\n");
+    fprintf(stderr,"%d (of %d) tests passed.\n",npass,NUM_TESTS);
+    
+    if (npass == NUM_TESTS) {
+      
+      exit(0);
+      
+    } else {
+      
+      exit(1);
+
+    }
 
   }
 
