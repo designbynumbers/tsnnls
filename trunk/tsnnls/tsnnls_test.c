@@ -120,8 +120,10 @@
 #endif
 
 int VERBOSITY = 0;
-enum STYPE { tsnnls, pjv, tlsqr, fallback, SOLlsqr, spiv } solver = { tsnnls };
+enum STYPE { tsnnls, pjv, tlsqr, fallback, SOLlsqr, spiv } solvers[10] = { tsnnls };
+int nsolvers = 0;
 int nconstrained = -1;
+int exit_status = 0;
 
 int read_sparse( FILE *fp, double **vals, int *dim, int *cols );
 int read_mat( FILE *fp, double **vals, int *dim, int *cols);
@@ -210,8 +212,8 @@ read_sparse( FILE *fp, double **vals, int *dim, int *cols )
 
     if (fcode == EOF) { 
 
-      printf("tsnnls_test: Read matrix with %d (claimed %d) nonzeros.\n",
-	     checknnz,nnz);
+      //printf("tsnnls_test: Read matrix with %d (claimed %d) nonzeros.\n",
+      //     checknnz,nnz);
       return 0; 
 
     } else { return -1; }
@@ -302,96 +304,103 @@ static void
 tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
 {
   int xItr;
-  int pItr = 0;			
   double err = 0;
   double expectedError=0;
 
-  fprintf(stderr,"matrixdims runtime  relerror (|x'-x|/|x|) worst expected\n");
-  fprintf(stderr,"--------------------------------------------------------\n");
-  
   double residual;
   double ttime;
   double *x;
+
+  int    i;
 	
-  start_clock();
-	
-  /* Passing a 0.0 here means we will ALWAYS perform the error-reducing final 
-   * step with LSQR. 
-   */
+  for (i=0;i<nsolvers;i++) {
 
-  if (solver == pjv) {
+    if (i>0) { fprintf(stderr,"        "); }
 
-    x = t_snnls_pjv(A, b, &residual, 0.0, 0 );
-
-  } else if (solver == fallback) {
-
-    x = t_snnls_fallback(A, b, &residual, 0.0, 0 ) ;
-
-  } else if (solver == tsnnls) {
-
-    x = t_snnls(A, b, &residual, 0.0, 0);
-
-  } else if (solver == spiv) {
-
-    x = t_snnls_spiv(A,b,&residual,0.0,0,nconstrained);
-
-  } else {
-
-    printf("tsnnls_test: Illegal solver in tsnnls_test.\n");
-    exit(1);
-
-  }
-	
-  ttime = end_clock();
-	
-  printf( "%3d x %3d  %6f ", A->m, A->n, ttime );
-  if( x == NULL )
-    {
-      printf( "Problem %d failed! (Matrix probably not positive definite)\n", pItr );
-      taucs_ccs_free(A);
-      free(b);
-      free(realx);
+    start_clock();
+    
+    /* Passing a 0.0 here means we will ALWAYS perform the error-reducing final 
+     * step with LSQR. 
+     */
+    
+    if (solvers[i] == pjv) {
       
+      fprintf(stderr,"pjv     ");
+      x = t_snnls_pjv(A, b, &residual, 0.0, 0 );
+      
+    } else if (solvers[i] == fallback) {
+      
+      fprintf(stderr,"fallback");
+      x = t_snnls_fallback(A, b, &residual, 0.0, 0 ) ;
+      
+    } else if (solvers[i] == tsnnls) {
+      
+      fprintf(stderr,"block3  ");
+      x = t_snnls(A, b, &residual, 0.0, 0);
+      
+    } else if (solvers[i] == spiv) {
+      
+      fprintf(stderr,"spiv    ");
+      x = t_snnls_spiv(A,b,&residual,0.0,0,nconstrained);
+      
+    } else {
+      
+      printf("tsnnls_test: Illegal solver in tsnnls_test.\n");
       exit(1);
+      
     }
-  
-  // compute relative error using ||(x*-x)||/||x||
-  
-  double* diff = malloc(sizeof(double)*A->n);
-  
-  for( xItr=0; xItr<A->n; xItr++ )
-    diff[xItr] = realx[xItr] - x[xItr];
-  
-  int incX = {1};
-  //err = cblas_dnrm2( A->n, diff, 1 );
-  //err /= cblas_dnrm2( A->n, realx, 1 );
-  
-  err = DNRM2_F77(&(A->n),diff,&incX);
-  err /= DNRM2_F77(&(A->n),realx,&incX);
-  
-  /* Expected relative error given from theory is approx. cond^2*eps */
-  expectedError = taucs_rcond(A);
-  expectedError = 1.0/expectedError;
-  
-  expectedError *= expectedError;
-  expectedError *= __DBL_EPSILON__;
-  
-  printf( "%8e          %8e\n", err, expectedError );
-  
-  if( err > expectedError ) {
-    fprintf( stderr, "\t*** WARNING: relative error larger "
-	     "than expected, your build may not function as expected\n" );
-    exit(1);
+    
+    ttime = end_clock();
+    
+    fprintf(stderr, " %3d x %3d   %6f ", A->m, A->n, ttime );
+    
+    if( x == NULL ) {
+      
+      fprintf(stderr, "(Solver failed)           FAIL\n");
+      exit_status = 1;
+    
+    } else {
+    
+      // compute relative error using ||(x*-x)||/||x||
+      
+      double* diff = malloc(sizeof(double)*A->n);
+      
+      for( xItr=0; xItr<A->n; xItr++ )
+	diff[xItr] = realx[xItr] - x[xItr];
+      
+      int incX = {1};
+      double xnorm;
+      //err = cblas_dnrm2( A->n, diff, 1 );
+      //err /= cblas_dnrm2( A->n, realx, 1 );
+      
+      err = DNRM2_F77(&(A->n),diff,&incX);
+       
+      /* Expected absolute error given from theory is approx. cond^2*eps */
+      expectedError = taucs_rcond(A);
+      expectedError = 1.0/expectedError;
+      
+      expectedError *= expectedError;
+      expectedError *= __DBL_EPSILON__;
+      
+      fprintf(stderr, "%8e %8e ", err, expectedError );
+      
+      if( err > expectedError ) {
+	fprintf( stderr, "FAIL.\n" );
+	exit_status = 1;
+      } else {
+	fprintf( stderr, "pass.\n");
+      }
+      
+      free(diff);
+      free(x);
+   
+    }
+
   }
-
-  free(diff);
-  free(x);
-  free(b);
-  free(realx);
+  
   taucs_ccs_free(A);
-
-  exit(0);
-
+  free(realx);
+  free(b);
 }
 
 static void
@@ -400,78 +409,89 @@ tlsqr_test(taucs_ccs_matrix *A, taucs_double *realx, taucs_double *b)
   int xItr;
   double* x;
   double ttime;
+
+  int i;
+
+  for(i=0;i<nsolvers;i++) {
 	
-  start_clock();
+    start_clock();
+    
+    if (solvers[i] == tlsqr) { 
+      
+      fprintf(stderr,"tlsqr   ");
+      x = t_lsqr(A, b );
 
-  if (solver == tlsqr) { 
+    } else if (solvers[i] == SOLlsqr) {
+      
+      fprintf(stderr,"SOLlsqr ");
+      x = lsqrwrapper(A, b);
 
-    x = t_lsqr(A, b );
+    } else {
 
-  } else if (solver == SOLlsqr) {
-
-    x = lsqrwrapper(A, b);
-
-  } else {
-
-    printf("tsnnls_test: Illegal solver in tlsqr_test.\n");
-    exit(1);
-
-  }
-
-  ttime = end_clock();
+      printf("tsnnls_test: Illegal solver in tlsqr_test.\n");
+      exit(1);
+      
+    }
+    
+    ttime = end_clock();
+    
+    fprintf(stderr,"%3d x %3d  %6f  ",A->m,A->n,ttime);
+    
+    if( x == NULL ) {
+      
+      fprintf(stderr," (Could not compute) FAIL\n");
+      exit_status = 1;
+      
+      taucs_ccs_free(A);
+      free(b);
+      free(realx);
+      
+    } else {
+      
+      // compute relative error using ||(x*-x)||/||x||
+      
+      double* diff = malloc(sizeof(double)*A->n);
+      double expectedError;
+      
+      for( xItr=0; xItr<A->n; xItr++ )
+	diff[xItr] = realx[xItr] - x[xItr];
+      
+      double err = 0;
+      int incX = {1};
+      
+      //err = cblas_dnrm2( A->n, diff, 1 );
+      //err /= cblas_dnrm2( A->n, realx, 1 );
+      
+      err = DNRM2_F77(&(A->n),diff,&incX);
+      err /= DNRM2_F77(&(A->n),realx,&incX);
+      
+      /* Expected relative error given from theory is approx. cond^2*eps */
+      expectedError = ((double)1.0/taucs_rcond(A));
+      expectedError *= expectedError;
+      expectedError *= __DBL_EPSILON__;
+      
+      printf( "%8e %8e  ", err, expectedError );
+      
+      if( err > expectedError ) {
 	
-  printf( "tsnnls_test: %d x %d matrix tlsqr runtime %f ", A->m, A->n, ttime );
-  
-  if( x == NULL ) {
+	fprintf( stderr, "  FAIL.\n");
+	exit_status = 1;
+	
+      } else {
+	
+	fprintf( stderr, "  pass.\n");
+	
+      }
+      
+      free(diff);  
+      free(x);
+      taucs_ccs_free(A);
+      free(b);
+      free(realx);
+      
+    }
 
-    printf( "tsnnls_test: Solver failed! (A probably not positive definite)\n" );
-    taucs_ccs_free(A);
-    free(b);
-    free(realx);
-    
-    exit(1);
-    
   }
-  
-  // compute relative error using ||(x*-x)||/||x||
-  
-  double* diff = malloc(sizeof(double)*A->n);
-  double expectedError;
-  
-  for( xItr=0; xItr<A->n; xItr++ )
-    diff[xItr] = realx[xItr] - x[xItr];
-  
-  double err = 0;
-  int incX = {1};
-  
-  //err = cblas_dnrm2( A->n, diff, 1 );
-  //err /= cblas_dnrm2( A->n, realx, 1 );
-  
-  err = DNRM2_F77(&(A->n),diff,&incX);
-  err /= DNRM2_F77(&(A->n),realx,&incX);
-  
-  /* Expected relative error given from theory is approx. cond^2*eps */
-  expectedError = ((double)1.0/taucs_rcond(A));
-  expectedError *= expectedError;
-  expectedError *= __DBL_EPSILON__;
-  
-  printf( "relative error ||x'-x||/||x||: %e / "
-	  "worst expected error: %e\n", err, expectedError );
-  
-  if( err > expectedError ) {
-
-    fprintf( stderr, "\t*** WARNING: relative error larger "
-	     "than expected, your build may not function as expected\n" );
-    exit(1);
-  }
-  
-  free(diff);  
-  free(x);
-  taucs_ccs_free(A);
-  free(b);
-  free(realx);
-
-  exit(0);
 
 }
 
@@ -489,7 +509,7 @@ lsqrwrapper( taucs_ccs_matrix* Af, double* b )
   lsqr_work    *lsqr_work;
   lsqr_func    *lsqr_func;
   int bItr;
-  double		*xf_raw;
+  double       *xf_raw;
     
   alloc_lsqr_mem( &lsqr_in, &lsqr_out, &lsqr_work, &lsqr_func, Af->m, Af->n );
   
@@ -541,15 +561,18 @@ int main( int argc, char* argv[] )
   taucs_ccs_matrix *A;
   int tverbosity = 0;
 
-  const char *aname = NULL;
-  const char *bname = NULL;
-  const char *xname = NULL;
+  const char (**aname) = NULL;
+  const char (**bname) = NULL;
+  const char (**xname) = NULL;
+
+  int nfiles;
+  int i;
 
 #ifdef WITH_ARGTABLE2
 
-  struct arg_file *arg_Afile = arg_file1("A",NULL,"<A file>","matrix for problem in .mat or .sparse format");
-  struct arg_file *arg_bfile = arg_file1("b",NULL,"<b file>","rhs vector b in .mat format");
-  struct arg_file *arg_xfile = arg_file0("x",NULL,"<x file>","solution vector x in .mat format");
+  struct arg_file *arg_Afile = arg_filen("A",NULL,"<A file>",1,64000,"matrix for problem in .mat or .sparse format");
+  struct arg_file *arg_bfile = arg_filen("b",NULL,"<b file>",1,64000,"rhs vector b in .mat format");
+  struct arg_file *arg_xfile = arg_filen("x",NULL,"<x file>",0,64000,"solution vector x in .mat format");
   struct arg_lit  *arg_tsnnls = arg_lit0(NULL,"tsnnls","solve with tsnnls");
   struct arg_lit  *arg_pjv = arg_lit0(NULL,"pjv","solve with reference solver");
   struct arg_lit  *arg_tlsqr = arg_lit0(NULL,"tlsqr","solve with tlsqr");
@@ -617,16 +640,49 @@ int main( int argc, char* argv[] )
 
   /* Now we read the arguments and move into local vars. */
 
-  aname = arg_Afile->filename[0];
-  bname = arg_bfile->filename[0];
+  if (arg_Afile->count != arg_bfile->count) {
+
+    printf("tsnnls_test: Input %d A matrices, but %d b right-hand vectors.\n"
+	   "             These numbers must be the same to run multiple files.\n",
+	   arg_Afile->count,arg_bfile->count);
+    exit(1);
+
+  }
+
+  nfiles = arg_Afile->count;
+
+  aname = calloc(sizeof(char *),nfiles);
+  bname = calloc(sizeof(char *),nfiles);
+
+  for(i=0;i<nfiles;i++) {
+
+    aname[i] = arg_Afile->filename[i];
+    bname[i] = arg_bfile->filename[i];
+
+  }
   
-  if (arg_xfile->count > 0) { xname = arg_xfile->filename[0]; }
-  if (arg_lsqr->count > 0)  { solver = SOLlsqr; }
-  if (arg_tsnnls->count > 0) { solver = tsnnls; }
-  if (arg_pjv->count > 0)    { solver = pjv; }
-  if (arg_tlsqr->count > 0)  { solver  = tlsqr; }
-  if (arg_fallback->count > 0) {solver = fallback; }
-  if (arg_spiv->count > 0) { solver = spiv; }
+  if (arg_xfile->count > 0) { 
+
+    if (arg_xfile->count != nfiles) {
+
+      printf("tsnnls: Number of solutions x (%d) must match number of A and b files (%d).\n",
+	     arg_xfile->count,nfiles);
+
+      exit(1);
+
+    }
+
+    xname = calloc(sizeof(char *),nfiles);    
+    for(i=0;i<nfiles;i++) { xname[i] = arg_xfile->filename[i]; }
+
+  }
+
+  if (arg_lsqr->count > 0)  { solvers[nsolvers++] = SOLlsqr; }
+  if (arg_tsnnls->count > 0) { solvers[nsolvers++] = tsnnls; }
+  if (arg_pjv->count > 0)    { solvers[nsolvers++] = pjv; }
+  if (arg_tlsqr->count > 0)  { solvers[nsolvers++]  = tlsqr; }
+  if (arg_fallback->count > 0) {solvers[nsolvers++] = fallback; }
+  if (arg_spiv->count > 0) { solvers[nsolvers++] = spiv; }
   if (arg_verb->count > 0) { tverbosity = arg_verb->ival[0]; }
 
   if (arg_constrained->count > 0) {nconstrained = arg_constrained->ival[0];}
@@ -668,17 +724,24 @@ int main( int argc, char* argv[] )
   
   /* Now we attempt to parse the arguments and load files. */
 
-  aname = argv[1];
-  bname = argv[2];
+  nfiles = 1;
+
+  aname = calloc(sizeof(char *),1);
+  bname = calloc(sizeof(char *),1);
+  
+  aname[0] = argv[1];
+  bname[0] = argv[2];
 
   if (argc == 5) { xname = argv[3]; }
 
-  if (!strcmp(argv[argc-1],"--tsnnls")) { solver = tsnnls; }
-  else if (!strcmp(argv[argc-1],"--pjv")) { solver = pjv; }
-  else if (!strcmp(argv[argc-1],"--tlsqr")) { solver = tlsqr; }
-  else if (!strcmp(argv[argc-1],"--fallback")) { solver = fallback; }
-  else if (!strcmp(argv[argc-1],"--lsqr")) { solver = SOLlsqr; }
-  else if (!strcmp(argv[argc-1],"--spiv")) { solver = spiv; }
+  nsolvers=1;
+
+  if (!strcmp(argv[argc-1],"--tsnnls")) { solvers[0] = tsnnls; }
+  else if (!strcmp(argv[argc-1],"--pjv")) { solvers[0] = pjv; }
+  else if (!strcmp(argv[argc-1],"--tlsqr")) { solvers[0] = tlsqr; }
+  else if (!strcmp(argv[argc-1],"--fallback")) { solvers[0] = fallback; }
+  else if (!strcmp(argv[argc-1],"--lsqr")) { solvers[0] = SOLlsqr; }
+  else if (!strcmp(argv[argc-1],"--spiv")) { solvers[0] = spiv; }
   else {
     
     printf("tsnnls_test: Unknown solver %s.\n",argv[argc-1]);
@@ -692,116 +755,175 @@ int main( int argc, char* argv[] )
   tsnnls_version(NULL,0);
   tsnnls_verbosity(tverbosity);
 
-  Avals = loadvals(aname, &Adim, &Acols);
-  A = taucs_construct_sorted_ccs_matrix(Avals, Acols, Adim);
-  free(Avals);
-
-  printf("tsnnls_test: Loaded %d x %d matrix A from %s.\n",
-	 Adim,Acols,aname);
-
-  if (nconstrained == -1) { nconstrained = Acols; }
-
-  /* Now load b. */
-
-  bvals = loadvals(bname, &bdim, &bcols);
+  fprintf(stderr,"Loaded  Solver   matrixdims  runtime  error        errbound     Result\n");
+  fprintf(stderr,"----------------------------------------------------------------------\n");
   
-  if (bdim != Adim || bcols != 1) {
+  for(i=0;i<nfiles;i++) {
 
-    printf("tsnnls_test: We expect the second (b) file %s to be %d x 1.\n"
-	   "             The given file is %d x %d.\n",
-	   bname,Adim,bdim,bcols);
-    exit(1);
-
-  }
-
-  printf("tsnnls_test: Loaded %d x 1 rhs vector b from %s.\n",
-	 bdim,bname);
-
-  /* Now, if present, load x */
-
-  if (xname != NULL) {
-
-    xvals = loadvals(xname, &xdim, &xcols);
-
-    if (xdim != Acols || xcols != 1) {
-
-      printf("tsnnls_test: We expect the third (x) file %s to be %d x 1.\n"
+    Avals = loadvals(aname[i], &Adim, &Acols);
+    A = taucs_construct_sorted_ccs_matrix(Avals, Acols, Adim);
+    free(Avals);
+    
+    fprintf(stderr,"A");
+    
+    if (nconstrained == -1) { nconstrained = Acols; }
+    
+    /* Now load b. */
+    
+    bvals = loadvals(bname[i], &bdim, &bcols);
+    
+    if (bdim != Adim || bcols != 1) {
+      
+      printf("tsnnls_test: We expect the second (b) file %s to be %d x 1.\n"
 	     "             The given file is %d x %d.\n",
-	     xname,Acols,xdim,xcols);
+	     bname[i],Adim,bdim,bcols);
       exit(1);
-
+      
     }
 
-    printf("tsnnls_test: Loaded %d x %d solution vector x from %s.\n",
-	   xdim,xcols,xname);
-
-    if (solver == tsnnls || solver == pjv || solver == fallback || solver == spiv) {
-      
-      tsnnls_test(A,xvals,bvals);
-      
-    } else if (solver == tlsqr || solver == SOLlsqr) {
-      
-      tlsqr_test(A,xvals,bvals);
-
-    } 
-
-  } 
-
-  /* If we've survived this long, we're in problem mode instead of test mode. */
-
-  double residual;
-
-  if (solver == fallback) {
-
-    xvals = t_snnls_fallback(A, bvals, &residual, -1, 1);
+    fprintf(stderr,"b");
     
-  } else if (solver == pjv) {
+    /* Now, if present, load x */
+    
+    if (xname != NULL) {
+      
+      xvals = loadvals(xname[i], &xdim, &xcols);
+      
+      if (xdim != Acols || xcols != 1) {
+	
+	printf("tsnnls_test: We expect the third (x) file %s to be %d x 1.\n"
+	       "             The given file is %d x %d.\n",
+	       xname[i],Acols,xdim,xcols);
+	exit(1);
+	
+      }
+      
+      fprintf(stderr,"x     ");
+      
+      int solItr;
 
-    xvals = t_snnls_pjv(A, bvals, &residual, -1, 1);
+      if (solvers[0] == tsnnls || solvers[0] == pjv || 
+	  solvers[0] == fallback || solvers[0] == spiv) {
 
-  } else if (solver == spiv) {
+	for(solItr = 0;solItr < nsolvers;solItr++) {
 
-    xvals = t_snnls_spiv(A, bvals, &residual, -1, 1,nconstrained);
+	  if (solvers[solItr] == tlsqr || solvers[solItr] == SOLlsqr) {
 
-  } else if (solver == tlsqr) {
-   
-    xvals = t_lsqr(A, bvals);
+	    fprintf(stderr,
+		    "\ntsnnls: Error. Can't mix least squares solvers (tlsqr, SOLlsqr)\n"
+		    "         with constrained solvers (tsnnls, pjv, spiv, fallback).\n");
+	    exit(1);
 
-  } else if (solver == SOLlsqr) {
+	  }
 
-    xvals = lsqrwrapper(A, bvals);
+	}
+	
+	tsnnls_test(A,xvals,bvals);
+	
+      } else if (solvers[0] == tlsqr || solvers[0] == SOLlsqr) {
+	
+	for (solItr = 0;solItr < nsolvers;solItr++) {
+	  
+	  if ((solvers[solItr] != tlsqr) && (solvers[solItr] != SOLlsqr)) {
+	    
+	    fprintf(stderr,
+		    "\ntsnnls: Error. Can't mix least squares solvers (tlsqr, SOLlsqr)\n"
+		    "         with constrained solvers (tsnnls, pjv, spiv, fallback).\n");
+	    exit(1);
+	    
+	  }
 
-  } else {
+	}
 
-    xvals = t_snnls(A, bvals, &residual, -1, 1);
+	tlsqr_test(A,xvals,bvals);
+	
+      } 
+      
+    } else {
+    
+      /* If we've survived this long, we're in problem mode instead of test mode. */
+      
+      double residual;
 
+      start_clock();
+
+      if (solvers[0] == fallback) {
+	
+	fprintf(stderr,"fallback");
+	xvals = t_snnls_fallback(A, bvals, &residual, -1, 1);
+	
+      } else if (solvers[0] == pjv) {
+	
+	fprintf(stderr,"pjv     ");
+	xvals = t_snnls_pjv(A, bvals, &residual, -1, 1);
+	
+      } else if (solvers[0] == spiv) {
+	
+	fprintf(stderr,"spiv    ");
+	xvals = t_snnls_spiv(A, bvals, &residual, -1, 1,nconstrained);
+	
+      } else if (solvers[0] == tlsqr) {
+	
+	fprintf(stderr,"tlsqr   ");
+	xvals = t_lsqr(A, bvals);
+	
+      } else if (solvers[0] == SOLlsqr) {
+	
+	fprintf(stderr,"SOLlsqr ");
+	xvals = lsqrwrapper(A, bvals);
+	
+      } else {
+	
+	fprintf(stderr,"block3  ");
+	xvals = t_snnls(A, bvals, &residual, -1, 1);
+
+      }
+
+      double ttime;
+      ttime = end_clock();
+
+      fprintf(stderr,"%3d x %3d",A->m,A->n);
+      fprintf(stderr,"  %6f ",ttime);
+
+      if (xvals == NULL) {
+	
+	fprintf(stderr," Fail.\n");
+	exit_status = 1;
+	
+      } else {
+
+	printf(" Success.\n");
+	
+	char outfilename[256];
+	
+	sprintf(outfilename,"x%d.mat",i);
+	outfile = fopen(outfilename,"w");
+	
+	if (outfile == NULL) {
+	  
+	  printf("tsnnls_test: Could not open %s to write solution.\n",outfilename);
+	  exit(1);
+	  
+	}
+	
+	colvector_write_mat(outfile,xvals,Acols,"x");
+	free(xvals);
+
+      }
+
+      free(bvals);
+      fclose(outfile);
+      taucs_ccs_free(A);
+      
+    }
+    
   }
 
-  if (xvals == NULL) {
+  free(aname);
+  free(bname);
+  if (xname != NULL) { free(xname); }
 
-    printf("tsnnls_test: solver failed.\n");
-    exit(1);
-
-  }
-
-  printf("tsnnls_test: Solved problem.\n");
-
-  outfile = fopen("x.mat","w");
-  
-  if (outfile == NULL) {
-
-    printf("tsnnls_test: Could not open x.mat to write solution.\n");
-    exit(1);
-
-  }
-
-  colvector_write_mat(outfile,xvals,Acols,"x");
-
-  free(bvals);
-  free(xvals);
-  fclose(outfile);
-  taucs_ccs_free(A);
-  exit(0);
+  exit(exit_status);
 
 }
 

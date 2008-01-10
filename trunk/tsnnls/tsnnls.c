@@ -1132,7 +1132,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   Pxplusalphap = calloc(n,sizeof(taucs_double));
 
   p = calloc(n,sizeof(taucs_double));
-  alpha = calloc(n,sizeof(taucs_double));
+  alpha = calloc(n+1,sizeof(taucs_double));
 
 
   /* submatrix allocation actually takes bit of time during profiling,
@@ -2505,8 +2505,12 @@ taucs_double *solve_unconstrained(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
       taucs_ccs_write_mat(outfile,ATA);
       fclose(outfile);
 
-      printf("t_snnls_lsqr failed. Dumping to A.mat, b.mat, ATA.mat.\n");
-      exit(1);
+      sprintf(gErrorString,"t_snnlslsqr failed. Dumped matrices to A.mat, b.mat, x.mat.\n");
+      gErrorCode = 462;
+
+      taucs_ccs_free(Afree);
+      taucs_ccs_free(ATAfree);
+      return NULL;
 
     }
     
@@ -2565,7 +2569,7 @@ void bindzeros(int n,taucs_double *x,int *nFree,int *Free,int *nBound,int *Bound
 
   for(i=0;i<*nFree;i++) {
 
-    assert(x[Free[i]] >= -1e-16);
+    assert(x[Free[i]] >= -1e-15);
 
     if (x[Free[i]] < 1e-16 && Free[i] < nconstrained) {  
       
@@ -2626,7 +2630,7 @@ double findalpha(taucs_double *p,taucs_double *xn,
 
   }
   
-  assert(alpha > 0 && alpha <= 1.0);
+  assert(alpha > -1e-15 && alpha <= 1.0);
   return alpha;
 
 }
@@ -2777,10 +2781,14 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
   double           alpha = 0;
   int              isconstrainedpt = (1 == 0); // False
 
+  clear_tsnnls_error();
+  
   nBound = 0; nFree = A->n;               // Set all variables free for starters.
   for(i=0;i<A->n;i++) { Free[i] = i; }
   
   xn = solve_unconstrained(A,ATA,b,nFree,Free);
+  if (xn == NULL) { taucs_ccs_free(ATA); free(Bound); return NULL; }
+
   P_spiv(A->n,xn,nconstrained);
   
   bindzeros(A->n,xn,&nFree,Free,&nBound,Bound,nconstrained);
@@ -2791,10 +2799,27 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
     do {
 
       p = computep(A,ATA,xn,b,nFree,Free); /* Solve min ||A(xn + p) - b|| in free vars. */
+
+      if (p == NULL) { 
+	taucs_ccs_free(ATA); free(xn); free(Bound); free(y);
+	return NULL;
+      }
       
       alpha = findalpha(p,xn,nFree,Free,nconstrained,&newzero);
+ 
+      // This piece of code deals with a funny roundoff error problem.
+      // Essentially, though alpha = scratchx/scratchp, you want to compute
+      // xn[i] + p[i] * alpha as xn[i] + (p[i] * scratchx)*(1/scratchp).
+      
+      double scratchx, scratchp, one = 1.0;
+ 
+      scratchx = -xn[newzero]; 
+      scratchp = 1/p[newzero];
 
-      DAXPY_F77(&N,&alpha,p,&incX,xn,&incY); // xn = xn + alpha*p
+      DSCAL_F77(&N,&scratchx,p,&incX); DSCAL_F77(&N,&scratchp,p,&incX);
+      DAXPY_F77(&N,&one,p,&incX,xn,&incY);
+      
+      // DAXPY_F77(&N,&alpha,p,&incX,xn,&incY); // xn = xn + alpha*p
       
       bindzeros(A->n,xn,&nFree,Free,&nBound,Bound,nconstrained); // Add new variable(s) to bound set
 
