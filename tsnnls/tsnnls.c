@@ -1509,42 +1509,47 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
        The vector x_F must be assembled from F and x, though. */
 
     /* double normgF = 0.0; */
-    double *AfpAfxf, *Afpb, *xf, *gf;
-    int    gfItr;
 
-    AfpAfxf = calloc(A_original_ordering->m,sizeof(double));
-    Afpb    = calloc(A_original_ordering->m,sizeof(double));
-    xf      = calloc(sizeF,sizeof(double));
-    gf      = calloc(sizeF,sizeof(double));
+    if (sizeF > 0) {
 
-    for(gfItr=0;gfItr<sizeF;gfItr++) { xf[gfItr] = x[F[gfItr]]; }
-
-    ourtaucs_ccs_times_vec(lsqrApA,xf,AfpAfxf);
-    taucs_transpose_vec_times_matrix(b,A_original_ordering,F,sizeF,Afpb);
-
-    for(gfItr=0;gfItr<sizeF;gfItr++) { gf[gfItr] = AfpAfxf[gfItr] - Afpb[gfItr]; }
-
-    /* At this point, if we're really at a stationary point, this should be 
-       pretty much dead zero. We check this to make sure. */
-
-    for(gfItr=0;gfItr<sizeF;gfItr++) { 
-
-      if (fabs(gf[gfItr]) > 1e-8) {
-
-	gErrorCode = 74;
-	sprintf(gErrorString,
-		"tsnnls: Warning! Component %d of the reduced gradient is %g at the\n"
-		"        end of the f loop. This suggests that we are not at a stationary\n"
-		"        point and that something has gone wrong with the run.\n",
-		gfItr,gf[gfItr]);
-
-	return NULL;
-
+      double *AfpAfxf, *Afpb, *xf, *gf;
+      int    gfItr;
+      
+      AfpAfxf = calloc(A_original_ordering->m,sizeof(double));
+      Afpb    = calloc(A_original_ordering->m,sizeof(double));
+      xf      = calloc(sizeF,sizeof(double));
+      gf      = calloc(sizeF,sizeof(double));
+      
+      for(gfItr=0;gfItr<sizeF;gfItr++) { xf[gfItr] = x[F[gfItr]]; }
+      
+      ourtaucs_ccs_times_vec(lsqrApA,xf,AfpAfxf);
+      taucs_transpose_vec_times_matrix(b,A_original_ordering,F,sizeF,Afpb);
+      
+      for(gfItr=0;gfItr<sizeF;gfItr++) { gf[gfItr] = AfpAfxf[gfItr] - Afpb[gfItr]; }
+      
+      /* At this point, if we're really at a stationary point, this should be 
+	 pretty much dead zero. We check this to make sure. */
+      
+      for(gfItr=0;gfItr<sizeF;gfItr++) { 
+	
+	if (fabs(gf[gfItr]) > 1e-8) {
+	  
+	  gErrorCode = 74;
+	  sprintf(gErrorString,
+		  "tsnnls: Warning! Component %d of the reduced gradient is %g at the\n"
+		  "        end of the f loop. This suggests that we are not at a stationary\n"
+		  "        point and that something has gone wrong with the run.\n",
+		  gfItr,gf[gfItr]);
+	  
+	  return NULL;
+	  
+	}
+	
       }
+      
+      free(gf); free(xf); free(AfpAfxf); free(Afpb);
 
-    }
-
-    free(gf); free(xf); free(AfpAfxf); free(Afpb);
+    } // otherwise, there's no reduced gradient to compute.
     
     /* Now we need to compute y_G and see if shifting anything out
        of F has created infeasibles in G */
@@ -2402,7 +2407,7 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
 {
   taucs_double *ATAx, *ATb,*y;
   int N=A->n,incX=1,incY=1,i;
-  double alpha=-1;
+  double alpha=-1;  
 
   ATAx = malloc(sizeof(taucs_double)*A->n);
   ATb  = malloc(sizeof(taucs_double)*A->n);
@@ -2418,7 +2423,7 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
 
   y = malloc(sizeof(taucs_double)*nBound);
   assert(y != NULL);
-  for(i=0;i<nBound;i++) { y[i] = ATAx[Bound[i]]; }
+  for(i=0;i<nBound;i++) { y[i] = ATAx[Bound[i]]; }  
 
   /* Now free scratch memory and return. */
 
@@ -2552,6 +2557,18 @@ taucs_double *computep(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
   result = solve_unconstrained(A,ATA,Axn,nFree,Free); 
   free(Axn);
 
+  // For debugging purposes, we try computing p another way.
+
+  double *checkresult;
+  int    N=A->n;
+  double checknorm;
+
+  checkresult = solve_unconstrained(A,ATA,b,nFree,Free);
+  DAXPY_F77(&N,&alpha,xn,&incX,checkresult,&incY); // checkresult -= xn.
+  
+  DAXPY_F77(&N,&alpha,result,&incX,checkresult,&incY); // checkresult -= result
+  checknorm = DNRM2_F77(&N,checkresult,&incX);
+
   return result;
 }
 
@@ -2645,12 +2662,24 @@ void release_miny(taucs_double *y,int *nFree,int *Free,int *nBound,int *Bound)
   
   for(minyind=-1,miny=0.0,i=0;i<*nBound;i++) { 
     
-    if (y[i] < miny) {
-      
+    // Experiment with Murty's method
+
+    if (y[i] < 0) {
+
       minyind = Bound[i];
-      miny = y[i];            /* y array is indexed by _bound_ variables only */
-      
+      miny = y[i];
+
+      break;
+
     }
+
+
+    //if (y[i] < miny) {
+      
+    //  minyind = Bound[i];
+    //  miny = y[i];            /* y array is indexed by _bound_ variables only */
+      
+    //}
     
   }
   
@@ -2804,6 +2833,8 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
 	taucs_ccs_free(ATA); free(xn); free(Bound); free(y);
 	return NULL;
       }
+
+      isconstrainedpt = (DNRM2_F77(&N,p,&incX) < 1e-12);  
       
       alpha = findalpha(p,xn,nFree,Free,nconstrained,&newzero);
  
@@ -2812,11 +2843,16 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
       // xn[i] + p[i] * alpha as xn[i] + (p[i] * scratchx)*(1/scratchp).
       
       double scratchx, scratchp, one = 1.0;
- 
-      scratchx = -xn[newzero]; 
-      scratchp = 1/p[newzero];
 
-      DSCAL_F77(&N,&scratchx,p,&incX); DSCAL_F77(&N,&scratchp,p,&incX);
+      if (newzero != -1) { // if we found a zero value, then multiply p by "alpha"
+ 
+	scratchx = -xn[newzero]; 
+	scratchp = 1/p[newzero];
+	
+	DSCAL_F77(&N,&scratchx,p,&incX); DSCAL_F77(&N,&scratchp,p,&incX);
+
+      }
+
       DAXPY_F77(&N,&one,p,&incX,xn,&incY);
       
       // DAXPY_F77(&N,&alpha,p,&incX,xn,&incY); // xn = xn + alpha*p
@@ -2825,7 +2861,6 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
 
       // Housekeeping.
 
-      isconstrainedpt = (DNRM2_F77(&N,p,&incX) < 1e-12);  
       free(p);
 
       pivcount++;
