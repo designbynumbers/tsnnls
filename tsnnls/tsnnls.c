@@ -823,30 +823,39 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       
       /* We now compute (A_G)'. */
       /* And finally take (A_G)'*residual. This is a sizeG-vector. */
-      yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
+
+      if (sizeG > 0) {
+	
+	yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
       
-      /* 
-       * We now should compute (A_G)', and take (A_G)'*residual, but 
-       * A_G'*residual = residual'*A_G, and that's faster. 
-       * taucs_transpose_vec_times_matrix also incorporates the 
-       * selection of columns of G from which to form A_G so that 
-       * we do not have to incur the computational expense of creating
-       * a submatrix.
-       */
-      taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
-      
-      fix_zeros(yg_raw, sizeG, rcond, inPrintErrorWarnings);
-      
-      /* We're now done. It remains to scatter the entries in xf_raw
-       * and yg_raw over the x and y vectors, and free everything that
-       * we can manage to free. 
-       */
+	/* 
+	 * We now should compute (A_G)', and take (A_G)'*residual, but 
+	 * A_G'*residual = residual'*A_G, and that's faster. 
+	 * taucs_transpose_vec_times_matrix also incorporates the 
+	 * selection of columns of G from which to form A_G so that 
+	 * we do not have to incur the computational expense of creating
+	 * a submatrix.
+	 */
+	taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
+	
+	fix_zeros(yg_raw, sizeG, rcond, inPrintErrorWarnings);
+	
+	/* We're now done. It remains to scatter the entries in xf_raw
+	 * and yg_raw over the x and y vectors, and free everything that
+	 * we can manage to free. 
+	 */
+
+      } else { 
+
+	yg_raw = NULL;
+
+      }
       
 #ifdef HAVE_MEMSET
-      
-      memset(x,0,sizeof(double)*n);
-      memset(y,0,sizeof(double)*n);
-      
+	
+	memset(x,0,sizeof(double)*n);
+	memset(y,0,sizeof(double)*n);
+	
 #else  /* Work around it. */
       
       for(i=0;i<n;i++) { x[i] = 0; y[i] = 0; }
@@ -863,12 +872,12 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	{ 
 	  x[F[i]] = xf_raw[i]; 
 	}
-      for(i=0;i<sizeG;i++) 
+      for(i=0;i<sizeG;i++) // Shouldn't run if sizeG == 0
 	{ 
 	  y[G[i]] = yg_raw[i]; 
 	}
       
-      free(yg_raw);
+      if (yg_raw != NULL) { free(yg_raw); }
       
       if( sizeF != 0 )
        {
@@ -1598,45 +1607,51 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     /* We now compute (A_G)'. */
     /* And finally take (A_G)'*residual. This is a sizeG-vector. */
     assert(yg_raw == NULL);
-    yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
 
-    /* 
-     * We now should compute (A_G)', and take (A_G)'*residual, but 
-     * A_G'*residual = residual'*A_G, and that's faster. 
+    if (sizeG > 0) {
+
+      yg_raw = (taucs_double *)calloc(sizeG,sizeof(taucs_double));     
+      
+      /* 
+       * We now should compute (A_G)', and take (A_G)'*residual, but 
+       * A_G'*residual = residual'*A_G, and that's faster. 
      * taucs_transpose_vec_times_matrix also incorporates the 
      * selection of columns of G from which to form A_G so that 
      * we do not have to incur the computational expense of creating
      * a submatrix.
      */
-    
-    if (gVERBOSITY >= 10) { printf("tsnnls: Computing residual.\n"); }
-
-    taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
+      
+      if (gVERBOSITY >= 10) { printf("tsnnls: Computing residual.\n"); }
+      
+      taucs_transpose_vec_times_matrix(residual, A_original_ordering, G, sizeG, yg_raw);
+      
+    }
 
     /* This was the last time we used residual, so let's kill it. */
     free(residual); residual = NULL;
-
+    
     /* Note, this shouldn't change, this was a check during debugging
-    infeasible(F,x,sizeF,H1,&sizeH1);  
-
-    if(sizeH1 > 0){
-      // error, error, this shouldn't change
-      printf("sizeH1 > 0 after the inner loop\n");
-      exit(-1);
-    }
+       infeasible(F,x,sizeF,H1,&sizeH1);  
+       
+       if(sizeH1 > 0){
+       // error, error, this shouldn't change
+       printf("sizeH1 > 0 after the inner loop\n");
+       exit(-1);
+       }
     */
-
+    
     // Note: if we rewrote infeasible, we could avoid computing y at all.
     // But for the sake of ease, we'll leave it like this
 
     /* here we are setting up y. We only need to zero only the guys not in G */
     /* but it's safer to zero everything. */
-
+    
     for(i=0; i<n; i++){ y[i] = 0.0; }
     for(i=0; i<sizeG; i++){ y[G[i]] = yg_raw[i]; }  
-
+    
     /* From here on out, we will only use y. So we discard yg_raw. */
-    free(yg_raw); yg_raw = NULL;
+    if (yg_raw != NULL) { free(yg_raw); } 
+    yg_raw = NULL;
     
     infeasible(G,y,sizeG,H2,&sizeH2);
 
@@ -1652,7 +1667,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   if (gVERBOSITY >= 10) { printf("tsnnls: G loop terminated.\n"); }
 
-  if( lsqrStep != 0 && pivcount < MAXPIVOT)
+  if( lsqrStep != 0 && pivcount < MAXPIVOT && sizeF > 0)
     {
 
       if (gVERBOSITY >= 10) { printf("tsnnls: Doing lsqr step.\n"); }
@@ -2409,6 +2424,8 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
   int N=A->n,incX=1,incY=1,i;
   double alpha=-1;  
 
+  if (nBound == 0) { return NULL; }
+
   ATAx = malloc(sizeof(taucs_double)*A->n);
   ATb  = malloc(sizeof(taucs_double)*A->n);
   assert(ATAx != NULL && ATb != NULL);
@@ -2868,13 +2885,13 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
 
     } while (!isconstrainedpt);
 
-    free(y);
+    if (y != NULL) { free(y); y = NULL; }
     y = compute_lagrange_multipliers(A,ATA,xn,b,nBound,Bound);
     release_miny(y,&nFree,Free,&nBound,Bound);
     
   } while (!is_optimal_point(A->n,y,nBound,Bound));
   
-  free(y);
+  if (y != NULL) { free(y); y = NULL; }
  
   // We have now found an optimal solution an a partition into free and bound vars.
   // We recompute this final solution using Stanford LSQR for more accuracy.
