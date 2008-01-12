@@ -15,8 +15,8 @@
 */
 
 #define NUM_TESTS 100
-#define Msize 7
-#define Nsize 3
+#define Msize 10
+#define Nsize 9
 
 #include<config.h>
 
@@ -436,16 +436,17 @@ int main(int argc,char *argv[])
       block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
       spivX   = t_snnls_spiv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings,Nsize);
       
-      /* Now we compare the solution with our guess. */
+      /* Now we compare the solution with our guess, if successful. */
       
       err = 0; block3err = 0; spiverr=0;
       for(i=0;i<Nsize;i++) { 
 	
-	err += pow(tsnnlsX[i] - x[i],2.0); 
-	block3err += pow(block3X[i] - x[i],2.0);
-	spiverr += pow(spivX[i] - x[i],2.0);
+	if (tsnnlsX != NULL) { err += pow(tsnnlsX[i] - x[i],2.0); }
+	if (block3X != NULL) { block3err += pow(block3X[i] - x[i],2.0); }
+	if (spivX   != NULL) { spiverr += pow(spivX[i] - x[i],2.0); }
 	
       }
+
       err = sqrt(err);
       block3err = sqrt(block3err);
       spiverr = sqrt(spiverr);
@@ -463,7 +464,9 @@ int main(int argc,char *argv[])
 	
       }
       
-      free(tsnnlsX); free(block3X); free(spivX);
+      if (tsnnlsX != NULL) { free(tsnnlsX); }
+      if (block3X != NULL) { free(block3X); }
+      if (spivX   != NULL) { free(spivX); }
       
     }
 
