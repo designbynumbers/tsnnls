@@ -1,0 +1,25 @@
+To build on windows:
+
+copy tsnnls\win32\taucs_config_build.h to tsnnls\tsnnls\taucs_basic
+This just overwrites the OSType
+
+Also, you will need to find BLAS libraries to link.
+
+I used libraries from http://www.netlib.org/clapack/CLAPACK-3.1.1-VisualStudio.zip
+More optimized libraries may be available.
+
+You'll need:
+
+BLAS_nowrap.lib
+clapack_nowrap.lib
+libf2c.lib
+
+for the release build, 
+
+BLASd_nowrap.lib
+clapackd_nowrap.lib
+libf2cd.lib
+
+for the debug build.
+
+Place the libraries in the tsnnls\win32\lib directory.

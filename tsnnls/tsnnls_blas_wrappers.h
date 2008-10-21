@@ -6,6 +6,12 @@
    redefine these symbols manually.
 
 */
+#include "acint32_type.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 extern void DAXPY_F77(int *N,double *alpha,double *vecX, \
 		      int *incX,double *vecY,int *incY);
@@ -28,6 +34,13 @@ extern void DGEMV_F77(char *trans, int *M, int *N, double *alpha, double *A,
 		      int *ldA, double *X, int *incX, double *beta, double *Y,
 		      int *incY);
 
+extern void dpocon_( char*, ACINT32_TYPE*, double*, ACINT32_TYPE*, double*, double*, double*, ACINT32_TYPE*, ACINT32_TYPE* );
+extern int dgetrf_( ACINT32_TYPE* , ACINT32_TYPE*, double*, ACINT32_TYPE*, ACINT32_TYPE*, ACINT32_TYPE* );
+extern int dgecon_( char*, ACINT32_TYPE*, double*, ACINT32_TYPE*, double*, double*, double*, ACINT32_TYPE*, ACINT32_TYPE* );
+
+#ifdef __cplusplus
+}
+#endif
 
 
 /* Subroutine */ 
