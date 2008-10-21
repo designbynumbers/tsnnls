@@ -128,7 +128,10 @@ int exit_status = 0;
 int read_sparse( FILE *fp, double **vals, int *dim, int *cols );
 int read_mat( FILE *fp, double **vals, int *dim, int *cols);
 
+#ifdef HAVE_SYS_RESOURCE_H
 struct rusage start, end;
+#endif
+
 int tpStorage;
 
 static double* lsqrwrapper( taucs_ccs_matrix* Af, double* b );
@@ -136,17 +139,24 @@ static double* lsqrwrapper( taucs_ccs_matrix* Af, double* b );
 static void
 start_clock()
 {
+#ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &start);
+#endif
 }
 
 static double
 end_clock()
 {
+#ifdef HAVE_SYS_RESOURCE_H
     getrusage(RUSAGE_SELF, &end);
 
     double diff = end.ru_utime.tv_sec+end.ru_utime.tv_usec*1e-6 -
                   start.ru_utime.tv_sec+start.ru_utime.tv_usec*1e-6;
 	return diff;
+#else
+	// This timer doesn't currently work without rusage
+	return -1;
+#endif
 }
 
 double *loadvals(const char *filename,int *dim,int *cols)
@@ -363,7 +373,7 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
     
       // compute relative error using ||(x*-x)||/||x||
       
-      double* diff = malloc(sizeof(double)*A->n);
+      double* diff = (double*)malloc(sizeof(double)*A->n);
       
       for( xItr=0; xItr<A->n; xItr++ )
 	diff[xItr] = realx[xItr] - x[xItr];
@@ -450,7 +460,7 @@ tlsqr_test(taucs_ccs_matrix *A, taucs_double *realx, taucs_double *b)
       
       // compute relative error using ||(x*-x)||/||x||
       
-      double* diff = malloc(sizeof(double)*A->n);
+      double* diff = (double*)malloc(sizeof(double)*A->n);
       double expectedError;
       
       for( xItr=0; xItr<A->n; xItr++ )
@@ -726,13 +736,13 @@ int main( int argc, char* argv[] )
 
   nfiles = 1;
 
-  aname = calloc(sizeof(char *),1);
-  bname = calloc(sizeof(char *),1);
+  aname = (const char**)calloc(sizeof(char *),1);
+  bname = (const char**)calloc(sizeof(char *),1);
   
   aname[0] = argv[1];
   bname[0] = argv[2];
 
-  if (argc == 5) { xname = argv[3]; }
+  if (argc == 5) { xname[0] = argv[3]; }
 
   nsolvers=1;
 

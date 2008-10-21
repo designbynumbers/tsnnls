@@ -109,11 +109,14 @@ char gErrorString[1024] = "";
 
 */
 
-void tsnnls_version( char *version, size_t strlen) {
+void tsnnls_version( char *version, size_t str_len) {
   if (version == NULL) {
     printf("tsnnls Version: %s\n",PACKAGE_VERSION);
   } else {
-    (void)snprintf(version,strlen,PACKAGE_VERSION);
+    // Unfortunately, there's not a generally portable secure sprintf.
+    // This will make sure that the passed char* is big enough.
+    assert( strlen( PACKAGE_VERSION ) > str_len );
+    (void)sprintf(version,PACKAGE_VERSION);
   }
 }
 
@@ -613,13 +616,13 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   ninf = n+1;
   
   /* We first allocate space. */
-  F   = calloc(n,sizeof(int));
-  G   = calloc(n,sizeof(int));
-  H1  = calloc(n,sizeof(int));
-  H2  = calloc(n,sizeof(int));
+  F   = (int*)calloc(n,sizeof(int));
+  G   = (int*)calloc(n,sizeof(int));
+  H1  = (int*)calloc(n,sizeof(int));
+  H2  = (int*)calloc(n,sizeof(int));
   
-  x   = calloc(n,sizeof(taucs_double));
-  y   = calloc(m,sizeof(taucs_double));
+  x   = (taucs_double*)calloc(n,sizeof(taucs_double));
+  y   = (taucs_double*)calloc(m,sizeof(taucs_double));
   
   /* submatrix allocation actually takes bit of time during profiling,
    * so we reuse an allocation that cannot be overflowed by
@@ -1004,7 +1007,7 @@ double q(taucs_double *x,taucs_ccs_matrix *ApA, taucs_double *Apb,
   double q = 0.0;
   int i;
 
-  ApAx = malloc(sizeof(double)*n);
+  ApAx = (double*)malloc(sizeof(double)*n);
 
   ourtaucs_ccs_times_vec(ApA,x,ApAx);
   for(i=0; i<n; i++) { q += x[i] * (0.5*ApAx[i] - Apb[i]); }
@@ -1125,23 +1128,23 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   n = A_original_ordering->n;
   
   /* We first allocate space. */
-  F   = calloc(n,sizeof(int));
-  G   = calloc(n,sizeof(int));
-  H1  = calloc(n,sizeof(int));
-  H2  = calloc(n,sizeof(int));
+  F   = (int*)calloc(n,sizeof(int));
+  G   = (int*)calloc(n,sizeof(int));
+  H1  = (int*)calloc(n,sizeof(int));
+  H2  = (int*)calloc(n,sizeof(int));
   
-  x    = calloc(n,sizeof(taucs_double));
-  y    = calloc(m,sizeof(taucs_double));
+  x    = (taucs_double*)calloc(n,sizeof(taucs_double));
+  y    = (taucs_double*)calloc(m,sizeof(taucs_double));
 
-  Apb  = calloc(n,sizeof(taucs_double));
-  ApAx  = calloc(n,sizeof(taucs_double));
-  ApAxplusalphap = calloc(n,sizeof(taucs_double));
+  Apb  = (taucs_double*)calloc(n,sizeof(taucs_double));
+  ApAx  = (taucs_double*)calloc(n,sizeof(taucs_double));
+  ApAxplusalphap = (taucs_double*)calloc(n,sizeof(taucs_double));
 
-  xplusalphap  = calloc(n,sizeof(taucs_double));
-  Pxplusalphap = calloc(n,sizeof(taucs_double));
+  xplusalphap  = (taucs_double*)calloc(n,sizeof(taucs_double));
+  Pxplusalphap = (taucs_double*)calloc(n,sizeof(taucs_double));
 
-  p = calloc(n,sizeof(taucs_double));
-  alpha = calloc(n+1,sizeof(taucs_double));
+  p = (taucs_double*)calloc(n,sizeof(taucs_double));
+  alpha = (taucs_double*)calloc(n+1,sizeof(taucs_double));
 
 
   /* submatrix allocation actually takes bit of time during profiling,
@@ -1524,10 +1527,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       double *AfpAfxf, *Afpb, *xf, *gf;
       int    gfItr;
       
-      AfpAfxf = calloc(A_original_ordering->m,sizeof(double));
-      Afpb    = calloc(A_original_ordering->m,sizeof(double));
-      xf      = calloc(sizeF,sizeof(double));
-      gf      = calloc(sizeF,sizeof(double));
+      AfpAfxf = (double*)calloc(A_original_ordering->m,sizeof(double));
+      Afpb    = (double*)calloc(A_original_ordering->m,sizeof(double));
+      xf      = (double*)calloc(sizeF,sizeof(double));
+      gf      = (double*)calloc(sizeF,sizeof(double));
       
       for(gfItr=0;gfItr<sizeF;gfItr++) { xf[gfItr] = x[F[gfItr]]; }
       
@@ -2426,8 +2429,8 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
 
   if (nBound == 0) { return NULL; }
 
-  ATAx = malloc(sizeof(taucs_double)*A->n);
-  ATb  = malloc(sizeof(taucs_double)*A->n);
+  ATAx = (taucs_double*)malloc(sizeof(taucs_double)*A->n);
+  ATb  = (taucs_double*)malloc(sizeof(taucs_double)*A->n);
   assert(ATAx != NULL && ATb != NULL);
 
   /* Compute y = -(A^T(b - Ax))^T = -(b - Ax)^T A = -b^T A + x^T (A^T A). */ 
@@ -2438,7 +2441,7 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
 
   /* Now select the values corresponding to bound variables. */
 
-  y = malloc(sizeof(taucs_double)*nBound);
+  y = (taucs_double*)malloc(sizeof(taucs_double)*nBound);
   assert(y != NULL);
   for(i=0;i<nBound;i++) { y[i] = ATAx[Bound[i]]; }  
 
@@ -2538,7 +2541,7 @@ taucs_double *solve_unconstrained(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
     
   }
 
-  x = calloc(sizeof(taucs_double),A->n);
+  x = (taucs_double*)calloc(sizeof(taucs_double),A->n);
   for(i=0;i<nFree;i++) { x[Free[i]] = xFree[i]; }
 
   taucs_ccs_free(ATAfree);
@@ -2562,7 +2565,7 @@ taucs_double *computep(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
  = min || Ap - ( - (Axn - b)) ||. */
 
 {
-  taucs_double *Axn = calloc(sizeof(taucs_double),A->m);
+  taucs_double *Axn = (taucs_double*)calloc(sizeof(taucs_double),A->m);
   taucs_double *result;
   int M=A->m,incX=1,incY=1;
   double alpha=-1.0;
@@ -2597,7 +2600,7 @@ void bindzeros(int n,taucs_double *x,int *nFree,int *Free,int *nBound,int *Bound
 {
   int i;
   int nNewBound = 0;
-  int *newBound = calloc(sizeof(int),n);
+  int *newBound = (int*)calloc(sizeof(int),n);
 
   /* Search the free set for new variables to bind. */
 
@@ -2727,7 +2730,7 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
   taucs_ccs_matrix *Afree;
   taucs_double     *newx;
 
-  newx = calloc(sizeof(taucs_double),A->n);
+  newx = (taucs_double*)calloc(sizeof(taucs_double),A->n);
     
   if ( nFree > 0 ) {
 
@@ -2812,10 +2815,10 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
 // non-negativity constraints, while the remaining variables are not constrained at all.
 
   taucs_ccs_matrix *ATA = taucs_ccs_aprime_times_a(A);
-  taucs_double     *xn = malloc(sizeof(taucs_double)*A->n);
+  taucs_double     *xn = (taucs_double*)malloc(sizeof(taucs_double)*A->n);
  
   int              nFree,nBound;
-  int              *Bound = calloc(sizeof(int),A->n),*Free = calloc(sizeof(int),A->n);
+  int              *Bound = (int*)calloc(sizeof(int),A->n),*Free = (int*)calloc(sizeof(int),A->n);
   
   int              MAXPIVOT = A->n * 10;
   int              pivcount = 0, newzero;

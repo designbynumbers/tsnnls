@@ -1,0 +1,18 @@
+To build on windows, you will need to find BLAS libraries to link.
+
+I used libraries from http://www.netlib.org/clapack/CLAPACK-3.1.1-VisualStudio.zip
+More optimized libraries may be available.
+
+You'll need:
+
+BLAS_nowrap.lib
+clapack_nowrap.lib
+libf2c.lib
+
+for the release build, 
+
+BLASd_nowrap.lib
+clapackd_nowrap.lib
+libf2cd.lib
+
+for the debug build.

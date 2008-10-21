@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 #include <assert.h>
 
 #define TAUCS_CORE_CILK

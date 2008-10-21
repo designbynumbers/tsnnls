@@ -385,7 +385,7 @@ t_snnlslsqr(taucs_ccs_matrix *A,
 	    double* outRcond )
 {
   taucs_ccs_matrix   *ApAperm;
-  void *Apb /*n x 1*/, \
+  taucs_double *Apb /*n x 1*/, \
     *ApAx /*n x 1*/, \
     *x /* n x 1 */, \
     *Itstep /*n x 1*/; 
@@ -398,13 +398,13 @@ t_snnlslsqr(taucs_ccs_matrix *A,
   if( ordering == NULL )
     {
       /* use amd ordering if the user hasn't specified anything else */
-      setenv("COL_ORDERING", "amd", 0);
+	  putenv("COL_ORDERING=amd");
       ordering = getenv("COL_ORDERING");
     }
   taucs_ccs_order(ApA, &perm, &invperm, ordering);
   ApAperm = taucs_ccs_permute_symmetrically(ApA, perm, invperm);
   
-  Apb = calloc(A->m, sizeof(taucs_double));
+  Apb = (taucs_double*)calloc(A->m, sizeof(taucs_double));
   
   mfR = taucs_ccs_factor_llt_mf(ApAperm);
   if( mfR == NULL )
@@ -421,13 +421,13 @@ t_snnlslsqr(taucs_ccs_matrix *A,
     *outRcond = t_condest(mfR);
   
   /* We now solve the first equation: x = R\(A'*A*b). */
-  x = calloc(A->n,sizeof(taucs_double));
+  x = (taucs_double*)calloc(A->n,sizeof(taucs_double));
   
   taucs_transpose_vec_times_matrix_nosub(b, A, Apb);
   // we have to permute A'b to be meaningful.
   {
     double* apbperm = Apb;
-    Apb = malloc(sizeof(double)*A->n);
+    Apb = (double*)malloc(sizeof(double)*A->n);
     taucs_vec_permute(A->n, TAUCS_DOUBLE, apbperm, Apb, perm);
     free(apbperm);
   }
@@ -436,7 +436,7 @@ t_snnlslsqr(taucs_ccs_matrix *A,
   
   /* Given the base solution, we now update it by refinement. */
   ApAx = (taucs_double*)malloc(sizeof(double)*A->n);
-  Itstep = calloc(A->n,sizeof(taucs_double)); 
+  Itstep = (taucs_double*)calloc(A->n,sizeof(taucs_double)); 
 	
   double* scratch = (double*)malloc(sizeof(double)*ApAperm->n);
   memcpy(scratch, Apb, sizeof(double)*ApAperm->n);
@@ -465,7 +465,7 @@ t_snnlslsqr(taucs_ccs_matrix *A,
   /* We now have a solution, but must clean up the memory we allocated
    * and unscramble x 
    */
-  x_unscrambled = calloc(sizeof(double),ApA->n);
+  x_unscrambled = (double*)calloc(sizeof(double),ApA->n);
   taucs_vec_permute(ApA->n, TAUCS_DOUBLE, x, x_unscrambled, invperm);
   
   taucs_ccs_free(ApAperm);
@@ -486,7 +486,7 @@ t_lsqr(taucs_ccs_matrix *A, taucs_double *b)
   double* x;
   taucs_ccs_matrix* apda;
 
-  F = malloc(sizeof(int)*A->n);
+  F = (int*)malloc(sizeof(int)*A->n);
   for( i=0; i<A->n; i++ )
     F[i] = i;
   apda = taucs_ccs_aprime_times_a(A);
