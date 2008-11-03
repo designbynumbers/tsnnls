@@ -76,6 +76,11 @@
 
 #ifdef HAVE_FULL_CLAPACK
   #define DGELS_WRAPPER dgels_  
+
+  extern void DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
+			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB,
+			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info);
+
 #else
   #define DGELS_WRAPPER DGELS_F77
 
@@ -136,7 +141,9 @@ double *genb(int mdim, int ndim, double *A, double *x, double *y)
 
   if (info != 0) { 
 
-    fprintf(stderr,"genb_test: DGELS call 1 failed due to arg %d.\n",-(int)(info));
+    fprintf(stderr,"genb_test: DGELS call 1 failed due to arg %d.\n",(int)(info));
+    fprintf(stderr,"args (%c,%d,%d,%d,%p,%d,%p,%d,%p,%d,%d)\n",
+	    trans,m,n,nrhs,Awork,m,z,m,work,lwork,info);
     exit(1);
 
   }
