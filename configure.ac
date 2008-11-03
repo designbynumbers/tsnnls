@@ -54,8 +54,9 @@ AC_PROG_LIBTOOL
 AC_CHECK_FUNCS([memset memcpy rand srand time])
 
 # Checks for FORTRAN.
-AC_PROG_F77		
-AC_F77_LIBRARY_LDFLAGS
+AC_PROG_FC([gfortran g77])		
+AC_FC_LIBRARY_LDFLAGS
+LIBS="$LIBS $FCLIBS -lm"
 
 # Checks for Darwin.
 AC_CANONICAL_HOST
@@ -93,7 +94,7 @@ don't have a FORTRAN compiler (preferably g77) on your default path.])
     fi
 
     # Now look for a full (or minimal ATLAS) lapack
-    AC_F77_FUNC(dpotrf)
+    AC_FC_FUNC(dpotrf)
     ACX_LAPACK(AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1]),AC_CHECK_LIB([lapack],$dpotrf,[atlas_lapack=yes 
        LAPACK_LIBS="-llapack -lcblas -lf77blas -latlas"
        AC_DEFINE_UNQUOTED([HAVE_ATLAS_LAPACK],[1],[ATLAS (instead of full) LAPACK])
@@ -105,7 +106,7 @@ don't have a FORTRAN compiler (preferably g77) on your default path.])
   esac
 
 # We'll need to call F77 functions from C, find out how to mangle their names
-AC_F77_FUNC([daxpy],[fname])
+AC_FC_FUNC([daxpy],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="daxpy_"
 fi
@@ -113,7 +114,7 @@ AC_DEFINE_UNQUOTED([DAXPY_F77],[$fname],[Name of daxpy after mangling])
 AC_MSG_CHECKING([name of daxpy after mangling])
 echo "$fname"
 
-AC_F77_FUNC([dsyrk],[fname])
+AC_FC_FUNC([dsyrk],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dsyrk_"
 fi
@@ -121,7 +122,7 @@ AC_DEFINE_UNQUOTED([DSYRK_F77],[$fname],[Name of dsyrk after mangling])
 AC_MSG_CHECKING([name of dsyrk after mangling])
 echo "$fname"
 
-AC_F77_FUNC([dsymv],[fname])
+AC_FC_FUNC([dsymv],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dsymv_"
 fi
@@ -131,7 +132,7 @@ echo "$fname"
 
 # dgemm
 
-AC_F77_FUNC([dgemm],[fname])
+AC_FC_FUNC([dgemm],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dgemm_"
 fi
@@ -141,7 +142,7 @@ echo "$fname"
 
 # dgemv
 
-AC_F77_FUNC([dgemv],[fname])
+AC_FC_FUNC([dgemv],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dgemv_"
 fi
@@ -151,7 +152,7 @@ echo "$fname"
 
 # dtrsm
  
-AC_F77_FUNC([dtrsm],[fname])
+AC_FC_FUNC([dtrsm],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dtrsm_"
 fi
@@ -161,7 +162,7 @@ echo "$fname"
 
 # dpotrf
 
-AC_F77_FUNC([dpotrf],[fname])
+AC_FC_FUNC([dpotrf],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dpotrf_"
 fi
@@ -171,7 +172,7 @@ echo "$fname"
 
 # dgels
 
-AC_F77_FUNC([dgels],[fname])
+AC_FC_FUNC([dgels],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dgels_"
 fi
@@ -181,7 +182,7 @@ echo "$fname"
 
 # dnrm2
 
-AC_F77_FUNC([dnrm2],[fname])
+AC_FC_FUNC([dnrm2],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dnrm2_"
 fi
@@ -191,7 +192,7 @@ echo "$fname"
 
 # ddot
 
-AC_F77_FUNC([ddot],[fname])
+AC_FC_FUNC([ddot],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="ddot_"
 fi
@@ -201,7 +202,7 @@ echo "$fname"
 
 # dscal
 
-AC_F77_FUNC([dscal],[fname])
+AC_FC_FUNC([dscal],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
   fname="dscal_"
 fi
