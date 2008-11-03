@@ -9,6 +9,9 @@
    such as int32_t and uint32_t, which would probably be the cleanest
    solution, but we don't have an easy way to know where/whether those
    are defined until we upgrade to Autoconf 2.60 or later. */
+
+#ifndef __AC_INT32TYPE_H__
+#define __AC_INT32TYPE_H__ 1
    
 #include"config.h"
 
@@ -35,3 +38,4 @@ typedef unsigned int ACUINT32_TYPE;
 #endif
 #endif
 
+#endif
