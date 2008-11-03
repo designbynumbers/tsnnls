@@ -34,7 +34,7 @@ extern void DGEMV_F77(char *trans, int *M, int *N, double *alpha, double *A,
 		      int *ldA, double *X, int *incX, double *beta, double *Y,
 		      int *incY);
 
-extern void dpocon_( char*, ACINT32_TYPE*, double*, ACINT32_TYPE*, double*, double*, double*, ACINT32_TYPE*, ACINT32_TYPE* );
+extern int dpocon_( char*, ACINT32_TYPE*, double*, ACINT32_TYPE*, double*, double*, double*, ACINT32_TYPE*, ACINT32_TYPE* );
 extern int dgetrf_( ACINT32_TYPE* , ACINT32_TYPE*, double*, ACINT32_TYPE*, ACINT32_TYPE*, ACINT32_TYPE* );
 extern int dgecon_( char*, ACINT32_TYPE*, double*, ACINT32_TYPE*, double*, double*, double*, ACINT32_TYPE*, ACINT32_TYPE* );
 
