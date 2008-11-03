@@ -1,3 +1,6 @@
+#ifndef __ACINT32_TYPE_H__
+#define __ACINT32_TYPE_H__
+
 /* This file is part of TSNNLS. Here we define a special type which
    should be a 32-bit integer. We use the variables SIZEOF_INT and 
    SIZEOF_LONG_INT, which should be passed in from configure. */
@@ -29,5 +32,6 @@ typedef unsigned int ACUINT32_TYPE;
 
 #error Neither int nor long int has size 4. Fix acint32_type.h
 
+#endif
 #endif
 
