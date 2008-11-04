@@ -50,8 +50,11 @@ CFLAGS=`echo $CFLAGS | sed s/-O2//g`
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
+# Checks for libraries
+AC_CHECK_LIB([m],[cos])
+
 # Checks for functions
-AC_CHECK_FUNCS([memset memcpy rand srand time])
+AC_CHECK_FUNCS([memset memcpy rand srand time isnormal isnan])
 
 # Checks for FORTRAN.
 AC_PROG_FC([gfortran g77])		
