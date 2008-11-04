@@ -15,8 +15,8 @@
 */
 
 #define NUM_TESTS 100
-#define Msize 10
-#define Nsize 9
+#define Msize 121
+#define Nsize 89
 
 #include<config.h>
 
@@ -77,9 +77,9 @@
 #ifdef HAVE_FULL_CLAPACK
   #define DGELS_WRAPPER dgels_  
 
-  extern void DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
+/*extern int DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
 			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB,
-			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info);
+			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info); */
 
 #else
   #define DGELS_WRAPPER DGELS_F77
@@ -90,7 +90,7 @@
 #endif
 
 
-double *genb(int mdim, int ndim, double *A, double *x, double *y)
+double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
  
 /* Use the method PJV to generate a rhs for a test problem with 
    matrix A and solution x and y. We expect that 
@@ -143,8 +143,19 @@ double *genb(int mdim, int ndim, double *A, double *x, double *y)
 
     fprintf(stderr,"genb_test: DGELS call 1 failed due to arg %d.\n",(int)(info));
     fprintf(stderr,"args (%c,%d,%d,%d,%p,%d,%p,%d,%p,%d,%d)\n",
-	    trans,m,n,nrhs,Awork,m,z,m,work,lwork,info);
+	    trans,(int)(m),(int)(n),(int)(nrhs),Awork,(int)(m),z,(int)(m),work,(int)(lwork),(int)(info));
     exit(1);
+
+  }
+
+  for (i=0;i<n;i++) {
+
+    if (!isnormal(z[i])) {
+
+      *success = 0;
+      return NULL;
+
+    }
 
   }
 
@@ -224,6 +235,7 @@ double *genb(int mdim, int ndim, double *A, double *x, double *y)
 
   free(work); free(Awork); free(z); free(r); free(r2); free(delta);
 
+  *success = 1;
   return b;
 
 }
@@ -319,7 +331,7 @@ int main(int argc,char *argv[])
 
   double err,block3err,spiverr;
 
-  int    writemode=0;
+  int    writemode=0,genb_ok=0;
 
   /* Genb_test expects either no argument, in which case it generates and runs
      the tests on its' own, or the --makedir argument, in which case it just 
@@ -379,11 +391,11 @@ int main(int argc,char *argv[])
     
 #ifdef HAVE_TIME
 
-  srand(536);
+  srand(6589);
 
 #else
 
-  srand(536);
+  srand(6589);
 
 #endif
 
@@ -393,7 +405,7 @@ int main(int argc,char *argv[])
 
     A = random_matrix(Msize,Nsize);
     random_x_y(Msize,Nsize,&x,&y);
-    b = genb(Msize,Nsize,A,x,y);
+    b = genb(&genb_ok,Msize,Nsize,A,x,y);
     Aflip = fliporder(Msize,Nsize,A);
     Accs = taucs_construct_sorted_ccs_matrix(Aflip,Nsize,Msize);
 
@@ -437,28 +449,40 @@ int main(int argc,char *argv[])
       
     } else {
     
-      /* Now feed the problem to tsnnls. */
+      if (genb_ok) {
       
-      tsnnlsX = t_snnls_pjv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
-      block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
-      spivX   = t_snnls_spiv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings,Nsize);
-      
-      /* Now we compare the solution with our guess, if successful. */
-      
-      err = 0; block3err = 0; spiverr=0;
-      for(i=0;i<Nsize;i++) { 
+	/* Now feed the problem to tsnnls. */
 	
-	if (tsnnlsX != NULL) { err += pow(tsnnlsX[i] - x[i],2.0); }
-	if (block3X != NULL) { block3err += pow(block3X[i] - x[i],2.0); }
-	if (spivX   != NULL) { spiverr += pow(spivX[i] - x[i],2.0); }
+	tsnnlsX = t_snnls_pjv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
+	block3X = t_snnls(Accs,b,&ResNorm,ErrTol,PrintErrWarnings);
+	//spivX   = t_snnls_spiv(Accs,b,&ResNorm,ErrTol,PrintErrWarnings,Nsize);
+	spivX = NULL;
 	
-      }
+	/* Now we compare the solution with our guess, if successful. */
+	
+	err = 0; block3err = 0; spiverr=0;
+	for(i=0;i<Nsize;i++) { 
+	  
+	  if (tsnnlsX != NULL) { err += pow(tsnnlsX[i] - x[i],2.0); }
+	  if (block3X != NULL) { block3err += pow(block3X[i] - x[i],2.0); }
+	  if (spivX   != NULL) { spiverr += pow(spivX[i] - x[i],2.0); }
+	  
+	}
+	
+	err = sqrt(err);
+	block3err = sqrt(block3err);
+	//spiverr = sqrt(spiverr);
+	spiverr = 0;
+	
+	fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e % 7e ",test+1,Msize,Nsize,block3err,err,spiverr); 
+      
+      } else {
 
-      err = sqrt(err);
-      block3err = sqrt(block3err);
-      spiverr = sqrt(spiverr);
+	fprintf(stderr,"(random matrix was not full rank, so failed to generate test case.) ");
+	err = block3err = spiverr = 0;
+
+      }
       
-      fprintf(stderr,"%3d  %-4d %-4d % 7e % 7e % 7e ",test+1,Msize,Nsize,block3err,err,spiverr); 
       
       if (err < 1e-8 && block3err < 1e-8 && spiverr < 1e-8) {
 	
@@ -470,14 +494,18 @@ int main(int argc,char *argv[])
 	fprintf(stderr," FAIL\n");
 	
       }
+
+      if (genb_ok) {
       
-      if (tsnnlsX != NULL) { free(tsnnlsX); }
-      if (block3X != NULL) { free(block3X); }
-      if (spivX   != NULL) { free(spivX); }
+	if (tsnnlsX != NULL) { free(tsnnlsX); }
+	if (block3X != NULL) { free(block3X); }
+	if (spivX   != NULL) { free(spivX); }
       
+      }
+
     }
 
-    free(A); free(x); free(y); free(b);
+    free(A); free(x); free(y); if (genb_ok) { free(b); }
     taucs_ccs_free(Accs);
     
   }
