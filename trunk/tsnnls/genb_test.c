@@ -77,9 +77,9 @@
 #ifdef HAVE_FULL_CLAPACK
   #define DGELS_WRAPPER dgels_  
 
-/*extern int DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
+extern int DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
 			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB,
-			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info); */
+			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info); 
 
 #else
   #define DGELS_WRAPPER DGELS_F77
@@ -150,12 +150,28 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
 
   for (i=0;i<n;i++) {
 
+    #ifdef HAVE_ISNORMAL
+
     if (!isnormal(z[i])) {
 
       *success = 0;
       return NULL;
 
     }
+
+    #endif
+
+    #ifdef HAVE_ISNAN
+
+    if (isnan(z[i])) {
+
+      *success = 0;
+      return NULL;
+
+    }
+
+    #endif
+    
 
   }
 
