@@ -1,6 +1,11 @@
 #!/bin/sh
 rm -f config.cache
-libtoolize
+if [ -e libtoolize ]; then
+  libtoolize --force
+else 
+  glibtoolize --force
+fi
+
 aclocal
 autoconf
 autoheader
