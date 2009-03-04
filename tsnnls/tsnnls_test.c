@@ -379,7 +379,7 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
 	diff[xItr] = realx[xItr] - x[xItr];
       
       int incX = {1};
-      double xnorm;
+      //double xnorm;
       //err = cblas_dnrm2( A->n, diff, 1 );
       //err /= cblas_dnrm2( A->n, realx, 1 );
       
