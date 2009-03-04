@@ -1027,14 +1027,41 @@ double q(taucs_double *x,taucs_ccs_matrix *ApA, taucs_double *Apb,
 
 #define DEBUG 1
 
+#define TSNNLS_FREE_MEM_MACRO \
+  if (F != NULL) {free(F); F = NULL;} \
+  if (G != NULL) {free(G); G = NULL;} \
+  if (H1 != NULL) {free(H1); H1 = NULL;} \
+  if (H2 != NULL) {free(H2); H2 = NULL;} \
+  if (AprimeDotA != NULL) {taucs_ccs_free(AprimeDotA); AprimeDotA = NULL;} \
+  if (lsqrApA != NULL) {taucs_ccs_free(lsqrApA);  lsqrApA = NULL;} \
+  if (Af != NULL) {taucs_ccs_free(Af); Af = NULL;}\
+  if (y != NULL) {free(y); y = NULL;}\
+  if (Apb != NULL) {free(Apb); Apb = NULL;}\
+  if (ApAx != NULL) {free(ApAx); ApAx = NULL;}\
+  if (ApAxplusalphap != NULL) {free(ApAxplusalphap); ApAxplusalphap = NULL;} \
+  if (xplusalphap != NULL) {free(xplusalphap); xplusalphap = NULL;} \
+  if (Pxplusalphap != NULL) {free(Pxplusalphap); Pxplusalphap = NULL;} \
+  if (p != NULL) {free(p); p = NULL;}\
+  if (alpha != NULL) {free(alpha); alpha = NULL;}\
+  if (gf != NULL) {free(gf); gf = NULL;}\
+  if (xf != NULL) {free(xf); xf = NULL;}\
+  if (AfpAfxf != NULL) {free(AfpAfxf); AfpAfxf = NULL;}\
+  if (Afpb != NULL) {free(Afpb); Afpb = NULL;} \
+  if (xf_raw != NULL) {free(xf_raw); xf_raw = NULL;} \
+  if (residual != NULL) {free(residual); residual = NULL;} \
+  if (yg_raw != NULL) {free(yg_raw); yg_raw = NULL; }\
+  if (finalresidual != NULL) {free(finalresidual); finalresidual = NULL; }\
+  if (x != NULL) {free(x); x = NULL;} \
+  if (y != NULL) {free(y); y = NULL;} 
+
 taucs_double*
 t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b, 
 	 double* outResidualNorm, double inRelErrTolerance, int inPrintErrorWarnings )
 {
-  taucs_ccs_matrix  *Af;
+  taucs_ccs_matrix  *Af = NULL;
   int               m,n,i, maxSize;
   int               A_cols;
-  int               *F, *G, *H1, *H2;
+  int               *F = NULL, *G = NULL, *H1 = NULL, *H2 = NULL;
   int               sizeF, sizeG, sizeH1, sizeH2, sizeAlpha;
   int		    lsqrStep=0;
   double	    rcond=1;
@@ -1042,8 +1069,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int               MAXPIVOT = A_original_ordering->n * 10;
   int               pivcount = 0;
 
-  taucs_double *p;
-  taucs_double *alpha;
+  taucs_double *p = NULL;
+  taucs_double *alpha = NULL;
   double qofx, newq;
   /*double bb;*/
 
@@ -1065,12 +1092,16 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
    * Like the row indices themselves, they are 0-based. 
    */
   taucs_double     *x, *y, *xf_raw = NULL, *yg_raw = NULL, *residual = NULL;
-  taucs_double *Apb, *ApAx, *xplusalphap, *ApAxplusalphap, *Pxplusalphap;
+  taucs_double *Apb = NULL, *ApAx = NULL, *xplusalphap = NULL, *ApAxplusalphap = NULL, *Pxplusalphap = NULL;
   
   int AprimeDotA_cols;
   
   taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
-  taucs_ccs_matrix*   lsqrApA;
+  taucs_ccs_matrix*   lsqrApA = NULL;
+
+  double *AfpAfxf = NULL, *Afpb = NULL, *xf = NULL, *gf = NULL;
+  int    gfItr;
+  double* finalresidual = NULL;
 
   clear_tsnnls_error();
 
@@ -1257,8 +1288,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	      lsqrStep = 1;
 	}
 	
-	if( xf_raw == NULL )
+	if( xf_raw == NULL ) {
+	  TSNNLS_FREE_MEM_MACRO
 	  return NULL; // matrix probably not positive definite
+	}
 
 	if (gVERBOSITY >= 10) { 
 
@@ -1384,6 +1417,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	    gErrorCode = 1199;
 	    sprintf(gErrorString,
 		    "tsnnls: lowest alpha appears to be < 0.\n");
+	    
+	    TSNNLS_FREE_MEM_MACRO
 	    return NULL;
 
 	  }
@@ -1407,6 +1442,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 		  "tsnnls: Reducing stepsize to %g did not \n"
 		  "        produce a local reduction in qofx.\n",
 		  tmp);
+
+	  TSNNLS_FREE_MEM_MACRO
 	  return NULL;
 
 	}
@@ -1499,6 +1536,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	      "        (%16g -> %16g). Aborting run.\n",
 	      last_stationary_q,qofx);
       
+      TSNNLS_FREE_MEM_MACRO
       return NULL;
 
     }
@@ -1523,9 +1561,6 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     /* double normgF = 0.0; */
 
     if (sizeF > 0) {
-
-      double *AfpAfxf, *Afpb, *xf, *gf;
-      int    gfItr;
       
       AfpAfxf = (double*)calloc(A_original_ordering->m,sizeof(double));
       Afpb    = (double*)calloc(A_original_ordering->m,sizeof(double));
@@ -1553,13 +1588,17 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 		  "        point and that something has gone wrong with the run.\n",
 		  gfItr,gf[gfItr]);
 	  
+	  TSNNLS_FREE_MEM_MACRO
 	  return NULL;
 	  
 	}
 	
       }
       
-      free(gf); free(xf); free(AfpAfxf); free(Afpb);
+      free(gf); gf = NULL;
+      free(xf); xf = NULL;
+      free(AfpAfxf); AfpAfxf = NULL;
+      free(Afpb); Afpb = NULL;
 
     } // otherwise, there's no reduced gradient to compute.
     
@@ -1590,7 +1629,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       ourtaucs_ccs_times_vec(A_original_ordering,x,residual);
 
       //free(xf_raw);  // we won't use it again below
-      xf_raw = NULL; // for safety's sake.
+      xf_raw = NULL; // for safety's sake. /* This looks hinky! */
 
     } else{	  
       /* 
@@ -1724,7 +1763,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
       if (gVERBOSITY >= 10) { printf("tsnnls: Computing final residual.\n"); }
 
-      double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
+      finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
 
       //cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
@@ -1735,28 +1774,28 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       //*outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
       *outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
 
-      free(finalresidual);
+      free(finalresidual); finalresidual = NULL;
     }
   // free memory
 
-  free(F);
-  free(G);
-  free(H1);
-  free(H2);
-  taucs_ccs_free(AprimeDotA);
-  taucs_ccs_free(lsqrApA);
-  taucs_ccs_free(Af);
+  free(F); F = NULL;
+  free(G); G = NULL;
+  free(H1); H1 = NULL;
+  free(H2); H2 = NULL;
+  taucs_ccs_free(AprimeDotA); AprimeDotA = NULL;
+  taucs_ccs_free(lsqrApA);  lsqrApA = NULL;
+  taucs_ccs_free(Af); Af = NULL;
 
-  free(y);
-  free(Apb);
-  free(ApAx);
-  free(ApAxplusalphap);
+  free(y); y = NULL;
+  free(Apb); Apb = NULL;
+  free(ApAx); ApAx = NULL;
+  free(ApAxplusalphap); ApAxplusalphap = NULL;
 
-  free(xplusalphap);
-  free(Pxplusalphap);
+  free(xplusalphap); xplusalphap = NULL;
+  free(Pxplusalphap); Pxplusalphap = NULL;
 
-  free(p);
-  free(alpha);
+  free(p); p = NULL; 
+  free(alpha); alpha = NULL;
 
   if (gVERBOSITY >= 10) { printf("tsnnls: Done.\n"); }
 
@@ -1769,6 +1808,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
     gErrorCode = 999;
     sprintf(gErrorString,"tsnnls: Too many pivots (%d).",MAXPIVOT);
 
+    TSNNLS_FREE_MEM_MACRO
     return NULL;
   }
 
