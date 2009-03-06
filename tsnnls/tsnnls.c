@@ -1396,7 +1396,10 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	assert(alphaItr < sizeAlpha);
 
 	/* burn ending zeros, so only the last one is zero */
-	while(alpha[sizeAlpha-2] == 0) { sizeAlpha--; }
+	if (alpha[0] == 0) { alpha[0] = 0.01; } /* Fake it? */
+	
+	if (sizeAlpha > 1) { while(alpha[sizeAlpha-2] == 0) { sizeAlpha--; } }
+	else { sizeAlpha = 2; }
 
 	/* now we see if the step of size alpha[i] improves q */
 
@@ -1408,7 +1411,8 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
 	  } else { /* The smallest alpha doesn't work, so try shrinking further. */
 
-	    tmp = alpha[sizeAlpha-2] * pow(0.5,alphaItr-(sizeAlpha-2));
+	    assert(sizeAlpha >= 2);
+	    tmp = alpha[sizeAlpha-2] * pow(0.5,alphaItr-(sizeAlpha-2)); /* We arranged for sizeAlpha >= 2 earlier */
 
 	  }
 
