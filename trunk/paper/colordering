@@ -1,0 +1,19 @@
+-- rr wall time
+
+identity clock time: 251
+genmmd clock time: 243
+amd clock time: 231
+mmd clock time: 255
+metis clock time: 240
+md clock time: 258
+
+-- sprandn wall time
+
+md clock time: 239
+amd clock time: 219
+mmd clock time: 233
+identity clock time: 211
+metis clock time: 278
+genmmd clock time: 252
+
+

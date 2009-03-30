@@ -1,0 +1,69 @@
+\begin{thebibliography}{}
+
+\bibitem[\protect\citeauthoryear{Bj{\"o}rck}{Bj{\"o}rck}{1996}]{MR97g:65004}
+{\sc Bj{\"o}rck, {\AA}.} 1996.
+\newblock {\em Numerical methods for least squares problems}.
+\newblock Society for Industrial and Applied Mathematics (SIAM), Philadelphia,
+  PA.
+
+\bibitem[\protect\citeauthoryear{Byrd, Hribar, and Nocedal}{Byrd
+  et~al\mbox{.}}{1999}]{MR2000h:90104}
+{\sc Byrd, R.~H.}, {\sc Hribar, M.~E.}, {\sc and} {\sc Nocedal, J.} 1999.
+\newblock An interior point algorithm for large-scale nonlinear programming.
+\newblock {\em SIAM J. Optim.\/}~{\em 9,\/}~4, 877--900 (electronic).
+\newblock Dedicated to John E. Dennis, Jr., on his 60th birthday.
+
+\bibitem[\protect\citeauthoryear{Foster}{Foster}{1991}]{MR92k:65056}
+{\sc Foster, L.} 1991.
+\newblock Modifications of the normal equations method that are numerically
+  stable.
+\newblock In {\em Numerical linear algebra, digital signal processing and
+  parallel algorithms (Leuven, 1988)}. NATO Adv. Sci. Inst. Ser. F Comput.
+  Systems Sci., vol.~70. Springer, Berlin, 501--512.
+
+\bibitem[\protect\citeauthoryear{Lawson and Hanson}{Lawson and
+  Hanson}{1995}]{MR96d:65067}
+{\sc Lawson, C.~L.} {\sc and} {\sc Hanson, R.~J.} 1995.
+\newblock {\em Solving least squares problems}. Classics in Applied
+  Mathematics, vol.~15.
+\newblock Society for Industrial and Applied Mathematics (SIAM), Philadelphia,
+  PA.
+\newblock Revised reprint of the 1974 original.
+
+\bibitem[\protect\citeauthoryear{Matstoms}{Matstoms}{2004}]{sls}
+{\sc Matstoms, P.} 2004.
+\newblock {SLS}: A {MATLAB} toolbox for sparse least squares problems.
+
+\bibitem[\protect\citeauthoryear{Paige and Saunders}{Paige and
+  Saunders}{1982}]{355989}
+{\sc Paige, C.~C.} {\sc and} {\sc Saunders, M.~A.} 1982.
+\newblock Lsqr: An algorithm for sparse linear equations and sparse least
+  squares.
+\newblock {\em ACM Trans. Math. Softw.\/}~{\em 8,\/}~1, 43--71.
+
+\bibitem[\protect\citeauthoryear{Portugal, J{\'u}dice, and Vicente}{Portugal
+  et~al\mbox{.}}{1994}]{MR95a:90059}
+{\sc Portugal, L.~F.}, {\sc J{\'u}dice, J.~J.}, {\sc and} {\sc Vicente, L.~N.}
+  1994.
+\newblock A comparison of block pivoting and interior-point algorithms for
+  linear least squares problems with nonnegative variables.
+\newblock {\em Math. Comp.\/}~{\em 63,\/}~208, 625--643.
+
+\bibitem[\protect\citeauthoryear{Toledo, Rotkin, and Chen}{Toledo
+  et~al\mbox{.}}{2003}]{taucs}
+{\sc Toledo, S.}, {\sc Rotkin, V.}, {\sc and} {\sc Chen, D.} 2003.
+\newblock {TAUCS}: A library of sparse linear solvers.
+\newblock Version 2.2.
+
+\bibitem[\protect\citeauthoryear{{Tomlab Optimization, Inc.}}{{Tomlab
+  Optimization, Inc.}}{2004}]{TOMLAB}
+{\sc {Tomlab Optimization, Inc.}} 2004.
+\newblock {TOMLAB} optimization environment.
+
+\bibitem[\protect\citeauthoryear{Waltz and Nocedal}{Waltz and
+  Nocedal}{2003}]{knitro}
+{\sc Waltz, R.~A.} {\sc and} {\sc Nocedal, J.} 2003.
+\newblock {KNITRO} user's manual.
+\newblock Technical Report OTC 2003/05.
+
+\end{thebibliography}
