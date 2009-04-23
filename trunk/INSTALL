@@ -82,6 +82,12 @@ feedback on how well this works-- without access to such systems for
 test purposes, the TSNNLS developers have no way to verify that the
 installer will do anything useful in these circumstances. 
 
+Windows 
+
+A port of TSNNLS to Windows systems is in the directory /win32. The
+file BUILDING contains some (very brief) notes on building for this
+configuration, helpfully contributed by Tom Finnigan of TSplines, Inc.
+
 Basic Installation
 ==================
 
