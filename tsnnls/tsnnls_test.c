@@ -742,7 +742,12 @@ int main( int argc, char* argv[] )
   aname[0] = argv[1];
   bname[0] = argv[2];
 
-  if (argc == 5) { xname[0] = argv[3]; }
+  if (argc == 5) { 
+  
+    xname = (const char**)calloc(sizeof(char *),1);
+    xname[0] = argv[3]; 
+
+  }
 
   nsolvers=1;
 
