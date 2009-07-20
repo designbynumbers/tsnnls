@@ -109,6 +109,10 @@
   #include <float.h>
 #endif 
 
+#ifdef HAVE_MATH_H
+  #include <math.h>
+#endif
+
 #include "tsnnls_blas_wrappers.h"
 
 #ifdef WITH_DMALLOC
@@ -527,10 +531,11 @@ lsqrwrapper( taucs_ccs_matrix* Af, double* b )
   lsqr_in->num_rows = Af->m;
   lsqr_in->num_cols = Af->n;
   lsqr_in->damp_val = 0;
-  lsqr_in->rel_mat_err = 0;
+  lsqr_in->rel_mat_err = 0; 
   lsqr_in->rel_rhs_err = 0;
-  lsqr_in->cond_lim = 1e13;
-  lsqr_in->max_iter = lsqr_in->num_rows + lsqr_in->num_cols + 1000;
+  lsqr_in->cond_lim = 1/(10*sqrt(DBL_EPSILON));
+  lsqr_in->max_iter = 4*lsqr_in->num_cols;
+  //lsqr_in->num_rows + lsqr_in->num_cols + 1000;
   lsqr_in->lsqr_fp_out = NULL;	
   for( bItr=0; bItr<Af->m; bItr++ )
     {
@@ -857,7 +862,7 @@ int main( int argc, char* argv[] )
     } else {
     
       /* If we've survived this long, we're in problem mode instead of test mode. */
-      
+      fprintf(stderr,"      ");
       double residual;
 
       start_clock();
@@ -897,7 +902,7 @@ int main( int argc, char* argv[] )
       double ttime;
       ttime = end_clock();
 
-      fprintf(stderr,"%3d x %3d",A->m,A->n);
+      fprintf(stderr," %3d x %3d",A->m,A->n);
       fprintf(stderr,"  %6f ",ttime);
 
       if (xvals == NULL) {
