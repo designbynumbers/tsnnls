@@ -968,6 +968,7 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   } else {
 
+    free(x);
     gErrorCode = 932;
     sprintf(gErrorString,"tsnnls_pjv: Too many pivots (%d).\n",pivcount);
     
