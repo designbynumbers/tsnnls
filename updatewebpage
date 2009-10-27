@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#
+# This script regenerates all the man pages and html documentation from
+# pod source, then makes the distribution (including these new versions)
+# and finally copies both the new distribution and the docs to the web page.
+#
+
+version=$(ls libtsnnls-*.tar.gz); \
+version=${version%.tar.gz}; \
+version=${version#libtsnnls-}; \
+echo Updating release for libtsnnls ${version}; 
+./refreshmans; \
+make dist; \
+scp libtsnnls*.tar.gz cantarel@kroner.dreamhost.com:"~/jasoncantarella.com/downloads/";
