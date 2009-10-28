@@ -144,6 +144,10 @@ extern "C" {
 void taucs_ccs_submatrix( const taucs_ccs_matrix* A, const int* keptCols, 
 			  const int inColCount, taucs_ccs_matrix* result);
 taucs_ccs_matrix*   taucs_ccs_transpose( const taucs_ccs_matrix* A );
+taucs_ccs_matrix*   taucs_ccs_new(int rows, int cols, int nnz); /* This is a matrix of doubles. */
+
+
+	
 
 /* taucs versions of these are sparse, otherwise full. */
 void  transpose_vec_times_matrix(double* b, double* A, int* F, int A_cols, 
