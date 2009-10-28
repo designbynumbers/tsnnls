@@ -152,7 +152,32 @@ void clear_tsnnls_error()
   sprintf(gErrorString,"tsnnls: No error.\n");
 }
 
-void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
+
+taucs_ccs_matrix*   taucs_ccs_new(int rows, int cols, int nnz)
+/* Constructs and clears a new taucs_ccs matrix for a given number of nonzero entries. */
+{
+  taucs_ccs_matrix *cleanA;
+  
+  cleanA = (taucs_ccs_matrix*)calloc(1,sizeof(taucs_ccs_matrix));
+  assert(cleanA != NULL);
+
+  cleanA->n = cols;
+  cleanA->m = rows;
+  cleanA->flags = TAUCS_DOUBLE;
+  
+  cleanA->colptr   = (int*)calloc(cleanA->n+1,sizeof(int));
+  cleanA->rowind   = (int*)calloc(nnz,sizeof(int));
+  cleanA->values.d = (double*)calloc(nnz,sizeof(taucs_double));
+  
+  assert(cleanA->colptr != NULL);
+  assert(cleanA->rowind != NULL);
+  assert(clearA->values.d != NULL);
+
+  return cleanA;
+}
+
+  
+  void sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod );
 
 
 /* The entries of setA are indices into the array varsA. Procedure finds the 
@@ -2087,15 +2112,16 @@ ourtaucs_ccs_times_vec( taucs_ccs_matrix* m,
       return;
     }
   
-  for(i=0; i < rows; i++) 
-    B[i] = 0;
+  for(i=0; i < rows; i++)  { B[i] = 0; }
   
   for (j=0; j<n; j++) {
     for (ip = (m->colptr)[j]; ip < (m->colptr[j+1]); ip++) {
       i   = (m->rowind)[ip];
       Aij = (m->values.d)[ip];
       
+      if (i >= rows) { exit(1); }
       B[i] = taucs_add(B[i],taucs_mul(X[j],Aij));
+      
     }
   }
 }
