@@ -171,7 +171,7 @@ taucs_ccs_matrix*   taucs_ccs_new(int rows, int cols, int nnz)
   
   assert(cleanA->colptr != NULL);
   assert(cleanA->rowind != NULL);
-  assert(clearA->values.d != NULL);
+  assert(cleanA->values.d != NULL);
 
   return cleanA;
 }

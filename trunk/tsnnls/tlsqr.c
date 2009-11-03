@@ -392,15 +392,15 @@ t_snnlslsqr(taucs_ccs_matrix *A,
   double	   *x_unscrambled;
   void		   *mfR; /* The Cholesky factor R, stored by TAUCS. */
   int		   *perm, *invperm;
-  char		   *ordering;
+  char		   ordering[1024] = "amd";
   
-  ordering = getenv("COL_ORDERING");
-  if( ordering == NULL )
-    {
+  //ordering = getenv("COL_ORDERING");
+  //if( ordering == NULL )
+  //   {
       /* use amd ordering if the user hasn't specified anything else */
-	  putenv("COL_ORDERING=amd");
-      ordering = getenv("COL_ORDERING");
-    }
+  //    putenv("COL_ORDERING=amd");
+  //    ordering = getenv("COL_ORDERING");
+  //  }
   taucs_ccs_order(ApA, &perm, &invperm, ordering);
   ApAperm = taucs_ccs_permute_symmetrically(ApA, perm, invperm);
   
