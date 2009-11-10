@@ -1,0 +1,34 @@
+---------------------------------------------------------------------------
+--------------------- Sparse QR factorization in MATLAB -------------------
+---------------------------------------------------------------------------
+---------------- Pontus Matstoms , e-mail: pomat@math.liu.se --------------
+------------------- Linkoping University , 1993-08-04 ---------------------
+---------------------------------------------------------------------------
+------------------ Extraction of Q appended 1997-09-15 --------------------
+--------------- Mikael Lundquist, email: milun@mai.liu.se -----------------
+---------------------------------------------------------------------------
+
+This directory contains the M-files for sparse QR factorization discussed 
+in the report, Matstoms, "Sparse QR factorization in MATLAB", 1992. The
+implementation is based on the sparse extension of MATLAB introduced in
+version 4. A version number 4.0.BETA.3 or higher is therefore assumed.
+
+A code description (calling sequences etc.) is given in PostScript format
+in the file description.ps.Z
+
+                          ----------------------
+   
+The M-files are available under the following conditions.
+
+   o The code is used only for non-commercial purposes in education
+     and research.
+
+   o The origin notice shall be retained in all copies.
+
+   o The code is made available without any guarantees. Both the University
+     of Linkoping and myself disclaim all implied warranties.
+
+   o You send me your name and institution as soon as you have transfered
+     the files.
+
+                          ----------------------
