@@ -2400,6 +2400,50 @@ void taucs_ccs_write_sparse( FILE *fp, taucs_ccs_matrix *A)
 
 }
 
+void taucs_ccs_write_dat(FILE *fp, taucs_ccs_matrix *A) 
+/* Writes the matrix to a MATLAB .dat file */
+
+{
+  double *vals;
+  int rows,cols;
+
+  fprintf(fp,
+	  "%% Created by tsnnls\n"
+	  "%% name: A\n"
+	  "%% type: matrix\n"
+	  "%% rows: %d\n"
+	  "%% columns: %d\n",rows,cols);
+
+
+  rows = A->m; cols = A->n;
+  vals = taucs_convert_ccs_to_doubles(A);
+ 
+  if (vals == NULL) {
+
+    printf("taucs_ccs_write_dat: Can't convert %d x %d matrix to doubles.\n",
+	   A->m,A->n);
+    exit(1);
+
+  }
+  
+  int rItr,cItr;
+
+  for( rItr=0; rItr<rows; rItr++ ) {
+    
+    for( cItr=0; cItr<cols; cItr++ ) {
+
+      fprintf( fp, "%10.16lf ", vals[rItr*cols + cItr] );
+
+    }
+    
+    fprintf( fp, "\n" );
+  }
+  
+  free(vals);
+  
+}
+  
+
 void taucs_ccs_write_mat(FILE *fp, taucs_ccs_matrix *A) 
 
 {
@@ -2439,6 +2483,42 @@ void taucs_ccs_write_mat(FILE *fp, taucs_ccs_matrix *A)
   
   free(vals);
   
+}
+
+void colvector_write_dat(FILE *fp, double *x, int rows, char *name)
+
+/* Writes a column vector to an MATLAB DAT file, with given name */
+/* if specified. Otherwise, the name is set to "x" if the name   */
+/* pointer is NULL. */
+
+{
+  int i;
+  char *varname;
+  char xn[2] = "x";
+
+  if (name == NULL) {
+
+    varname = xn;
+
+  } else {
+
+    varname = name;
+
+  }
+  
+  fprintf(fp,
+	  "%% Created by tsnnls\n"
+	  "%% name: %s\n"
+	  "%% type: matrix\n"
+	  "%% rows: %d\n"
+	  "%% columns: 1\n",varname,rows);
+
+  for(i=0;i<rows;i++) {
+    
+    fprintf(fp,"%10.16lf\n",x[i]);
+
+  }
+
 }
   
 void colvector_write_mat(FILE *fp, double *x, int rows, char *name)
