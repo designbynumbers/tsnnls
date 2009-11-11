@@ -3,6 +3,8 @@ TODO File for tsnnls project (unordered)
 1. Autoinstall of static "megamix" precompiled binary library if we
 can't link with local BLAS/LAPACK.
 
+2. Link with MATLAB (if we have it) to offer check against SLS/Snnls for debugging purposes.
+
 
 
  
