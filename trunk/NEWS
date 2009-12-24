@@ -1,3 +1,4 @@
 NEWS
 
 Updated to GNU tools, 3/9/2007.
+Fixed installation bug which caused build to fail without argtable2 (thanks to Larry Baker for the bug report!) 12/23/2009.
