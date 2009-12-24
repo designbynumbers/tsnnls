@@ -217,7 +217,6 @@ echo "$fname"
 AC_CHECK_LIB(argtable2,arg_parse,
 AC_DEFINE([WITH_ARGTABLE2],[1],[Defined if we have the argtable2 library])
 AM_CONDITIONAL([ARGTABLE],[test 1 == 1]),
-AC_DEFINE([WITH_ARGTABLE2],[],[Defined if we have the argtable2 library])
 AM_CONDITIONAL([ARGTABLE],[test 0 == 1]))
 
 # Checks for header files.
