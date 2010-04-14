@@ -55,9 +55,9 @@ TAUCS license and availability information is provided in
 
 2. License
 
-This software is distributed under the terms of the GNU GPL. A full
+This software is distributed under the terms of the GNU Lesser GPL. A full
 description of the terms of this license can be found in the file
-'LICENSE' in the same directory as this readme, or the license can be
+'LICENSE, COPYING, and COPYING.LESSER' in the same directory as this readme, or the license can be
 read on the web at http://www.gnu.org/licenses/gpl.txt
 
 

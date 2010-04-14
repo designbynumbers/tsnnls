@@ -13,13 +13,13 @@ AC_COPYRIGHT(
 
                   Copyright (c) 2006 University of Georgia.
 
- Distributed under terms of the GNU General Public License version 2.1
-                       or later (see COPYING.LIB-2.1).
+ Distributed under terms of the GNU Lesser General Public License version 3
+                       or later (see COPYING and COPYING.LESSER).
 )
 
 # Don't forget to change the LIB_VERSION (and read the note if you are
 # wondering what the numbers mean.
-AC_INIT(libtsnnls, 2.2.3, cantarel@math.uga.edu)
+AC_INIT(libtsnnls, 2.3.3, cantarel@math.uga.edu)
 AM_INIT_AUTOMAKE
 
 #
@@ -39,7 +39,7 @@ AM_INIT_AUTOMAKE
 # Due to various broken ideas, we have to have two versions of this number, one
 # with colons below and one with periods above.  Please keep them in sync!
 #
-AC_SUBST(LIB_VERSION, 2:2:3)
+AC_SUBST(LIB_VERSION, 2:3:3)
 AC_CONFIG_SRCDIR([configure])
 AM_CONFIG_HEADER([config.h])
 
