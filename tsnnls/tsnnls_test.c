@@ -119,9 +119,8 @@
   #include <dmalloc.h>
 #endif
 
-#ifdef HAVE_ARGTABLE2_H
-  #include <argtable2.h>
-#endif
+#include <argtable2.h>
+
 
 int VERBOSITY = 0;
 enum STYPE { tsnnls, pjv, tlsqr, fallback, SOLlsqr, spiv } solvers[10] = { tsnnls };

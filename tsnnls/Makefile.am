@@ -2,7 +2,8 @@
 # Makefile.am for /tsnnls directory
 #
 
-AM_CFLAGS = -g -Wall
+AM_CFLAGS    = -Wall -I$(top_srcdir)/../argtable2-13/src -I$(top_srcdir)/../ridgerunner/argtable2-13/src 
+AM_LDFLAGS =  -L$(top_srcdir)/../argtable2-13/src -L$(top_srcdir)/../ridgerunner/argtable2-13/src 
 
 SUBDIRS = taucs_basic
 
@@ -18,6 +19,7 @@ EXTRA_DIST = testfull full_example_A.mat full_example_b.mat full_example_x.mat \
 pkginclude_HEADERS = tsnnls.h lsqr.h
 noinst_HEADERS = tsnnls_blas_wrappers.h taucs_basic/taucs_common.h acint32_type.h
 nobase_pkginclude_HEADERS = taucs_basic/taucs.h taucs_basic/colamd.h taucs_basic/f2c.h taucs_basic/taucs_config_build.h taucs_basic/taucs_config_tests.h taucs_basic/taucs_private.h
+
 lib_LTLIBRARIES = libtsnnls.la
 
 libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
@@ -38,6 +40,27 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
         tsnnls.c \
 	lsqr.c
 
+lib_LIBRARIES = libtsnnls.a
+
+libtsnnls_a_SOURCES = taucs_basic/taucs_logging.c \
+	taucs_basic/taucs_malloc.c \
+	taucs_basic/taucs_ccs_order.c \
+	taucs_basic/taucs_ccs_ops.c \
+	taucs_basic/taucs_vec_base.c \
+	taucs_basic/taucs_complex.c \
+	taucs_basic/colamd.c \
+	taucs_basic/amdbar.c \
+	taucs_basic/amdexa.c \
+	taucs_basic/amdtru.c \
+	taucs_basic/genmmd.c \
+	taucs_basic/taucs_timer.c \
+	taucs_basic/taucs_sn_llt.c \
+	taucs_basic/taucs_ccs_base.c \
+	tlsqr.c \
+        tsnnls.c \
+	lsqr.c
+
+libtsnnls_a_CFLAGS = $(AM_CFLAGS)
 
 if ARGTABLE 
   bin_PROGRAMS = tsnnls_test
