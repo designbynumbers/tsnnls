@@ -48,8 +48,10 @@ AM_CONFIG_HEADER([config.h])
 CFLAGS=`echo $CFLAGS | sed s/-O2//g`
 
 # Checks for programs.
+LT_INIT
 AC_PROG_CC
 AC_PROG_LIBTOOL
+AM_PROG_CC_C_O
 
 # Checks for libraries
 AC_CHECK_LIB([m],[cos])
@@ -109,6 +111,9 @@ don't have a FORTRAN compiler (preferably g77) on your default path.])
     
   esac
 
+
+LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
+ 
 # We'll need to call F77 functions from C, find out how to mangle their names
 AC_FC_FUNC([daxpy],[fname])
 if test "$fname" = "unknown"; then   # Assume g77 conventions 
@@ -215,10 +220,14 @@ AC_MSG_CHECKING([name of dscal after mangling])
 echo "$fname"
 
 # Other checks for libraries.
-AC_CHECK_LIB(argtable2,arg_parse,
-AC_DEFINE([WITH_ARGTABLE2],[1],[Defined if we have the argtable2 library])
-AM_CONDITIONAL([ARGTABLE],[test 1 == 1]),
-AM_CONDITIONAL([ARGTABLE],[test 0 == 1]))
+AC_SEARCH_LIBS([arg_parse],[argtable2],[have_argtable2=true],[have_argtable2=false])
+
+if test "x${have_argtable2}" = xtrue; then
+   AC_DEFINE([WITH_ARGTABLE2],[1],[Defined if we have the argtable2 library])
+   AM_CONDITIONAL([ARGTABLE],[test 1 == 1])
+else
+   AM_CONDITIONAL([ARGTABLE],[test 0 == 1])
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
