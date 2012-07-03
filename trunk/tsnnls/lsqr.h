@@ -1,3 +1,10 @@
+#ifndef ___LIBTSNNLS_LSQR_H___
+#define ___LIBTSNNLS_LSQR_H___ 1
+
+#if (__cplusplus || c_plusplus)
+extern "C" {
+#endif
+
 /*
 * lsqr.h
 * Contains auxiliary functions, data type definitions, and function 
@@ -396,3 +403,8 @@ double dvec_norm2( dvec * );
 void dvec_scale( double, dvec * );
 void dvec_copy( dvec *, dvec * );
 
+#if (__cplusplus || c_plusplus)
+};
+#endif 
+
+#endif
