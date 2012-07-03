@@ -258,7 +258,7 @@ AC_C_CONST
 AM_WITH_DMALLOC
 
 # Output
-AC_CONFIG_FILES([tsnnls-libs])    # Write linker info to file. 
+#AC_CONFIG_FILES([tsnnls-libs])    # Write linker info to file. 
 AC_CONFIG_FILES([Makefile
 		tsnnls/Makefile
 		tsnnls/taucs_basic/Makefile])
