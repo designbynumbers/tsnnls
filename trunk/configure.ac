@@ -42,7 +42,7 @@ AM_INIT_AUTOMAKE
 #
 AC_SUBST(LIB_VERSION, 2:3:3)
 AC_CONFIG_SRCDIR([configure])
-AM_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # We need to override the default cflags here. We don't want to compile with -02 by default
 CFLAGS=`echo $CFLAGS | sed s/-O2//g`
@@ -233,8 +233,9 @@ fi
 AC_HEADER_STDC
 AC_CHECK_HEADERS([clapack.h vecLib/clapack.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
 AC_CHECK_HEADERS([atlas/clapack.h])
-AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h ctype.h])
+AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h ctype.h malloc.h sys/malloc.h])
 AC_CHECK_HEADERS([argtable2.h])
+AC_CHECK_FUNCS([mallinfo])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

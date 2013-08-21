@@ -67,6 +67,10 @@
   #include <string.h>
 #endif
 
+#ifdef HAVE_MALLOC_H
+  #include <malloc.h>
+#endif
+
 #include "acint32_type.h"
 #include "lsqr.h"
 #include "tsnnls.h"
@@ -152,6 +156,22 @@ void clear_tsnnls_error()
   sprintf(gErrorString,"tsnnls: No error.\n");
 }
 
+int tsnnls_mem_used() 
+
+{
+  #ifdef HAVE_MALLINFO
+
+  struct mallinfo info;
+  info = mallinfo();
+
+  return info.uordblks;
+
+  #else
+
+  return -1;
+
+  #endif
+}
 
 taucs_ccs_matrix*   taucs_ccs_new(int rows, int cols, int nnz)
 /* Constructs and clears a new taucs_ccs matrix for a given number of nonzero entries. */
