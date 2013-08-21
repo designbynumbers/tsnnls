@@ -57,6 +57,9 @@ extern "C" {
   /* Returns the error code, if set, from the last call of tsnnls.
      If * to char * is passed, sets it to a buffer containing an error string. */  
 
+  int tsnnls_mem_used();
+  /* Returns the number of bytes in use by tsnnls (if available from mallinfo). */
+
   void clear_tsnnls_error();
   /* Clears any error code that has been previously set. */
 

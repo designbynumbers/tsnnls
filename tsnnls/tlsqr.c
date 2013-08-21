@@ -197,9 +197,44 @@ taucs_ccs_aprime_times_a( taucs_ccs_matrix* A )
 	  
 	  currentSize = newSize;
 	  
-	  if( newRows == NULL || newVals == NULL ) {
-	    fprintf( stderr, "tsnnls: Out of memory!\n" );
-	  }
+	  if( newRows == NULL ) { 
+	    fprintf( stderr, 
+		     "tsnnls: Ran out of memory in taucs_ccs_aprime_times_a "
+		     "        attempting to resize rowptrs array from %d to %d (ints).\n",
+		     currentSize,newSize);
+
+	    int mused = tsnnls_mem_used();
+
+	    if (mused != -1) {
+
+	      fprintf( stderr,
+		       "       Using %3.4g gb of memory at this point.\n",(double)(mused)/(1024.0*1024.0*1024.0) );
+
+	    }
+
+	    exit(1);
+
+	  } 
+
+	  if (newVals == NULL) {
+
+	    fprintf( stderr, 
+		     "tsnnls: Ran out of memory in taucs_ccs_aprime_times_a "
+		     "        attempting to resize valsPtr array from %d to %d (doubles).\n",
+		     currentSize,newSize);
+
+	    int mused = tsnnls_mem_used();
+
+	    if (mused != -1) {
+
+	      fprintf( stderr,
+		       "       Using %3.4g gb of memory at this point.\n",(double)(mused)/(1024.0*1024.0*1024.0) );
+	      
+	    }
+	    
+	    exit(1);
+
+	  } 
 	  
 	  result->values.d = newVals;
 	  valsPtr = newVals;
