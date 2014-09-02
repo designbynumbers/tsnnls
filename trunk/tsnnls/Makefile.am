@@ -1,7 +1,7 @@
 #
 # Makefile.am for /tsnnls directory
 #
-
+AUTOMAKE_OPTIONS = subdir-objects
 AM_CFLAGS    = -Wall 
 SUBDIRS = taucs_basic
 
