@@ -2427,16 +2427,15 @@ void taucs_ccs_write_dat(FILE *fp, taucs_ccs_matrix *A)
   double *vals;
   int rows,cols;
 
+  rows = A->m; cols = A->n;
+  vals = taucs_convert_ccs_to_doubles(A);
+
   fprintf(fp,
 	  "%% Created by tsnnls\n"
 	  "%% name: A\n"
 	  "%% type: matrix\n"
 	  "%% rows: %d\n"
 	  "%% columns: %d\n",rows,cols);
-
-
-  rows = A->m; cols = A->n;
-  vals = taucs_convert_ccs_to_doubles(A);
  
   if (vals == NULL) {
 
