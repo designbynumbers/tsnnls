@@ -1099,7 +1099,7 @@ multifrontal_supernodal_front_factor(int sn,
   int i,j;
   int* ind;
   taucs_datatype* re;
-  int INFO;
+  int INFO=0;
 
   /* creating transform for real indices */
   for(i=0;i<mtr->sn_size;i++) bitmap[mtr->sn_vertices[i]] = i;
@@ -1340,27 +1340,27 @@ tree_level(int j,
   }
 }
 
-static void
-tree_first_descendant(int j,
-		      int isroot, 
-		      int first_child[],
-		      int next_child[],
-		      int ipostorder[],
-		      int first_descendant[])
-{
-  int c;
-  int fd = ipostorder[j];
-  for (c=first_child[j]; c != -1; c = next_child[c]) {
-    tree_first_descendant(c,
-			  FALSE,
-			  first_child,
-			  next_child,
-			  ipostorder,
-			  first_descendant);
-    if (first_descendant[c] < fd) fd = first_descendant[c]; 
-  }
-  if (!isroot) first_descendant[j] = fd;
-}
+/* static void */
+/* tree_first_descendant(int j, */
+/* 		      int isroot,  */
+/* 		      int first_child[], */
+/* 		      int next_child[], */
+/* 		      int ipostorder[], */
+/* 		      int first_descendant[]) */
+/* { */
+/*   int c; */
+/*   int fd = ipostorder[j]; */
+/*   for (c=first_child[j]; c != -1; c = next_child[c]) { */
+/*     tree_first_descendant(c, */
+/* 			  FALSE, */
+/* 			  first_child, */
+/* 			  next_child, */
+/* 			  ipostorder, */
+/* 			  first_descendant); */
+/*     if (first_descendant[c] < fd) fd = first_descendant[c];  */
+/*   } */
+/*   if (!isroot) first_descendant[j] = fd; */
+/* } */
 
 
 int
@@ -2372,7 +2372,7 @@ leftlooking_supernodal_front_factor(int sn,
   int ip,jp;
   int*    ind;
   taucs_datatype* re;
-  int INFO;
+  int INFO=0;
 
   int sn_size = (L->sn_size)[sn];
   int up_size = (L->sn_up_size)[sn] - (L->sn_size)[sn];

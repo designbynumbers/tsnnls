@@ -70,12 +70,12 @@ AC_MSG_CHECKING(how to link with BLAS and LAPACK)
 
 case "${host_os}" in
   darwin*)
-    echo -framework vecLib
+    echo -framework accelerate
     AM_CONDITIONAL([DARWIN],[test 1 = 1])
     AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
-#    LIBS="$LIBS -framework vecLib"
-    AC_SUBST([LAPACK_LIBS],["-framework vecLib"])
+#    LIBS="$LIBS -framework accelerate"
+    AC_SUBST([LAPACK_LIBS],["-framework accelerate"])
     AC_SUBST([BLAS_LIBS],[" "])
     # $FLIBS was set above by AC_F77_PROG  
     # How can I work around the damaged g77 on Darwin by not linking lcrt2.o?
