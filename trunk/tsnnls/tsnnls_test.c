@@ -902,7 +902,7 @@ int main( int argc, char* argv[] )
       ttime = end_clock();
 
       fprintf(stderr," %3d x %3d",A->m,A->n);
-      fprintf(stderr,"  %6f ",ttime);
+      fprintf(stderr,"  %6f  (error not known in problem mode) ",ttime);
 
       if (xvals == NULL) {
 	
