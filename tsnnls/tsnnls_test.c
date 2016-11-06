@@ -74,14 +74,18 @@
 //#endif 
 
 #ifdef HAVE_CLAPACK_H
-  #include "clapack.h"
-#else
-  #ifdef HAVE_VECLIB_CLAPACK_H
-    #include "vecLib/clapack.h"
+  #include <clapack.h>
+#else 
+  #ifdef HAVE_ATLAS_CLAPACK_H
+     #include <atlas/clapack.h>
   #else
-    #ifdef HAVE_ATLAS_CLAPACK_H
-      #include "atlas/clapack.h"
-    #endif
+     #ifdef HAVE_VECLIB_CLAPACK_H
+       #include <vecLib/clapack.h>
+     #else
+       #ifdef HAVE_ACCELERATE_ACCELERATE_H
+         #include <Accelerate/Accelerate.h>
+       #endif
+     #endif
   #endif
 #endif
 

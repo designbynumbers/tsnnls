@@ -19,7 +19,7 @@ AC_COPYRIGHT(
 
 # Don't forget to change the LIB_VERSION (and read the note if you are
 # wondering what the numbers mean.
-AC_INIT(libtsnnls, 2.3.3, cantarel@math.uga.edu)
+AC_INIT(libtsnnls, 2.3.4, cantarel@math.uga.edu)
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE
 
@@ -40,7 +40,7 @@ AM_INIT_AUTOMAKE
 # Due to various broken ideas, we have to have two versions of this number, one
 # with colons below and one with periods above.  Please keep them in sync!
 #
-AC_SUBST(LIB_VERSION, 2:3:3)
+AC_SUBST(LIB_VERSION, 2:3:4)
 AC_CONFIG_SRCDIR([configure])
 AC_CONFIG_HEADERS([config.h])
 
@@ -74,8 +74,18 @@ case "${host_os}" in
     AM_CONDITIONAL([DARWIN],[test 1 = 1])
     AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1])
     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
-#    LIBS="$LIBS -framework accelerate"
-    AC_SUBST([LAPACK_LIBS],["-framework accelerate"])
+    # In this case, we need to use -framework accelerate (instead of the older
+    # -framework vecLib. Per the Apple docs, -framework is a linker option and
+    # not a compiler option, so it goes in LDFLAGS or as a library. Either
+    # seems to work.
+    LIBS="$LIBS -framework accelerate"
+
+    # Now there's a lot of lazy symbol binding going on in clang, so this
+    # actually works in the end even though we don't find the clapack header
+    # at include time
+    
+#   LDFLAGS="-framework accelerate $LDFLAGS"
+#   AC_SUBST([LAPACK_LIBS],["-framework accelerate"])
     AC_SUBST([BLAS_LIBS],[" "])
     # $FLIBS was set above by AC_F77_PROG  
     # How can I work around the damaged g77 on Darwin by not linking lcrt2.o?
@@ -231,7 +241,7 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([clapack.h vecLib/clapack.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
+AC_CHECK_HEADERS([clapack.h vecLib/clapack.h Accelerate/Accelerate.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
 AC_CHECK_HEADERS([atlas/clapack.h])
 AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h ctype.h malloc.h sys/malloc.h])
 AC_CHECK_HEADERS([argtable2.h])
