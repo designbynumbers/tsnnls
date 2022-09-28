@@ -7,54 +7,43 @@
  */
 
 #include <config.h>
-#include "tsnnls_blas_wrappers.h"
+//#include "tsnnls_blas_wrappers.h"
 
-#ifdef HAVE_STRING_H
-  #include <string.h>
-#endif
-
-#ifdef HAVE_FLOAT_H
-  #include <float.h>
-#endif 
+#include <string.h>
+#include <float.h>
 
 //#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
 //  #include <vecLib/vBLAS.h>
 //  #include <vecLib/clapack.h>
 //#else
 //  #include "gsl_cblas.h"
-//#endif 
+//#endif
 
-#ifdef HAVE_CLAPACK_H
-  #include <clapack.h>
-#else 
-  #ifdef HAVE_ATLAS_CLAPACK_H
-     #include <atlas/clapack.h>
-  #else
-     #ifdef HAVE_VECLIB_CLAPACK_H
-       #include <vecLib/clapack.h>
-     #else
-       #ifdef HAVE_ACCELERATE_ACCELERATE_H
-         #include <Accelerate/Accelerate.h>
-       #endif
-     #endif
-  #endif
-#endif
+#include<assert.h>
 
-#ifdef HAVE_MATH_H
-  #include <math.h>
-#endif
+#include<cblas.h>
+#include<lapacke.h>
 
-#ifdef HAVE_STDIO_H
-  #include <stdio.h>
-#endif
+/* #ifdef HAVE_CLAPACK_H */
+/*   #include <clapack.h> */
+/* #else  */
+/*   #ifdef HAVE_ATLAS_CLAPACK_H */
+/*      #include <atlas/clapack.h> */
+/*   #else */
+/*      #ifdef HAVE_VECLIB_CLAPACK_H */
+/*        #include <vecLib/clapack.h> */
+/*      #else */
+/*        #ifdef HAVE_ACCELERATE_ACCELERATE_H */
+/*          #include <Accelerate/Accelerate.h> */
+/*        #endif */
+/*      #endif */
+/*   #endif */
+/* #endif */
 
-#ifdef HAVE_STDLIB_H
-  #include <stdlib.h>
-#endif
-
-#ifdef HAVE_STRING_H
-  #include <string.h>
-#endif
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "acint32_type.h"
 #include "lsqr.h"
@@ -119,20 +108,20 @@ taucs_dotcols( const taucs_ccs_matrix* A, int col1, int col2 )
 double* 
 full_aprime_times_a( double* A, int rows, int cols )
 {
-  int rItr, cItr, colOffset;
+int rItr, cItr;//, colOffset;
   double* result = (double*)calloc(cols*cols, sizeof(double));
-  int incX,incY,N;
+//  int incX,incY,N;
 
-  colOffset = 0;
-  N = rows; 
-  incX = incY = cols;
+//  colOffset = 0;
+//N = rows; 
+// incX = incY = cols;
   
   for( cItr=0; cItr<cols; cItr++ )  {
     for( rItr=cItr; rItr<cols; rItr++ ) {
-      //result[rItr*cols + cItr] = cblas_ddot( rows, &A[cItr], 
-      //                                       cols, &A[rItr], cols );
-      result[rItr*cols + cItr] = DDOT_F77(&N, &A[cItr], &incX, 
-			                  &A[rItr], &incY);
+      result[rItr*cols + cItr] = cblas_ddot( rows, &A[cItr], 
+                                             cols, &A[rItr], cols );
+//result[rItr*cols + cItr] = DDOT_F77(&N, &A[cItr], &incX, 
+//			                  &A[rItr], &incY);
     }
   }
   
@@ -293,14 +282,13 @@ ccs_to_lapack( taucs_ccs_matrix* L, double** lapackL, int* N, int* LDA, double* 
 
 static double
 t_condest( void* mfR )
-{
-  #ifndef HAVE_ATLAS_LAPACK 
-
-  /* If we have a full LAPACK available, use dpocon to estimate condition number. */
+{ 
+  /* We expect to have OpenBlas available and so can use dpocon
+     to estimate condition number. */
   
   taucs_ccs_matrix* L;
   double* lapackL;
-  ACINT32_TYPE N, LDA, INFO;  /* Lapack expects 32 bit ints as integers. */
+  ACINT32_TYPE N, LDA;//, INFO;  /* Lapack expects 32 bit ints as integers. */
   char	UPLO;
   double  ANORM = 0;
   double* WORK;
@@ -344,8 +332,12 @@ t_condest( void* mfR )
   UPLO = 'L';
   WORK = (double*)malloc(sizeof(double)*3*N);
   IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
-  
-  dpocon_( &UPLO, &N, lapackL, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
+
+  lapack_int result;
+
+  result = LAPACKE_dpocon_work(LAPACK_COL_MAJOR, UPLO, N, lapackL, LDA, \
+			       ANORM, &RCOND, WORK, IWORK );
+  assert(result == 0);
   
   free(WORK);
   free(IWORK);
@@ -354,7 +346,7 @@ t_condest( void* mfR )
   
   return RCOND;
 
-  #else 
+#if 0 
 
   /* We have only a limited ATLAS LAPACK available, which doesn't include the condition
      number estimating code. We can still get a condition number estimate from lsqr. */
@@ -485,16 +477,16 @@ t_snnlslsqr(taucs_ccs_matrix *A,
   double alpha = {-1.0};
   int    incX = {1},incY = {1};
 
-  //cblas_daxpy(A->n,-1.0,(double *)(ApAx),1,(double *)(scratch),1); 
+  cblas_daxpy(A->n,alpha,(double *)(ApAx),incX,(double *)(scratch),incY); 
   /* Apb = Apb - ApAx */
-  DAXPY_F77(&(A->n),&alpha,(double *)(ApAx),&incX,(double *)(scratch),&incY);
+  //DAXPY_F77(&(A->n),&alpha,(double *)(ApAx),&incX,(double *)(scratch),&incY);
 
   //refinementEps = cblas_dnrm2(A->n, scratch, 1);
   taucs_supernodal_solve_llt(mfR,Itstep,scratch); /* Itstep = R\Apb. */
 
   alpha = 1.0;
-  //cblas_daxpy(A->n,1.0,(double *)(Itstep),1,(double *)(x),1);  
-  DAXPY_F77(&(A->n),&alpha,(double *)(Itstep),&incX,(double *)(x),&incY);
+  cblas_daxpy(A->n,1.0,(double *)(Itstep),1,(double *)(x),1);  
+  //DAXPY_F77(&(A->n),&alpha,(double *)(Itstep),&incX,(double *)(x),&incY);
   /* x = x + Itstep */
   
   free(scratch);

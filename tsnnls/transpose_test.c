@@ -14,39 +14,31 @@
 #include<config.h>
 
 #include"acint32_type.h"
-#include"tsnnls_blas_wrappers.h"
+//#include"tsnnls_blas_wrappers.h"
 
-#ifdef HAVE_STDLIB_H
- #include<stdlib.h>
-#endif
+#include<stdlib.h>
+#include<math.h>
+#include<stdio.h>
+#include<time.h>
 
-#ifdef HAVE_MATH_H
- #include<math.h>
-#endif
+#include<cblas.h>
+#include<lapacke.h>
 
-#ifdef HAVE_STDIO_H
- #include<stdio.h>
-#endif
-
-#ifdef HAVE_TIME_H
- #include<time.h>
-#endif
-
-#ifdef HAVE_CLAPACK_H
-  #include <clapack.h>
-#else 
-  #ifdef HAVE_ATLAS_CLAPACK_H
-     #include <atlas/clapack.h>
-  #else
-     #ifdef HAVE_VECLIB_CLAPACK_H
-       #include <vecLib/clapack.h>
-     #else
-       #ifdef HAVE_ACCELERATE_ACCELERATE_H
-         #include <Accelerate/Accelerate.h>
-       #endif
-     #endif
-  #endif
-#endif
+/* #ifdef HAVE_CLAPACK_H */
+/*   #include <clapack.h> */
+/* #else  */
+/*   #ifdef HAVE_ATLAS_CLAPACK_H */
+/*      #include <atlas/clapack.h> */
+/*   #else */
+/*      #ifdef HAVE_VECLIB_CLAPACK_H */
+/*        #include <vecLib/clapack.h> */
+/*      #else */
+/*        #ifdef HAVE_ACCELERATE_ACCELERATE_H */
+/*          #include <Accelerate/Accelerate.h> */
+/*        #endif */
+/*      #endif */
+/*   #endif */
+/* #endif */
 
 #ifdef WITH_DMALLOC
   #include <dmalloc.h>

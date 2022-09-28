@@ -48,9 +48,7 @@
 
 #include <config.h>
 
-#ifdef HAVE_CTYPE_H
-  #include <ctype.h>
-#endif
+#include <ctype.h>
 
 #include "lsqr.h"
 #include "tsnnls.h"
@@ -71,53 +69,36 @@
 // #include <vecLib/vBLAS.h>
 //#else
 // #include "tsnnls/gsl_cblas.h"
-//#endif 
+//#endif
 
-#ifdef HAVE_CLAPACK_H
-  #include <clapack.h>
-#else 
-  #ifdef HAVE_ATLAS_CLAPACK_H
-     #include <atlas/clapack.h>
-  #else
-     #ifdef HAVE_VECLIB_CLAPACK_H
-       #include <vecLib/clapack.h>
-     #else
-       #ifdef HAVE_ACCELERATE_ACCELERATE_H
-         #include <Accelerate/Accelerate.h>
-       #endif
-     #endif
-  #endif
-#endif
+#include<cblas.h>
+#include<lapacke.h>
 
-#ifdef HAVE_STRING_H
-  #include <string.h>
-#endif
+/* #ifdef HAVE_CLAPACK_H */
+/*   #include <clapack.h> */
+/* #else  */
+/*   #ifdef HAVE_ATLAS_CLAPACK_H */
+/*      #include <atlas/clapack.h> */
+/*   #else */
+/*      #ifdef HAVE_VECLIB_CLAPACK_H */
+/*        #include <vecLib/clapack.h> */
+/*      #else */
+/*        #ifdef HAVE_ACCELERATE_ACCELERATE_H */
+/*          #include <Accelerate/Accelerate.h> */
+/*        #endif */
+/*      #endif */
+/*   #endif */
+/* #endif */
 
-#ifdef HAVE_STDLIB_H
-  #include <stdlib.h>
-#endif
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <float.h>
+#include <math.h>
 
-#ifdef HAVE_STDIO_H
-  #include <stdio.h>
-#endif
-
-#ifdef HAVE_SYS_TIME_H
-  #include <sys/time.h>
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H
-  #include <sys/resource.h>
-#endif 
-
-#ifdef HAVE_FLOAT_H
-  #include <float.h>
-#endif 
-
-#ifdef HAVE_MATH_H
-  #include <math.h>
-#endif
-
-#include "tsnnls_blas_wrappers.h"
+//#include "tsnnls_blas_wrappers.h"
 
 #ifdef WITH_DMALLOC
   #include <dmalloc.h>
@@ -387,10 +368,10 @@ tsnnls_test(taucs_ccs_matrix *A,taucs_double *realx,taucs_double *b)
       
       int incX = {1};
       //double xnorm;
-      //err = cblas_dnrm2( A->n, diff, 1 );
       //err /= cblas_dnrm2( A->n, realx, 1 );
       
-      err = DNRM2_F77(&(A->n),diff,&incX);
+      //err = DNRM2_F77(&(A->n),diff,&incX);
+      err = cblas_dnrm2( A->n, diff, incX );
        
       /* Expected absolute error given from theory is approx. cond^2*eps */
       expectedError = taucs_rcond(A);
@@ -476,11 +457,11 @@ tlsqr_test(taucs_ccs_matrix *A, taucs_double *realx, taucs_double *b)
       double err = 0;
       int incX = {1};
       
-      //err = cblas_dnrm2( A->n, diff, 1 );
-      //err /= cblas_dnrm2( A->n, realx, 1 );
+      err = cblas_dnrm2( A->n, diff, incX );
+      err /= cblas_dnrm2( A->n, realx, incX );
       
-      err = DNRM2_F77(&(A->n),diff,&incX);
-      err /= DNRM2_F77(&(A->n),realx,&incX);
+      //err = DNRM2_F77(&(A->n),diff,&incX);
+      //err /= DNRM2_F77(&(A->n),realx,&incX);
       
       /* Expected relative error given from theory is approx. cond^2*eps */
       expectedError = ((double)1.0/taucs_rcond(A));

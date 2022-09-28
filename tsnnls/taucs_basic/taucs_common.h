@@ -15,11 +15,11 @@
   #include <dmalloc.h>
 #endif
 
-#define taucs_herk  DSYRK_F77
-#define taucs_gemm  DGEMM_F77
-#define taucs_trsm  DTRSM_F77
-#define taucs_potrf DPOTRF_F77
-#define taucs_dnrm2 DNRM2_F77
+#define taucs_herk  wrapper_dsyrk //DSYRK_F77
+#define taucs_gemm  wrapper_dgemm //DGEMM_F77
+#define taucs_trsm  wrapper_trsm // DTRSM_F77
+#define taucs_potrf wrapper_potrf //DPOTRF_F77
+#define taucs_dnrm2 wrapper_dnrm2 //DNRM2_F77
 
 // Changed taucs_datatype to double, since we're only using the DOUBLE core in tsnnls
 

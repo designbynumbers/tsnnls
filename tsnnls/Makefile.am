@@ -34,6 +34,7 @@ libtsnnls_la_SOURCES = taucs_basic/taucs_logging.c \
 	taucs_basic/taucs_timer.c \
 	taucs_basic/taucs_sn_llt.c \
 	taucs_basic/taucs_ccs_base.c \
+	taucs_basic/cblas_wrappers.c \
 	tlsqr.c \
         tsnnls.c \
 	lsqr.c
@@ -43,7 +44,7 @@ libtsnnls_la_CFLAGS = $(AM_CFLAGS)
 if ARGTABLE 
   bin_PROGRAMS = tsnnls_test
   tsnnls_test_SOURCES = tsnnls_test.c
-  tsnnls_test_LDFLAGS = libtsnnls.la
+  tsnnls_test_LDADD = libtsnnls.la
 endif
 
 if ARGTABLE
@@ -51,17 +52,19 @@ if ARGTABLE
   SHELL_TESTS = testfull transpose_test sp_test1.sh sp_test2.sh sp_test3.sh sp_test4.sh sp_test5.sh sp_test6.sh rrtest.sh
 endif
 
-if HAVE_LAPACK 
-  check_PROGRAMS = transpose_test f77blas_test genb_test
-  genb_test_SOURCES = genb_test.c
-  genb_test_LDFLAGS = libtsnnls.la 
-  TESTS = f77blas_test genb_test $(SHELL_TESTS)
-else 
-  check_PROGRAMS = f77blas_test transpose_test
-  TESTS = f77blas_test $(SHELL_TESTS)
-endif
+#if HAVE_LAPACK 
+
+check_PROGRAMS = transpose_test f77blas_test genb_test
+genb_test_SOURCES = genb_test.c
+genb_test_LDADD = libtsnnls.la 
+TESTS = f77blas_test genb_test $(SHELL_TESTS)
+
+#else 
+#  check_PROGRAMS = f77blas_test transpose_test
+#  TESTS = f77blas_test $(SHELL_TESTS)
+#endif
 
 transpose_test_SOURCES = transpose_test.c
-transpose_test_LDFLAGS = libtsnnls.la
+transpose_test_LDADD = libtsnnls.la
 
 f77blas_test_SOURCES = f77blas_test.c

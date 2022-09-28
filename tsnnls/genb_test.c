@@ -21,42 +21,42 @@
 #include<config.h>
 
 #include"acint32_type.h"
-#include"tsnnls_blas_wrappers.h"
+//#include"tsnnls_blas_wrappers.h"
 
-#ifdef HAVE_STDLIB_H
- #include<stdlib.h>
-#endif
+#include<stdlib.h>
+#include<math.h>
+#include<stdio.h>
+#include<time.h>
 
-#ifdef HAVE_MATH_H
- #include<math.h>
-#endif
+#include<cblas.h>
+#include<lapacke.h>
 
-#ifdef HAVE_STDIO_H
- #include<stdio.h>
-#endif
-
-#ifdef HAVE_TIME_H
- #include<time.h>
-#endif
-
-#ifdef HAVE_CLAPACK_H
-  #include <clapack.h>
-#else 
-  #ifdef HAVE_ATLAS_CLAPACK_H
-     #include <atlas/clapack.h>
-  #else
-     #ifdef HAVE_VECLIB_CLAPACK_H
-       #include <vecLib/clapack.h>
-     #else
-       #ifdef HAVE_ACCELERATE_ACCELERATE_H
-         #include <Accelerate/Accelerate.h>
-       #endif
-     #endif
-  #endif
-#endif
+/* #ifdef HAVE_CLAPACK_H */
+/*   #include <clapack.h> */
+/* #else  */
+/*   #ifdef HAVE_ATLAS_CLAPACK_H */
+/*      #include <atlas/clapack.h> */
+/*   #else */
+/*      #ifdef HAVE_VECLIB_CLAPACK_H */
+/*        #include <vecLib/clapack.h> */
+/*      #else */
+/*        #ifdef HAVE_ACCELERATE_ACCELERATE_H */
+/*          #include <Accelerate/Accelerate.h> */
+/*        #endif */
+/*      #endif */
+/*   #endif */
+/* #endif */
 
 /* We now arrange to have a copy of Lapack's DGELS to link to. 
+
+   This version of tsnnls is going to depend on OpenBlas explicitly,
+   so we don't implement a careful and lengthy search; we just use 
+   the lapacke.h prototype.
+
+*/
   
+/* This (obsolete) documentation describes the previous strategy:
+
    If we have a full (not just Atlas) CLAPACK, we'll use the 
    clapack interface to call dgels_. In this case no prototype
    is needed, because we just included clapack.h.
@@ -72,26 +72,26 @@
 
 */
 
-#ifdef WITH_DMALLOC
+#ifdef HAVE_DMALLOC_H
   #include <dmalloc.h>
 #endif
 
 #include"tsnnls.h"
 
-#ifdef HAVE_FULL_CLAPACK
-  #define DGELS_WRAPPER dgels_  
+/* #ifdef HAVE_FULL_CLAPACK */
+/*   #define DGELS_WRAPPER dgels_   */
 
-extern int DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
-			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB,
-			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info); 
+/* extern int DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS, */
+/* 			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB, */
+/* 			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info);  */
 
-#else
-  #define DGELS_WRAPPER DGELS_F77
+/* #else */
+/*   #define DGELS_WRAPPER DGELS_F77 */
 
-  extern void DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS,
-			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB,
-			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info);
-#endif
+/*   extern void DGELS_F77(char *trans, ACINT32_TYPE *M, ACINT32_TYPE *N, ACINT32_TYPE *NRHS, */
+/* 			double *A, ACINT32_TYPE *ldA, double *B, ACINT32_TYPE *ldB, */
+/* 			double *work, ACINT32_TYPE *lwork, ACINT32_TYPE *info); */
+/* #endif */
 
 
 double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
@@ -141,7 +141,8 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
 
   }
 
-  DGELS_WRAPPER(&trans,&m,&n,&nrhs,Awork,&m,z,&m,work,&lwork,&info);
+  //DGELS_WRAPPER(&trans,&m,&n,&nrhs,Awork,&m,z,&m,work,&lwork,&info);
+  info = LAPACKE_dgels_work(LAPACK_COL_MAJOR,trans,m,n,nrhs,Awork,m,z,m,work,lwork);
 
   if (info != 0) { 
 
@@ -185,12 +186,14 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
   double *r = calloc(m,sizeof(double));
   for(i=0;i<n;i++) { r[i] = y[i]; }
 
+  CBLAS_TRANSPOSE cbtrans = CblasTrans;
   trans = 'T';
   double alpha = 1.0, beta = -1.0;
   int incX = 1, incY = 1;
   int intM = m, intN = n;
   
-  DGEMV_F77(&trans,&intM,&intN,&alpha,A,&intM,z,&incX,&beta,r,&incY);
+  //DGEMV_F77(&trans,&intM,&intN,&alpha,A,&intM,z,&incX,&beta,r,&incY);
+  cblas_dgemv(CblasColMajor,cbtrans,intM,intN,alpha,A,intM,z,incX,beta,r,incY);
 
   /* Having computed the residual r, we record the norm of the residual for 
      debugging purposes. */
@@ -207,7 +210,9 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
   double *delta = calloc(m,sizeof(double));
   for(i=0;i<n;i++) { delta[i] = r[i]; }
 
-  DGELS_WRAPPER(&trans,&m,&n,&nrhs,Awork,&m,delta,&m,work,&lwork,&info);
+  //DGELS_WRAPPER(&trans,&m,&n,&nrhs,Awork,&m,delta,&m,work,&lwork,&info);
+  info = LAPACKE_dgels_work(LAPACK_COL_MAJOR,trans,m,n,nrhs,Awork,m,delta,m,work,lwork);
+
 
   if (info != 0) { 
 
@@ -219,8 +224,9 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
   /* We now subtract the correction step delta from z to find a better z. */
 
   alpha = -1.0; beta = 1.0;
-  DAXPY_F77(&intM,&alpha,delta,&incX,z,&incY);
-
+  //DAXPY_F77(&intM,&alpha,delta,&incX,z,&incY);
+  cblas_daxpy(intM,alpha,delta,incX,z,incY);
+  
   /* We have now found a very high-quality z so that A^T z = y. To check this, 
      we recompute the residual and its norm. */
 
@@ -228,11 +234,13 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
   for(i=0;i<m;i++) { r2[i] = y[i]; }
 
   trans = 'T';
+  cbtrans = CblasTrans;
   alpha = 1.0; beta = -1.0;
   incX = 1; incY = 1;
   intM = m; intN = n;
   
-  DGEMV_F77(&trans,&intM,&intN,&alpha,A,&intM,z,&incX,&beta,r2,&incY);
+  //DGEMV_F77(&trans,&intM,&intN,&alpha,A,&intM,z,&incX,&beta,r2,&incY);
+  cblas_dgemv(CblasColMajor,cbtrans,intM,intN,alpha,A,intM,z,incX,beta,r2,incY);
 
   /* Having computed the residual r, we record the norm of the residual for 
      debugging purposes. */
@@ -250,8 +258,10 @@ double *genb(int *success,int mdim, int ndim, double *A, double *x, double *y)
 
   alpha = 1.0; beta = -1.0;
   trans = 'N';
+  cbtrans = CblasNoTrans;
 
-  DGEMV_F77(&trans,&intM,&intN,&alpha,A,&intM,x,&incX,&beta,b,&incY);
+  //DGEMV_F77(&trans,&intM,&intN,&alpha,A,&intM,x,&incX,&beta,b,&incY);
+  cblas_dgemv(CblasColMajor,cbtrans,intM,intN,alpha,A,intM,x,incX,beta,b,incY);
 
   free(work); free(Awork); free(z); free(r); free(r2); free(delta);
 

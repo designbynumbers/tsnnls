@@ -8,17 +8,11 @@
 
 #include <config.h>
 
-#include "tsnnls_blas_wrappers.h"
+//#include "tsnnls_blas_wrappers.h"
 
-#ifdef HAVE_STRING_H
-  #include <string.h>
-#endif
-
-#ifdef HAVE_FLOAT_H
-  #include <float.h>
-#endif 
-
-#include<assert.h>
+#include <string.h>
+#include <float.h>
+#include <assert.h>
 
 //#ifdef HAVE_DARWIN  /* We expect to use the Accelerate framework */
 //  #include <vecLib/vBLAS.h>
@@ -39,37 +33,29 @@
 //  #endif
 //#endif
 
-#ifdef HAVE_CLAPACK_H
-  #include <clapack.h>
-#else 
-  #ifdef HAVE_ATLAS_CLAPACK_H
-     #include <atlas/clapack.h>
-  #else
-     #ifdef HAVE_VECLIB_CLAPACK_H
-       #include <vecLib/clapack.h>
-     #else
-       #ifdef HAVE_ACCELERATE_ACCELERATE_H
-         #include <Accelerate/Accelerate.h>
-       #endif
-     #endif
-  #endif
-#endif
+#include<cblas.h>
+#include<lapacke.h>
 
-#ifdef HAVE_MATH_H
-  #include <math.h>
-#endif
+/* #ifdef HAVE_CLAPACK_H */
+/*   #include <clapack.h> */
+/* #else  */
+/*   #ifdef HAVE_ATLAS_CLAPACK_H */
+/*      #include <atlas/clapack.h> */
+/*   #else */
+/*      #ifdef HAVE_VECLIB_CLAPACK_H */
+/*        #include <vecLib/clapack.h> */
+/*      #else */
+/*        #ifdef HAVE_ACCELERATE_ACCELERATE_H */
+/*          #include <Accelerate/Accelerate.h> */
+/*        #endif */
+/*      #endif */
+/*   #endif */
+/* #endif */
 
-#ifdef HAVE_STDIO_H
-  #include <stdio.h>
-#endif
-
-#ifdef HAVE_STDLIB_H
-  #include <stdlib.h>
-#endif
-
-#ifdef HAVE_STRING_H
-  #include <string.h>
-#endif
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef HAVE_MALLOC_H
   #include <malloc.h>
@@ -539,58 +525,57 @@ selectAprime( double* Ap, int cols, int rows, int* F, int sizeF )
 void 
 sparse_lsqr_mult( long mode, dvec* x, dvec* y, void* prod )
 {
-	taucs_ccs_matrix* A = (taucs_ccs_matrix*)prod;
-	int cItr, rItr;
-	
-	if( mode == 0 )
-	{
-		int i,ip,j,n, rows;
-		taucs_datatype Aij;
-
-		n = A->n;
-		rows = A->m;
-	
-	/*	double* Ax = (double*)malloc(sizeof(double)*A->m);
+  taucs_ccs_matrix* A = (taucs_ccs_matrix*)prod;
+  int cItr, rItr;
+  
+  if( mode == 0 )
+    {
+      int i,ip,j,n;
+      taucs_datatype Aij;
+      
+      n = A->n;
+      
+      /*	double* Ax = (double*)malloc(sizeof(double)*A->m);
 		ourtaucs_ccs_times_vec( A, x->elements, Ax );
 		for(i=0; i<A->m; i++ )
-			y->elements[i] += Ax[i];
+		y->elements[i] += Ax[i];
 		free(Ax);
-	*/
-	//	ourtaucs_ccs_times_vec( A, x->elements, y->elements );
-	
-		for (j=0; j<n; j++) {
-		  for (ip = (A->colptr)[j]; ip < (A->colptr[j+1]); ip++) {
-			i   = (A->rowind)[ip];
-			Aij = (A->values.d)[ip];
-			
-			y->elements[i] = y->elements[i]+(x->elements[j]*Aij);
-		  }
-		}
-	
+      */
+      //	ourtaucs_ccs_times_vec( A, x->elements, y->elements );
+      
+      for (j=0; j<n; j++) {
+	for (ip = (A->colptr)[j]; ip < (A->colptr[j+1]); ip++) {
+	  i   = (A->rowind)[ip];
+	  Aij = (A->values.d)[ip];
+	  
+	  y->elements[i] = y->elements[i]+(x->elements[j]*Aij);
 	}
-	else if( mode == 1 )
-	{
-		// since A^T*y = y^T*A
-	/*	double* yA = (double*)malloc(sizeof(double)*A->n);
+      }
+      
+    }
+  else if( mode == 1 )
+    {
+      // since A^T*y = y^T*A
+      /*	double* yA = (double*)malloc(sizeof(double)*A->n);
 		taucs_transpose_vec_times_matrix_nosub( y->elements, A, yA );
 		for(i=0; i<A->n; i++ )
-			x->elements[i] += yA[i];
+		x->elements[i] += yA[i];
 		free(yA);
-	*/
-	//	taucs_transpose_vec_times_matrix_nosub( y->elements, A, x->elements );
-		for( cItr=0; cItr<A->n; cItr++ )
-		{
-			//result[cItr] = 0;
-			for( rItr=0; rItr<A->colptr[cItr+1]-A->colptr[cItr]; rItr++ )
-			{
-				int tRow = A->rowind[A->colptr[cItr] + rItr];
-				x->elements[cItr] += y->elements[tRow] * A->values.d[A->colptr[cItr] + rItr];
-			}
-		}
-
+      */
+      //	taucs_transpose_vec_times_matrix_nosub( y->elements, A, x->elements );
+      for( cItr=0; cItr<A->n; cItr++ )
+	{
+	  //result[cItr] = 0;
+	  for( rItr=0; rItr<A->colptr[cItr+1]-A->colptr[cItr]; rItr++ )
+	    {
+	      int tRow = A->rowind[A->colptr[cItr] + rItr];
+	      x->elements[cItr] += y->elements[tRow] * A->values.d[A->colptr[cItr] + rItr];
+	    }
 	}
-	else
-		fprintf(stderr, "Unknown mode: %ld\n", mode );
+      
+    }
+  else
+    fprintf(stderr, "Unknown mode: %ld\n", mode );
 }
 
 #ifndef __DBL_EPSILON__
@@ -612,14 +597,14 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int               p, ninf, pbar = {3};
   int               m,n,i, maxSize;
   
-  int				A_rows, A_cols;
+  int		    A_cols;  /* A_rows */
   int               pivcount = 0;
   int               MAXPIVOT = 10*A_original_ordering->n;
   
-  int              *F, *G, *H1, *H2, SCR[1];
-  int              sizeF, sizeG, sizeH1, sizeH2, sizeSCR = {1};
-  int				lsqrStep=0;
-  double			rcond=1;
+  int               *F, *G, *H1, *H2, SCR[1];
+  int               sizeF, sizeG, sizeH1, sizeH2, sizeSCR = {1};
+  int		    lsqrStep=0;
+  double	    rcond=1;
   
   /* These variables are subsets of the column indices of the matrix A, 
    * always stored in sorted order, and sized by the corresponding
@@ -629,7 +614,7 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
    */
   taucs_double     *x,*y, *xf_raw = NULL, *yg_raw, *residual;
   
-  int AprimeDotA_cols;
+  //int AprimeDotA_cols;
   
   taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
   taucs_ccs_matrix*   lsqrApA;
@@ -653,10 +638,9 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   if( inRelErrTolerance <= 0 )
     lsqrStep = 1;
   
-  A_rows = A_original_ordering->m;
+  //A_rows = A_original_ordering->m; /* Made this change to squash a set-but-unused warning */ 
   A_cols = A_original_ordering->n;
-  
-  AprimeDotA_cols = A_cols;
+  //AprimeDotA_cols = A_cols;
   
   m = A_original_ordering->m;
   n = A_original_ordering->n;
@@ -699,8 +683,8 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   int incY = {1};
   double alpha = {-1.0};
   
-  //cblas_dscal(n,-1.0,y,1);      /* Scalar multiply y *= -1. */
-  DSCAL_F77(&n,&alpha,y,&incY);
+  cblas_dscal(n,alpha,y,incY);      /* Scalar multiply y *= -1. */
+  //DSCAL_F77(&n,&alpha,y,&incY);
   
   /* Now we enter the main loop. */
   infeasible(F,x,sizeF,H1,&sizeH1);  
@@ -870,8 +854,8 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       double alpha = {-1.0};
       int incX = {1}, incY = {1};
       
-      //cblas_daxpy(m,-1.0,b, 1, residual, 1);
-      DAXPY_F77(&m,&alpha,b,&incX,residual,&incY);
+      cblas_daxpy(m,alpha,b,incX, residual, incY);
+      //DAXPY_F77(&m,&alpha,b,&incX,residual,&incY);
       
       /* We now compute (A_G)'. */
       /* And finally take (A_G)'*residual. This is a sizeG-vector. */
@@ -989,13 +973,13 @@ t_snnls_pjv( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       double* finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
 
-      //cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
-      int incX;
-      alpha = -1; incX = 1; incY = 1; 
-      DAXPY_F77(&m,&alpha,b,&incX,finalresidual,&incY);
+      cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
+      //int incX;
+      //alpha = -1; incX = 1; incY = 1; 
+      //DAXPY_F77(&m,&alpha,b,&incX,finalresidual,&incY);
 
-      //*outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
-      *outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
+      *outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
+      //*outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
 
       free(finalresidual);
     }
@@ -1130,9 +1114,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 
   // I suppose one could double use incTmp and alphadog, but it 
   // shouldn't make much of a difference
-  double minusOne = {-1.0};
-  int incX = {1}, incY = {1};
-  double alphadog = {-1.0};
+  //double minusOne = {-1.0};
+  //int incX = {1}, incY = {1};
+  //double alphadog = {-1.0};
   int alphaItr = {0};
 
   /* These variables are subsets of the column indices of the matrix A, 
@@ -1144,7 +1128,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   taucs_double     *x, *y, *xf_raw = NULL, *yg_raw = NULL, *residual = NULL;
   taucs_double *Apb = NULL, *ApAx = NULL, *xplusalphap = NULL, *ApAxplusalphap = NULL, *Pxplusalphap = NULL;
   
-  int AprimeDotA_cols;
+  //int AprimeDotA_cols;
   
   taucs_ccs_matrix* AprimeDotA = taucs_ccs_aprime_times_a(A_original_ordering);
   taucs_ccs_matrix*   lsqrApA = NULL;
@@ -1203,7 +1187,7 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
   // A_rows = A_original_ordering->m;
   A_cols = A_original_ordering->n;
   
-  AprimeDotA_cols = A_cols;
+  //AprimeDotA_cols = A_cols;
   
   m = A_original_ordering->m;
   n = A_original_ordering->n;
@@ -1421,11 +1405,11 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
 	Pxplusalphap[i] = max(xplusalphap[i],0);
       }
 
-      double ntest=0.0;
-      for(i=0; i<n; i++) {ntest += pow(Pxplusalphap[i]-xplusalphap[i],2.0); }
-      
-      ntest = 0.0;
-      for(i=0; i<n; i++) {ntest += pow(xplusalphap[i],2.0); }
+      /* This code is just for debugging purposes */
+      /* double ntest=0.0; */
+      /* for(i=0; i<n; i++) {ntest += pow(Pxplusalphap[i]-xplusalphap[i],2.0);  */
+      /* ntest = 0.0; */
+      /* for(i=0; i<n; i++) {ntest += pow(xplusalphap[i],2.0); } */
 
       newq = q(Pxplusalphap,AprimeDotA,Apb,b,m,n);
       if (gVERBOSITY > 5) { printf("q(P[x + 1p]): %g.\n",newq); }
@@ -1697,8 +1681,9 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       residual = (taucs_double *)calloc(m,sizeof(taucs_double));
     }
 
-    DAXPY_F77(&m,&minusOne,b,&incX,residual,&incY);
-
+    //DAXPY_F77(&m,&minusOne,b,&incX,residual,&incY);
+    cblas_daxpy(m,-1.0,b,1,residual,1);
+    
     // Note: We could allocate this up front as well
     /* We now compute (A_G)'. */
     /* And finally take (A_G)'*residual. This is a sizeG-vector. */
@@ -1820,13 +1805,13 @@ t_snnls( taucs_ccs_matrix *A_original_ordering, taucs_double *b,
       finalresidual = (taucs_double *)calloc(m,sizeof(taucs_double));
       ourtaucs_ccs_times_vec(A_original_ordering,x,finalresidual);
 
-      //cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
+      cblas_daxpy(m,-1.0,b, 1, finalresidual, 1);
       // int incX, alphadog;
-      alphadog = -1; incX = 1; incY = 1; 
-      DAXPY_F77(&m,&alphadog,b,&incX,finalresidual,&incY);
+      //alphadog = -1; incX = 1; incY = 1; 
+      //DAXPY_F77(&m,&alphadog,b,&incX,finalresidual,&incY);
 
-      //*outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
-      *outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
+      *outResidualNorm = cblas_dnrm2(m, finalresidual, 1);
+      //*outResidualNorm = DNRM2_F77(&m,finalresidual,&incX);
 
       free(finalresidual); finalresidual = NULL;
     }
@@ -1914,9 +1899,7 @@ taucs_double*       t_snnls_fallback( taucs_ccs_matrix *A_original_ordering,
 
 double
 taucs_rcond( taucs_ccs_matrix* A )
-{
-  #ifndef HAVE_ATLAS_LAPACK 
-
+{ 
   /* We have two different versions of this function. In this version,
      we have a full LAPACK, so we use dgecon and dpocon to get the
      job done. */
@@ -1928,7 +1911,7 @@ taucs_rcond( taucs_ccs_matrix* A )
   double  RCOND = 0;
   double* WORK = NULL;
   ACINT32_TYPE*   IWORK = NULL;
-  ACINT32_TYPE	INFO;
+  //ACINT32_TYPE	INFO;
   ACINT32_TYPE*	IPIV = NULL;
   double* lapackA = NULL;
   
@@ -1982,13 +1965,19 @@ taucs_rcond( taucs_ccs_matrix* A )
   assert(WORK != NULL);
   IWORK = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*N);
   assert(IWORK != NULL);
-  INFO = 0;
+  //INFO = 0;
   
   IPIV = (ACINT32_TYPE*)malloc(sizeof(ACINT32_TYPE)*min(rowCount, A->n));
   assert(IPIV != NULL);
-  
-  dgetrf_( &rowCount, &AN, lapackA, &rowCount, IPIV, &INFO );
-  dgecon_( &NORM, &N, lapackA, &LDA, &ANORM, &RCOND, WORK, IWORK, &INFO );
+
+  lapack_int result;  
+    
+  result = LAPACKE_dgetrf_work(LAPACK_COL_MAJOR, rowCount, AN, lapackA, rowCount, IPIV);
+  assert(result == 0);
+  result = LAPACKE_dgecon_work(LAPACK_COL_MAJOR, NORM, N, lapackA, LDA, ANORM, &RCOND, WORK, IWORK);
+  assert(result==0);
+  // Note: we could simplify the calls here by using the improved "LAPACKE_dgetrf" and "LAPACKE_dgecon"
+  // but there doesn't seem to be a compelling reason to do so.
   
   free(IPIV);
   free(IWORK);
@@ -1997,7 +1986,9 @@ taucs_rcond( taucs_ccs_matrix* A )
   
   return RCOND;
 
-  #else 
+#if 0
+  // we're suppressing this block because we expect to have OpenBlas, which provides dgecon
+  // and dpotrf. But we're not deleting it entirely because it may prove useful in the future.
 
   /* We have only a limited ATLAS LAPACK available. In this case, we use lsqr to 
      estimate the condition number of A. */
@@ -2053,17 +2044,17 @@ transpose_vec_times_matrix(double* b, double* A, int* F, int A_cols, \
 {
   // result = b'*A
   int cItr;
-  int incX = {1};
-  int incY;
-  int N;
+  //int incX = {1};
+  //int incY;
+  //  int N;
 
-  N = rows;
-  incY = A_cols;
+  //N = rows;
+  //incY = A_cols;
 
   for( cItr=0; cItr<cols; cItr++ ) {
    
-    //result[cItr] = cblas_ddot( rows, b, 1, &A[F[cItr]], A_cols );
-    result[cItr] = DDOT_F77(&N,b,&incX,&A[F[cItr]],&incY); 
+    result[cItr] = cblas_ddot( rows, b, 1, &A[F[cItr]], A_cols );
+    //result[cItr] = DDOT_F77(&N,b,&incX,&A[F[cItr]],&incY); 
   }
 }
 
@@ -2091,14 +2082,14 @@ transpose_vec_times_matrix_nosub(double* b, double* A, int A_cols, int rows, dou
 {
   // result = b'*A
   int cItr;
-  int N;
-  int incX = {1}, incY;
+  //int N;
+  //int incX = {1}, incY;
 
-  N = rows; incY = A_cols;
+  //  N = rows; incY = A_cols;
 
   for( cItr=0; cItr<A_cols; cItr++ ) {
-    //result[cItr] = cblas_ddot( rows, b, 1, &A[cItr], A_cols );
-    result[cItr] = DDOT_F77(&N,b,&incX,&A[cItr],&incY);
+    result[cItr] = cblas_ddot( rows, b, 1, &A[cItr], A_cols );
+    //result[cItr] = DDOT_F77(&N,b,&incX,&A[cItr],&incY);
   }
 }
 
@@ -2598,7 +2589,8 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
 
 {
   taucs_double *ATAx, *ATb,*y;
-  int N=A->n,incX=1,incY=1,i;
+  int N=A->n,i;
+  //int incX=1,incY=1;
   double alpha=-1;  
 
   if (nBound == 0) { return NULL; }
@@ -2611,7 +2603,9 @@ taucs_double *compute_lagrange_multipliers(taucs_ccs_matrix *A,
 
   taucs_transpose_vec_times_matrix_nosub(b,A,ATb);      
   taucs_transpose_vec_times_matrix_nosub(x,ATA,ATAx);
-  DAXPY_F77(&N,&alpha,ATb,&incX,ATAx,&incY);
+  
+  cblas_daxpy(N,alpha,ATb,1,ATAx,1);
+  //DAXPY_F77(&N,&alpha,ATb,&incX,ATAx,&incY);
 
   /* Now select the values corresponding to bound variables. */
 
@@ -2741,27 +2735,35 @@ taucs_double *computep(taucs_ccs_matrix *A, taucs_ccs_matrix *ATA,
 {
   taucs_double *Axn = (taucs_double*)calloc(sizeof(taucs_double),A->m);
   taucs_double *result;
-  int M=A->m,incX=1,incY=1;
+  int M=A->m;//,incX=1,incY=1;
   double alpha=-1.0;
 
   ourtaucs_ccs_times_vec(A,xn,Axn);       // Axn = A*xn
-  DAXPY_F77(&M,&alpha,b,&incX,Axn,&incY); // Axn = Axn - b
-  DSCAL_F77(&M,&alpha,Axn,&incX);         // Axn = -Axn
+  //DAXPY_F77(&M,&alpha,b,&incX,Axn,&incY); // Axn = Axn - b
+  //DSCAL_F77(&M,&alpha,Axn,&incX);         // Axn = -Axn
+
+  cblas_daxpy(M,alpha,b,1,Axn,1);     //Axn = Axn - b
+  cblas_dscal(M,alpha,Axn,1);         //Axn = -Axn
 
   result = solve_unconstrained(A,ATA,Axn,nFree,Free); 
   free(Axn);
 
   // For debugging purposes, we try computing p another way.
 
-  double *checkresult;
-  int    N=A->n;
-  double checknorm;
+  /* double *checkresult; */
+  /* int    N=A->n; */
+  /* double checknorm; */
 
-  checkresult = solve_unconstrained(A,ATA,b,nFree,Free);
-  DAXPY_F77(&N,&alpha,xn,&incX,checkresult,&incY); // checkresult -= xn.
+  /* checkresult = solve_unconstrained(A,ATA,b,nFree,Free); */
+  /* //DAXPY_F77(&N,&alpha,xn,&incX,checkresult,&incY); // checkresult -= xn. */
+  /* cblas_daxpy(N,alpha,xn,1,checkresult,1); */
   
-  DAXPY_F77(&N,&alpha,result,&incX,checkresult,&incY); // checkresult -= result
-  checknorm = DNRM2_F77(&N,checkresult,&incX);
+  /* //DAXPY_F77(&N,&alpha,result,&incX,checkresult,&incY); // checkresult -= result */
+  /* cblas_daxpy(N,alpha,result,1,checkresult,1); */
+  
+  /* //checknorm = DNRM2_F77(&N,checkresult,&incX); */
+  /* checknorm = cblas_dnrm2(N,checkresult,1); */
+  
 
   return result;
 }
@@ -2964,14 +2966,17 @@ taucs_double *improve_by_SOL_lsqr(taucs_ccs_matrix *A,
 double compute_residual(taucs_ccs_matrix *A,taucs_double *x,taucs_double *b)   
 
 {
-  int m=A->m,incX=1,incY=1;
+  int m=A->m;//,incX=1,incY=1;
   double alpha=-1.0,resnorm;
 
   double* finalresidual = (taucs_double *)calloc(A->m,sizeof(taucs_double));
 
   ourtaucs_ccs_times_vec(A,x,finalresidual);
-  DAXPY_F77(&m,&alpha,b,&incX,finalresidual,&incY);
-  resnorm = DNRM2_F77(&m,finalresidual,&incX);
+  //DAXPY_F77(&m,&alpha,b,&incX,finalresidual,&incY);
+  cblas_daxpy(m,alpha,b,1,finalresidual,1);
+  
+  //resnorm = DNRM2_F77(&m,finalresidual,&incX);
+  resnorm = cblas_dnrm2(m,finalresidual,1);
 
   free(finalresidual);
 
@@ -2996,7 +3001,7 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
   
   int              MAXPIVOT = A->n * 10;
   int              pivcount = 0, newzero;
-  int              N=A->n,incX=1,incY=1;
+  int              N=A->n; //incX=1,incY=1;
 
   int i;
 
@@ -3028,7 +3033,8 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
 	return NULL;
       }
 
-      isconstrainedpt = (DNRM2_F77(&N,p,&incX) < 1e-12);  
+      //isconstrainedpt = (DNRM2_F77(&N,p,&incX) < 1e-12);
+      isconstrainedpt = (cblas_dnrm2(N,p,1) < 1e-12);  
       
       alpha = findalpha(p,xn,nFree,Free,nconstrained,&newzero);
  
@@ -3043,13 +3049,16 @@ taucs_double *t_snnls_spiv (taucs_ccs_matrix *A, taucs_double *b,
 	scratchx = -xn[newzero]; 
 	scratchp = 1/p[newzero];
 	
-	DSCAL_F77(&N,&scratchx,p,&incX); DSCAL_F77(&N,&scratchp,p,&incX);
+	//DSCAL_F77(&N,&scratchx,p,&incX);DSCAL_F77(&N,&scratchp,p,&incX);
+	cblas_dscal(N,scratchx,p,1); cblas_dscal(N,scratchp,p,1);
 
       }
 
-      DAXPY_F77(&N,&one,p,&incX,xn,&incY);
+      //DAXPY_F77(&N,&one,p,&incX,xn,&incY);
+      cblas_daxpy(N,one,p,1,xn,1);
       
       // DAXPY_F77(&N,&alpha,p,&incX,xn,&incY); // xn = xn + alpha*p
+      cblas_daxpy(N,alpha,p,1,xn,1); // Note: not sure about this one! Diff it?
       
       bindzeros(A->n,xn,&nFree,Free,&nBound,Bound,nconstrained); // Add new variable(s) to bound set
 

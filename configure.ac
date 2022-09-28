@@ -49,8 +49,7 @@ CFLAGS=`echo $CFLAGS | sed s/-O2//g`
 
 # Checks for programs.
 LT_INIT
-AC_PROG_CC
-AC_PROG_LIBTOOL
+AC_PROG_CC([clang gcc])
 AM_PROG_CC_C_O
 
 # Checks for libraries
@@ -60,174 +59,183 @@ AC_CHECK_LIB([m],[cos])
 AC_CHECK_FUNCS([memset memcpy rand srand time isnormal isnan])
 
 # Checks for FORTRAN.
-AC_PROG_FC([gfortran g77])		
-AC_FC_LIBRARY_LDFLAGS
-LIBS="$LIBS $FCLIBS -lm"
+#AC_PROG_FC([gfortran g77])		
+#AC_FC_LIBRARY_LDFLAGS
+#LIBS="$LIBS $FCLIBS -lm"
 
 # Checks for Darwin.
-AC_CANONICAL_HOST
-AC_MSG_CHECKING(how to link with BLAS and LAPACK)
+# AC_CANONICAL_HOST
+#AC_MSG_CHECKING(how to link with BLAS and LAPACK)
 
-case "${host_os}" in
-  darwin*)
-    echo -framework accelerate
-    AM_CONDITIONAL([DARWIN],[test 1 = 1])
-    AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1])
-    AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
-    # In this case, we need to use -framework accelerate (instead of the older
-    # -framework vecLib. Per the Apple docs, -framework is a linker option and
-    # not a compiler option, so it goes in LDFLAGS or as a library. Either
-    # seems to work.
-    LIBS="$LIBS -framework accelerate"
+dnl Tsnnls is now assuming that you're building with OpenBlas. This entails
+dnl converting from the clapack.h header (giving C prototypes for lapack functions)
+dnl by doing whatever f2c did) to the lapacke.h header, which is at least
+dnl *maintained* and attempts to provide a consistent C interface, so we have
+dnl a shot at keeping everything going.
 
-    # Now there's a lot of lazy symbol binding going on in clang, so this
-    # actually works in the end even though we don't find the clapack header
-    # at include time
+AC_SEARCH_LIBS([cblas_dgemv],[openblas], ,AC_MSG_ERROR([tsnnls 3.0.0 and higher require OpenBlas]))
+
+#LAPACK_LIBS="-lopenblas"
+
+dnl case "${host_os}" in
+dnl   darwin*)
+dnl     echo -framework accelerate
+dnl     AM_CONDITIONAL([DARWIN],[test 1 = 1])
+dnl     AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1])
+dnl     AC_DEFINE([HAVE_DARWIN],[1],[Defined if we are in the Apple environment.])
+dnl     # In this case, we need to use -framework accelerate (instead of the older
+dnl     # -framework vecLib. Per the Apple docs, -framework is a linker option and
+dnl     # not a compiler option, so it goes in LDFLAGS or as a library. Either
+dnl     # seems to work.
+dnl     LIBS="$LIBS -framework accelerate"
+
+dnl     # Now there's a lot of lazy symbol binding going on in clang, so this
+dnl     # actually works in the end even though we don't find the clapack header
+dnl     # at include time
     
-#   LDFLAGS="-framework accelerate $LDFLAGS"
-#   AC_SUBST([LAPACK_LIBS],["-framework accelerate"])
-    AC_SUBST([BLAS_LIBS],[" "])
-    # $FLIBS was set above by AC_F77_PROG  
-    # How can I work around the damaged g77 on Darwin by not linking lcrt2.o?
-    # By editing flibs to remove -lcrt2.o, of course!  
-    # (I realize that this is a total hack.)
+dnl #   LDFLAGS="-framework accelerate $LDFLAGS"
+dnl #   AC_SUBST([LAPACK_LIBS],["-framework accelerate"])
+dnl     AC_SUBST([BLAS_LIBS],[" "])
+dnl     # $FLIBS was set above by AC_F77_PROG  
+dnl     # How can I work around the damaged g77 on Darwin by not linking lcrt2.o?
+dnl     # By editing flibs to remove -lcrt2.o, of course!  
+dnl     # (I realize that this is a total hack.)
 
-    FLIBS=`echo $FLIBS | sed s/-lcrt2.o//g` 
-    ;;
-  *)
-    echo linux
-    AM_CONDITIONAL([DARWIN],[test 0 == 1])
-    # Gets ready to compile with weird Fortran stuff
+dnl     FLIBS=`echo $FLIBS | sed s/-lcrt2.o//g` 
+dnl     ;;
+dnl   *)
+dnl     echo linux
+dnl     AM_CONDITIONAL([DARWIN],[test 0 == 1])
+dnl     # Gets ready to compile with 
 
-    ACX_BLAS
-    if test "$acx_blas_ok" = no; then 
-	  AC_MSG_ERROR([tsnnls requires an F77BLAS. The ATLAS project
-will provide these on any given system if no other is
-available. Configure has searched the usual locations and can't find
-one. You can use --with-blas=<lib> to point to a blas library in a
-nonstandard spot. This test may fail even if you have BLAS if you
-don't have a FORTRAN compiler (preferably g77) on your default path.])
-    fi
+dnl     ACX_BLAS
+dnl     if test "$acx_blas_ok" = no; then 
+dnl 	  AC_MSG_ERROR([tsnnls requires an F77BLAS. The ATLAS project
+dnl will provide these on any given system if no other is
+dnl available. Configure has searched the usual locations and can't find
+dnl one. You can use --with-blas=<lib> to point to a blas library in a
+dnl nonstandard spot. This test may fail even if you have BLAS if you
+dnl don't have a FORTRAN compiler (preferably g77) on your default path.])
+dnl     fi
 
-    # Now look for a full (or minimal ATLAS) lapack
-    AC_FC_FUNC(dpotrf)
-    ACX_LAPACK(AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1]),AC_CHECK_LIB([lapack],$dpotrf,[atlas_lapack=yes 
-       LAPACK_LIBS="-llapack -lcblas -lf77blas -latlas"
-       AC_DEFINE_UNQUOTED([HAVE_ATLAS_LAPACK],[1],[ATLAS (instead of full) LAPACK])
-       AM_CONDITIONAL([HAVE_LAPACK],[test 1 == 0])
-       ],[atlas_lapack=no],[-lcblas -lf77blas -latlas $FLIBS -lm]))
-    AC_MSG_CHECKING([for minimal ATLAS lapack])
-    echo $atlas_lapack
+dnl     # Now look for a full (or minimal ATLAS) lapack
+dnl     AC_FC_FUNC(dpotrf)
+dnl     ACX_LAPACK(AM_CONDITIONAL([HAVE_LAPACK],[test x1 = x1]),AC_CHECK_LIB([lapack],$dpotrf,[atlas_lapack=yes 
+dnl        LAPACK_LIBS="-llapack -lcblas -lf77blas -latlas"
+dnl        AC_DEFINE_UNQUOTED([HAVE_ATLAS_LAPACK],[1],[ATLAS (instead of full) LAPACK])
+dnl        AM_CONDITIONAL([HAVE_LAPACK],[test 1 == 0])
+dnl        ],[atlas_lapack=no],[-lcblas -lf77blas -latlas $FLIBS -lm]))
+dnl     AC_MSG_CHECKING([for minimal ATLAS lapack])
+dnl     echo $atlas_lapack
     
-  esac
+dnl   esac
 
-
-LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
+#LIBS="$LAPACK_LIBS"
  
 # We'll need to call F77 functions from C, find out how to mangle their names
-AC_FC_FUNC([daxpy],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="daxpy_"
-fi
-AC_DEFINE_UNQUOTED([DAXPY_F77],[$fname],[Name of daxpy after mangling])
-AC_MSG_CHECKING([name of daxpy after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([daxpy],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="daxpy_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DAXPY_F77],[$fname],[Name of daxpy after mangling])
+dnl AC_MSG_CHECKING([name of daxpy after mangling])
+dnl echo "$fname"
 
-AC_FC_FUNC([dsyrk],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dsyrk_"
-fi
-AC_DEFINE_UNQUOTED([DSYRK_F77],[$fname],[Name of dsyrk after mangling])
-AC_MSG_CHECKING([name of dsyrk after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dsyrk],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dsyrk_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DSYRK_F77],[$fname],[Name of dsyrk after mangling])
+dnl AC_MSG_CHECKING([name of dsyrk after mangling])
+dnl echo "$fname"
 
-AC_FC_FUNC([dsymv],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dsymv_"
-fi
-AC_DEFINE_UNQUOTED([DSYMV_F77],[$fname],[Name of dsymv after mangling])
-AC_MSG_CHECKING([name of dsymv after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dsymv],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dsymv_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DSYMV_F77],[$fname],[Name of dsymv after mangling])
+dnl AC_MSG_CHECKING([name of dsymv after mangling])
+dnl echo "$fname"
 
-# dgemm
+dnl # dgemm
 
-AC_FC_FUNC([dgemm],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dgemm_"
-fi
-AC_DEFINE_UNQUOTED([DGEMM_F77],[$fname],[Name of dgemm after mangling])
-AC_MSG_CHECKING([name of dgemm after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dgemm],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dgemm_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DGEMM_F77],[$fname],[Name of dgemm after mangling])
+dnl AC_MSG_CHECKING([name of dgemm after mangling])
+dnl echo "$fname"
 
-# dgemv
+dnl # dgemv
 
-AC_FC_FUNC([dgemv],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dgemv_"
-fi
-AC_DEFINE_UNQUOTED([DGEMV_F77],[$fname],[Name of dgemv after mangling])
-AC_MSG_CHECKING([name of dgemv after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dgemv],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dgemv_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DGEMV_F77],[$fname],[Name of dgemv after mangling])
+dnl AC_MSG_CHECKING([name of dgemv after mangling])
+dnl echo "$fname"
 
-# dtrsm
+dnl # dtrsm
  
-AC_FC_FUNC([dtrsm],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dtrsm_"
-fi
-AC_DEFINE_UNQUOTED([DTRSM_F77],[$fname],[Name of dtrsm after mangling])
-AC_MSG_CHECKING([name of dtrsm after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dtrsm],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dtrsm_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DTRSM_F77],[$fname],[Name of dtrsm after mangling])
+dnl AC_MSG_CHECKING([name of dtrsm after mangling])
+dnl echo "$fname"
 
-# dpotrf
+dnl # dpotrf
 
-AC_FC_FUNC([dpotrf],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dpotrf_"
-fi
-AC_DEFINE_UNQUOTED([DPOTRF_F77],[$fname],[Name of dpotrf after mangling])
-AC_MSG_CHECKING([name of dpotrf after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dpotrf],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dpotrf_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DPOTRF_F77],[$fname],[Name of dpotrf after mangling])
+dnl AC_MSG_CHECKING([name of dpotrf after mangling])
+dnl echo "$fname"
 
-# dgels
+dnl # dgels
 
-AC_FC_FUNC([dgels],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dgels_"
-fi
-AC_DEFINE_UNQUOTED([DGELS_F77],[$fname],[Name of dgels after mangling])
-AC_MSG_CHECKING([name of dgels after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dgels],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dgels_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DGELS_F77],[$fname],[Name of dgels after mangling])
+dnl AC_MSG_CHECKING([name of dgels after mangling])
+dnl echo "$fname"
 
-# dnrm2
+dnl # dnrm2
 
-AC_FC_FUNC([dnrm2],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dnrm2_"
-fi
-AC_DEFINE_UNQUOTED([DNRM2_F77],[$fname],[Name of dnrm2 after mangling])
-AC_MSG_CHECKING([name of dnrm2 after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dnrm2],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dnrm2_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DNRM2_F77],[$fname],[Name of dnrm2 after mangling])
+dnl AC_MSG_CHECKING([name of dnrm2 after mangling])
+dnl echo "$fname"
 
-# ddot
+dnl # ddot
 
-AC_FC_FUNC([ddot],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="ddot_"
-fi
-AC_DEFINE_UNQUOTED([DDOT_F77],[$fname],[Name of ddot after mangling])
-AC_MSG_CHECKING([name of ddot after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([ddot],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="ddot_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DDOT_F77],[$fname],[Name of ddot after mangling])
+dnl AC_MSG_CHECKING([name of ddot after mangling])
+dnl echo "$fname"
 
-# dscal
+dnl # dscal
 
-AC_FC_FUNC([dscal],[fname])
-if test "$fname" = "unknown"; then   # Assume g77 conventions 
-  fname="dscal_"
-fi
-AC_DEFINE_UNQUOTED([DSCAL_F77],[$fname],[Name of dscal after mangling])
-AC_MSG_CHECKING([name of dscal after mangling])
-echo "$fname"
+dnl AC_FC_FUNC([dscal],[fname])
+dnl if test "$fname" = "unknown"; then   # Assume g77 conventions 
+dnl   fname="dscal_"
+dnl fi
+dnl AC_DEFINE_UNQUOTED([DSCAL_F77],[$fname],[Name of dscal after mangling])
+dnl AC_MSG_CHECKING([name of dscal after mangling])
+dnl echo "$fname"
 
 # Other checks for libraries.
 AC_SEARCH_LIBS([arg_parse],[argtable2],[have_argtable2=true],[have_argtable2=false])
@@ -240,11 +248,15 @@ else
 fi
 
 # Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([clapack.h vecLib/clapack.h Accelerate/Accelerate.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
-AC_CHECK_HEADERS([atlas/clapack.h])
-AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h ctype.h malloc.h sys/malloc.h])
+dnl AC_HEADER_STDC
+
+dnl AC_CHECK_HEADERS([clapack.h vecLib/clapack.h Accelerate/Accelerate.h],AC_DEFINE([HAVE_FULL_CLAPACK],[1],[Defined if we have a full clapack.]),AC_DEFINE([HAVE_FULL_CLAPACK],[],[Defined if we have full clapack.]))
+dnl AC_CHECK_HEADERS([atlas/clapack.h])
+dnl AC_CHECK_HEADERS([string.h float.h stdlib.h stdio.h sys/time.h sys/resource.h limits.h math.h time.h ctype.h malloc.h sys/malloc.h])
+
+AC_CHECK_HEADERS([cblas.h lapacke.h])
 AC_CHECK_HEADERS([argtable2.h])
+AC_CHECK_HEADERS([malloc.h])
 AC_CHECK_FUNCS([mallinfo])
 
 # Checks for typedefs, structures, and compiler characteristics.

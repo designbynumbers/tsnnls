@@ -10,22 +10,17 @@ installation on this system is functional.
 */
 
 #include <config.h>
-#include "tsnnls_blas_wrappers.h"
+//#include "tsnnls_blas_wrappers.h"
 
-#ifdef HAVE_MATH_H
-  #include <math.h>
-#endif
+#include<math.h>
+#include<stdlib.h>
+#include<stdio.h>
 
-#ifdef HAVE_STDLIB_H
-  #include <stdlib.h>
-#endif
+#include<cblas.h>
+#include<lapacke.h>
 
-#ifdef HAVE_STDIO_H
-  #include <stdio.h>
-#endif
-
-#ifdef WITH_DMALLOC
-  #include <dmalloc.h>
+#ifdef HAVE_DMALLOC_H
+  #include<dmalloc.h>
 #endif
 
 #ifdef __cplusplus
@@ -46,11 +41,11 @@ int main()
   int i,incA={1},incB={1},N={VECLEN};
   double alpha = -2.3;
 
-  fprintf(stderr,"f77blas tests\n");
+  fprintf(stderr,"cblas tests\n");
 
   /* L1 BLAS test for "daxpy" */
 
-  fprintf(stderr,"%s test... ","DAXPY_F77");
+  fprintf(stderr,"%s test... ","cblas_daxpy");
 
   for(i=0;i<VECLEN;i++) {
 
@@ -59,7 +54,8 @@ int main()
 
   }
 
-  DAXPY_F77(&N,&alpha,vecB,&incB,vecA,&incA);  /* vecA += alpha*vecB */
+  //DAXPY_F77(&N,&alpha,vecB,&incB,vecA,&incA);  /* vecA += alpha*vecB */
+  cblas_daxpy(N,alpha,vecB,incB,vecA,incA);
 
   for(i=0;i<VECLEN;i++) {
     
@@ -81,10 +77,9 @@ int main()
   double vecX[MATDIM],vecY[MATDIM],A[MATDIM*MATDIM],\
     vecYsto[MATDIM],vecCheck[MATDIM];
   int j,lda = {MATDIM},incX={1},incY={1};
-  char uplo = {'U'};
   double beta = 1.66;
 
-  fprintf(stderr,"%s test... ","DSYMV_F77");
+  fprintf(stderr,"%s test... ","cblas_dsymv");
 
   N = MATDIM; /* Reset N to dimension of NxN matrix A */
 
@@ -106,7 +101,8 @@ int main()
 
   }
 
-  DSYMV_F77(&uplo,&N,&alpha,A,&lda,vecX,&incX,&beta,vecY,&incY);
+  //DSYMV_F77(&uplo,&N,&alpha,A,&lda,vecX,&incX,&beta,vecY,&incY);
+  cblas_dsymv(CblasColMajor,CblasUpper,N,alpha,A,lda,vecX,incX,beta,vecY,incY);
 
   /* Should compute vecY = alpha A vecX + beta vecY */
 
@@ -142,11 +138,12 @@ int main()
 
   double newA[MATDIM*2*MATDIM],C[MATDIM*MATDIM], \
     newAnewAT[MATDIM*MATDIM],Csto[MATDIM*MATDIM];
-  char trans = 'N';
+  //char trans = 'N';
+  CBLAS_TRANSPOSE trans = CblasNoTrans;
   int k;
   int K = {2*MATDIM};
 
-  fprintf(stderr,"%s test... ","DSYRK_F77");
+  fprintf(stderr,"%s test... ","cblas_dsyrk");
 
   for(i=0;i<MATDIM;i++) {
 
@@ -171,7 +168,8 @@ int main()
 
   }
 
-  DSYRK_F77(&uplo,&trans,&N,&K,&alpha,newA,&N,&beta,C,&N);
+  //DSYRK_F77(&uplo,&trans,&N,&K,&alpha,newA,&N,&beta,C,&N);
+  cblas_dsyrk(CblasColMajor,CblasUpper,trans,N,K,alpha,newA,N,beta,C,N);
 
   /* Computes C = alpha newAnewA^T + beta C, which is a MATDIM*MATDIM matrix. */
 
