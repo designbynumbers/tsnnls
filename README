@@ -1,14 +1,11 @@
-tsnnls 2.0 - A fast block pivoting algorithm for sparse linear least squares
+tsnnls 2.4.5 - A fast block pivoting algorithm for sparse linear least squares
 problems with non-negative variables designed to be embedded in applications
 
-http://www.cs.duq.edu/~piatek/tsnnls/
-http://ada.math.uga.edu/research/software/tsnnls/
+Jason Cantarella 
+Michael Piatek
+Eric Rawdon
 
-Jason Cantarella, cantarel@math.uga.edu
-Michael Piatek, piatek@mathcs.duq.edu
-Eric Rawdon, ericrawdon@gmail.com
-
-11 September 2007
+28 September 2022
 
 Contents
 0. What is tsnnls?
@@ -34,16 +31,32 @@ problems, this is a reasonable solution. For ill-conditioned problems,
 you are probably better off with an iterative method like the Stanford
 LSQR code, which is also freely available on the web.
 
-The current implementation of tsnnls does not have direct support for
-multiprocessor machines. For a more complete report on tsnnls, see our
-paper "tsnnls: A solver for large sparse least squares problems with
-non-negative variables", which is available on the web from the same
-location as this library.
+For a more complete report on tsnnls, see our paper "tsnnls: A solver 
+for large sparse least squares problems with non-negative variables",
+which is available on arXiv.
 
 
 1. Building
 
-See the file INSTALL in the main distribution directory.
+TSNNLS uses the standard GNU Autotools
+
+./configure
+make
+make check
+make install
+
+method for installation. TSNNLS depends on OpenBlas to provide LAPACK
+and Blas functions; if you install via autotools, you may have to provide
+./configure with the location of the cblas.h and lapacke.h headers and
+the libopenblas.dylib library. To build the test program tsnnls_test, you
+will need to install the argparse library.
+
+Installation can also be accomplished via Homebrew using the cantarellalab tap:
+
+brew tap designbynumbers/cantarellalab
+brew install tsnnls
+
+See the file INSTALL in the main distribution directory for more information.
 
 Also note that included with our distribution is a limited version of
 the TAUCS package for sparse matrix manipulation. Future updates to
