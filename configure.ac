@@ -19,7 +19,7 @@ AC_COPYRIGHT(
 
 # Don't forget to change the LIB_VERSION (and read the note if you are
 # wondering what the numbers mean.
-AC_INIT(libtsnnls, 2.3.4, cantarel@math.uga.edu)
+AC_INIT(libtsnnls, 2.4.5, cantarel@math.uga.edu)
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE
 
@@ -40,7 +40,7 @@ AM_INIT_AUTOMAKE
 # Due to various broken ideas, we have to have two versions of this number, one
 # with colons below and one with periods above.  Please keep them in sync!
 #
-AC_SUBST(LIB_VERSION, 2:3:4)
+AC_SUBST(LIB_VERSION, 2:4:5)
 AC_CONFIG_SRCDIR([configure])
 AC_CONFIG_HEADERS([config.h])
 
@@ -73,7 +73,7 @@ dnl by doing whatever f2c did) to the lapacke.h header, which is at least
 dnl *maintained* and attempts to provide a consistent C interface, so we have
 dnl a shot at keeping everything going.
 
-AC_SEARCH_LIBS([cblas_dgemv],[openblas], ,AC_MSG_ERROR([tsnnls 3.0.0 and higher require OpenBlas]))
+AC_SEARCH_LIBS([cblas_dgemv],[openblas], ,AC_MSG_ERROR([tsnnls 2.4.5 and higher require OpenBlas]))
 
 #LAPACK_LIBS="-lopenblas"
 
