@@ -7,15 +7,15 @@ ifdef([m4_pattern_allow],
       [m4_pattern_allow([^AM_(CONFIG_HEADER|PROG_LEX)$])])dnl
 
 
-AC_PREREQ(2.57)
-AC_COPYRIGHT(
+AC_PREREQ([2.57])
+AC_COPYRIGHT([
 ------------------------------- libtsnnls.a ---------------------------------
 
                   Copyright (c) 2006 University of Georgia.
 
  Distributed under terms of the GNU Lesser General Public License version 3
                        or later (see COPYING and COPYING.LESSER).
-)
+])
 
 # Don't forget to change the LIB_VERSION (and read the note if you are
 # wondering what the numbers mean.
