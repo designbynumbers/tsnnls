@@ -24,6 +24,12 @@ tsnnls.h : Header for unconstrained and constrained sparse
 #ifndef TSNNLS_H
 #define TSNNLS_H 1
 
+/* This public header uses FILE (taucs_ccs_write_* / colvector_write_* below) and size_t
+   (tsnnls_version), so it must include <stdio.h> itself -- otherwise a consumer that includes
+   tsnnls.h before any stdio-pulling header fails with "unknown type name 'FILE'". Included
+   outside the extern "C" block, as system headers manage their own linkage. */
+#include <stdio.h>
+
 #if (__cplusplus || c_plusplus)
 extern "C" {
 #endif
