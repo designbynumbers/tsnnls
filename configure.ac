@@ -19,7 +19,7 @@ AC_COPYRIGHT([
 
 # Don't forget to change the LIB_VERSION (and read the note if you are
 # wondering what the numbers mean.
-AC_INIT(libtsnnls, 2.4.5, cantarel@math.uga.edu)
+AC_INIT(libtsnnls, 2.5.0, cantarel@math.uga.edu)
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE
 
@@ -40,7 +40,7 @@ AM_INIT_AUTOMAKE
 # Due to various broken ideas, we have to have two versions of this number, one
 # with colons below and one with periods above.  Please keep them in sync!
 #
-AC_SUBST(LIB_VERSION, 2:4:5)
+AC_SUBST(LIB_VERSION, 2:5:0)
 AC_CONFIG_SRCDIR([configure])
 AC_CONFIG_HEADERS([config.h])
 
@@ -51,6 +51,31 @@ CFLAGS=`echo $CFLAGS | sed s/-O2//g`
 LT_INIT
 AC_PROG_CC([clang gcc])
 AM_PROG_CC_C_O
+
+# The bundled TAUCS/f2c sources (tsnnls/taucs_basic/*.c) use K&R-style function definitions,
+# which were removed in C23. Modern compilers now default to C23 (-std=gnu23), so unless the
+# user has pinned a standard we build under -std=gnu17, which still accepts the old syntax.
+case " $CFLAGS " in
+  *" -std="*) ;;   # respect a standard the user chose explicitly
+  *)
+    save_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -std=gnu17"
+    AC_MSG_CHECKING([whether $CC accepts -std=gnu17])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
+                      [AC_MSG_RESULT([yes])],
+                      [AC_MSG_RESULT([no]); CFLAGS="$save_CFLAGS"])
+    ;;
+esac
+
+# Locate OpenBLAS via pkg-config. OpenBLAS is keg-only under Homebrew and so is not on the
+# default header/library search path; Homebrew adds keg-only pkgconfig dirs to PKG_CONFIG_PATH
+# automatically, so no manual flags are needed. We fold its flags into CPPFLAGS/LIBS so they
+# propagate to the library and all test programs (and so the cblas.h/lapacke.h checks below
+# find the headers).
+PKG_PROG_PKG_CONFIG
+PKG_CHECK_MODULES([OPENBLAS],[openblas])
+CPPFLAGS="$CPPFLAGS $OPENBLAS_CFLAGS"
+LIBS="$LIBS $OPENBLAS_LIBS"
 
 # Checks for libraries
 AC_CHECK_LIB([m],[cos])
@@ -73,7 +98,8 @@ dnl by doing whatever f2c did) to the lapacke.h header, which is at least
 dnl *maintained* and attempts to provide a consistent C interface, so we have
 dnl a shot at keeping everything going.
 
-AC_SEARCH_LIBS([cblas_dgemv],[openblas], ,AC_MSG_ERROR([tsnnls 2.4.5 and higher require OpenBlas]))
+# OpenBLAS is located via pkg-config (PKG_CHECK_MODULES above); its libraries are already in
+# LIBS, so no AC_SEARCH_LIBS([cblas_dgemv]) probe is needed here.
 
 #LAPACK_LIBS="-lopenblas"
 
@@ -276,9 +302,6 @@ AC_CHECK_SIZEOF([double *])
 # Can we inline and/or const?
 AC_C_INLINE
 AC_C_CONST
-
-# Enable debugging support for dmalloc, if we configure --with-dmalloc
-AM_WITH_DMALLOC
 
 # Output
 #AC_CONFIG_FILES([tsnnls-libs])    # Write linker info to file. 
